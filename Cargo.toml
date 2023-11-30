@@ -1,0 +1,14 @@
+[package]
+name = "git-z"
+version = "0.1.0-dev"
+authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
+edition = "2021"
+license = "GPL-3.0-only"
+resolver = "2"
+description = "A Git extension to go beyond."
+
+[dependencies]
+clap = { version = "4", features = ["derive", "wrap_help"] }
+color-eyre = "0.6"
+colored = "2"
+eyre = "0.6"
