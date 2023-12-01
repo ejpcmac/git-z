@@ -65,9 +65,9 @@ To make a change, please use this workflow:
 3. Work on your feature (don’t forget to write tests):
 
         # Some work
-        git commit -am "feat: my first change"
+        git z commit
         # Some work
-        git commit -am "refactor: my second change"
+        git z commit
         ...
 
 4. When your feature is ready, feel free to use
@@ -107,4 +107,6 @@ the existing code.
 ## Commit style
 
 Please name your commits using [Conventional
-Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+Commits](https://www.conventionalcommits.org/en/v1.0.0/) and using the types and
+scopes defined in `git-z.toml`. You can use `git z commit` to help you prepare
+the commit message.

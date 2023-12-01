@@ -24,6 +24,7 @@
 #![warn(clippy::use_self)]
 
 mod command;
+mod config;
 
 #[doc(hidden)]
 pub use command::GitZ;

@@ -1,0 +1,51 @@
+version = "0.1"
+
+# The available types of commits.
+#
+# This is a list of types (1 word) and their description, separated by one or
+# more spaces.
+types = [
+    "feat      adds a new feature in the code",
+    "sec       patches a security issue",
+    "fix       patches a code bug",
+    "perf      enhances the performance, without adding a new feature",
+    "refactor  refactors the code",
+    "test      adds, updates or removes tests only",
+    "docs      updates the documentation only",
+    "style     updates the style, like running clang-format or changing headers",
+    "deps      adds, updates or removes external dependencies",
+    "build     updates the build system or build scripts",
+    "env       updates the development environment",
+    "ide       updates the IDE configuration",
+    "ci        updates the CI configuration",
+    "revert    reverts a previous commit",
+    "chore     updates something that is not covered by any other type",
+    "wip       work in progress / to be rebased and squashed later",
+    "debug     commit used for debugging purposes, not to be integrated",
+]
+
+# The list of valid scopes.
+scopes = [
+    "changelog",
+    "config",
+    "contributing",
+    "git-z",
+    "lib",
+    "readme",
+    "version",
+]
+
+# The list of valid ticket prefixes.
+ticket_prefixes = ["PROJECT-", "OTHER-"]
+
+# The commit message template, written with the Tera [1] templating engine.
+# [1] https://tera.netlify.app/
+template = """
+{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+
+# Feel free to enter a longer description here.
+
+Refs: {{ ticket }}
+
+{% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+"""

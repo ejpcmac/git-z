@@ -13,23 +13,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use clap::Parser;
-use eyre::Result;
+//! Configuration for git-z, version 0.1.
 
-/// Arguments for `git-z hello`.
-#[derive(Debug, Parser)]
-pub struct Hello {
-    /// Who to say hello to.
-    name: Option<String>,
-}
+// NOTE: Never update the fields of the types defined in this file. Create a new
+// version instead.
 
-impl super::Command for Hello {
-    fn run(&self) -> Result<()> {
-        let Self { name } = self;
+use serde::{Deserialize, Serialize};
 
-        let name = name.as_deref().unwrap_or("world");
-        println!("Hello, {name}!");
-
-        Ok(())
-    }
+/// The git-z configuration.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    /// The version of the configuration.
+    pub(super) version: String,
+    /// The valid commit types.
+    pub types: Vec<String>,
+    /// The valid scopes.
+    pub scopes: Vec<String>,
+    /// The commit message template.
+    pub template: String,
+    /// The valid ticket prefixes.
+    pub ticket_prefixes: Vec<String>,
 }

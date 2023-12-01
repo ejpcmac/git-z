@@ -18,6 +18,11 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    naersk = {
+      url = "github:nix-community/naersk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { flake-parts, ... }@inputs:
@@ -25,13 +30,35 @@
       imports = [ inputs.devshell.flakeModule ];
       systems = [ "x86_64-linux" ];
 
-      perSystem = { system, ... }:
+      perSystem = { self', system, ... }:
         let
           overlays = [ (import inputs.rust-overlay) ];
           pkgs = import inputs.nixpkgs { inherit system overlays; };
+
           rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+          naersk = pkgs.callPackage inputs.naersk {
+            cargo = rust-toolchain;
+            rustc = rust-toolchain;
+          };
+
+          packageName = "git-z";
         in
         {
+          packages = {
+            default = self'.packages.${packageName};
+
+            ${packageName} = naersk.buildPackage {
+              src = ./.;
+
+              nativeBuildInputs = with pkgs; [ makeWrapper ];
+
+              postInstall = with pkgs; ''
+                wrapProgram $out/bin/${packageName} \
+                  --prefix PATH : ${lib.makeBinPath [ git ]}
+              '';
+            };
+          };
+
           devshells.default = {
             name = "git-z";
 
@@ -40,10 +67,21 @@
               {202}🔨 Welcome to the git-z devshell!{reset}
             '';
 
-            packages = with pkgs; [
+            packages = with pkgs; with self'.packages; [
               # Build toolchain.
               rust-toolchain
               clang
+
+              # IDE toolchain.
+              nil
+              nixpkgs-fmt
+              rust-analyzer
+
+              # Tools.
+              cargo-watch
+              git
+              git-z
+              gitAndTools.gitflow
             ];
           };
         };
