@@ -51,7 +51,6 @@ scopes = [
 
     # Commands
     "c:commit",
-    "c:hello",
 ]
 
 # The list of valid ticket prefixes.

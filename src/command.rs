@@ -14,20 +14,17 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 mod commit;
-mod hello;
 mod helpers;
 
 use clap::Parser;
 use eyre::Result;
 
-use self::{commit::Commit, hello::Hello};
+use self::commit::Commit;
 
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
 #[command(author, version)]
 pub enum GitZ {
-    /// Say hello.
-    Hello(Hello),
     /// Runs the commit wizard.
     Commit(Commit),
 }
@@ -41,7 +38,6 @@ impl GitZ {
     /// Runs git-z.
     pub fn run() -> Result<()> {
         let result = match Self::parse() {
-            Self::Hello(hello) => hello.run(),
             Self::Commit(commit) => commit.run(),
         };
 
