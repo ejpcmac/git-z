@@ -5,23 +5,23 @@ version = "0.1"
 # This is a list of types (1 word) and their description, separated by one or
 # more spaces.
 types = [
-    "build     updates the build system or build scripts",
-    "chore     updates something that is not covered by any other type",
-    "ci        updates the CI configuration",
-    "debug     commit used for debugging purposes, not to be integrated",
-    "deps      adds, updates or removes external dependencies",
-    "docs      updates the documentation only",
-    "env       updates the development environment",
     "feat      adds a new feature in the code",
+    "sec       patches a security issue",
     "fix       patches a code bug",
-    "ide       updates the IDE configuration",
     "perf      enhances the performance, without adding a new feature",
     "refactor  refactors the code",
-    "revert    reverts a previous commit",
-    "sec       patches a security issue",
-    "style     updates the style, like running clang-format or changing headers",
     "test      adds, updates or removes tests only",
+    "docs      updates the documentation only",
+    "style     updates the style, like running clang-format or changing headers",
+    "deps      adds, updates or removes external dependencies",
+    "build     updates the build system or build scripts",
+    "env       updates the development environment",
+    "ide       updates the IDE configuration",
+    "ci        updates the CI configuration",
+    "revert    reverts a previous commit",
+    "chore     updates something that is not covered by any other type",
     "wip       work in progress / to be rebased and squashed later",
+    "debug     commit used for debugging purposes, not to be integrated",
 ]
 
 # The list of valid scopes.
