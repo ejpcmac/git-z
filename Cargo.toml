@@ -3,6 +3,7 @@ name = "git-z"
 version = "0.1.0-dev"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
 edition = "2021"
+homepage = "https://github.com/ejpcmac/git-z"
 license = "GPL-3.0-only"
 resolver = "2"
 description = "A Git extension to go beyond."
@@ -21,3 +22,6 @@ toml = "0.8"
 
 [package.metadata.deb]
 depends = "git"
+
+[package.metadata.wix]
+license = "wix/gpl-3.0.rtf"
