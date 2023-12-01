@@ -44,6 +44,16 @@
               # Build toolchain.
               rust-toolchain
               clang
+
+              # IDE toolchain.
+              nil
+              nixpkgs-fmt
+              rust-analyzer
+
+              # Tools.
+              cargo-watch
+              git
+              gitAndTools.gitflow
             ];
           };
         };
