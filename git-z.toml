@@ -41,6 +41,7 @@ scopes = [
     "rustfmt",
     "toolchain",
     "version",
+    "vscode",
     "wix",
 
     # Binary
