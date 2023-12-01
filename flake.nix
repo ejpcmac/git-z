@@ -67,7 +67,7 @@
               {202}🔨 Welcome to the git-z devshell!{reset}
             '';
 
-            packages = with pkgs; [
+            packages = with pkgs; with self'.packages; [
               # Build toolchain.
               rust-toolchain
               clang
@@ -80,6 +80,7 @@
               # Tools.
               cargo-watch
               git
+              git-z
               gitAndTools.gitflow
             ];
           };
