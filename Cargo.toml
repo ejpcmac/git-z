@@ -2,9 +2,12 @@
 name = "git-z"
 version = "0.1.0-dev"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
+categories = ["command-line-utilities", "development-tools"]
 edition = "2021"
 homepage = "https://github.com/ejpcmac/git-z"
+keywords = ["conventional-commits", "git"]
 license = "GPL-3.0-only"
+repository = "https://github.com/ejpcmac/git-z"
 resolver = "2"
 description = "A Git extension to go beyond."
 
