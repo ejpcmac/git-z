@@ -50,6 +50,7 @@ scopes = [
     "lib",
 
     # Commands
+    "c:commit",
     "c:hello",
 ]
 
