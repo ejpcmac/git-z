@@ -23,7 +23,7 @@ use self::commit::Commit;
 
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
-#[command(author, version)]
+#[command(author, version = env!("VERSION_WITH_GIT"))]
 pub enum GitZ {
     /// Runs the commit wizard.
     Commit(Commit),

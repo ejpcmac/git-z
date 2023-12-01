@@ -45,6 +45,7 @@ scopes = [
     "main",
 
     # Lib
+    "cli",
     "command",
     "config",
     "lib",
