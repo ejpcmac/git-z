@@ -23,6 +23,16 @@ macro_rules! success {
     }};
 }
 
+/// Prints a warning.
+#[macro_export]
+macro_rules! warning {
+    ($($arg:tt)*) => {{
+        use colored::Colorize;
+        let message = format!($($arg)*).yellow().bold();
+        println!("{message}");
+    }};
+}
+
 /// Prints an error.
 #[macro_export]
 macro_rules! error {

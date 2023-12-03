@@ -49,6 +49,7 @@ list = [
     "cli",
     "command",
     "config",
+    "helpers",
     "lib",
 
     # Commands
