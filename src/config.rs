@@ -24,10 +24,11 @@ mod v0_2_dev_0;
 // - switch the version here,
 // - update VERSION below,
 // - update the version in `git-z.toml[.sample]`,
-// - write a new `impl From<old::Config> for Config` implementations,
-// - write a new load_from_* method to load from the previous version,
-// - write an updater in `git-z update`,
-// - update this message with instructions for next versions.
+// - update the `impl From<old::Config> for Config` implementations,
+// - write a new `impl From<previous::Config> for Config` implementation,
+// - handle the previous config in `Config::load`,
+// - write an updater in `git z update`,
+// - update the previous updaters as well.
 pub use v0_2_dev_0::{Config, Scopes, Templates, Ticket};
 
 use std::{fs, io, path::PathBuf, process::Command};
@@ -43,10 +44,10 @@ pub enum LoadError {
     ConfigFileError(#[from] ConfigFileError),
     #[error("Failed to read {CONFIG_FILE_NAME}")]
     ReadError(#[from] io::Error),
+    #[error("Failed to parse {CONFIG_FILE_NAME}: config version {0} is not supported")]
+    UnsupportedVersion(String),
     #[error("Failed to parse {CONFIG_FILE_NAME}")]
     ParseError(#[from] toml::de::Error),
-    #[error("The config file is out of date")]
-    OutOfDate,
 }
 
 /// An error that can occur when building the config file path.
@@ -78,8 +79,10 @@ struct MinimalConfig {
     version: String,
 }
 
-const CONFIG_FILE_NAME: &str = "git-z.toml";
-const VERSION: &str = "0.2-dev.0";
+/// The name of the configuration file.
+pub const CONFIG_FILE_NAME: &str = "git-z.toml";
+/// The current version of the configuration file.
+pub const VERSION: &str = "0.2-dev.0";
 
 const DEFAULT_TEMPLATE: &str = include_str!("../templates/COMMIT_EDITMSG");
 
@@ -113,7 +116,13 @@ impl Config {
                 let minimal_config: MinimalConfig = toml::from_str(&config)?;
                 match minimal_config.version.as_str() {
                     VERSION => Ok(toml::from_str(&config)?),
-                    _ => Err(LoadError::OutOfDate),
+                    "0.1" => {
+                        let config: v0_1::Config = toml::from_str(&config)?;
+                        Ok(config.into())
+                    }
+                    version => {
+                        Err(LoadError::UnsupportedVersion(version.to_owned()))
+                    }
                 }
             }
 
@@ -141,4 +150,32 @@ fn repo_root() -> Result<PathBuf, RepoRootError> {
         let git_error = String::from_utf8(git_rev_parse.stderr)?;
         Err(RepoRootError::GitError(git_error.trim().to_owned()))
     }
+}
+
+impl From<v0_1::Config> for Config {
+    fn from(old: v0_1::Config) -> Self {
+        Self {
+            version: old.version,
+            types: split_types_and_docs(old.types),
+            scopes: Some(Scopes::List { list: old.scopes }),
+            ticket: Ticket {
+                prefixes: old.ticket_prefixes,
+            },
+            templates: Templates {
+                commit: old.template,
+            },
+        }
+    }
+}
+
+fn split_types_and_docs(types: Vec<String>) -> IndexMap<String, String> {
+    types
+        .iter()
+        .map(|type_and_doc| {
+            let mut split = type_and_doc.splitn(2, ' ');
+            let ty = split.next().unwrap_or_default().to_owned();
+            let doc = split.next().unwrap_or_default().trim().to_owned();
+            (ty, doc)
+        })
+        .collect()
 }

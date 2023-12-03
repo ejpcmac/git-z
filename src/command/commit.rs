@@ -23,7 +23,10 @@ use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
 
-use crate::config::{Config, Scopes};
+use crate::{
+    command::helpers::load_config,
+    config::{Config, Scopes},
+};
 
 const PAGE_SIZE: usize = 15;
 
@@ -49,7 +52,7 @@ struct CommitMessage {
 
 impl super::Command for Commit {
     fn run(&self) -> Result<()> {
-        let config = Config::load()?;
+        let config = load_config()?;
 
         let commit_message = CommitMessage::run_wizard(&config)?;
         let context = Context::from_serialize(commit_message)?;

@@ -13,6 +13,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use eyre::Result;
+
+use crate::{
+    config::{Config, CONFIG_FILE_NAME, VERSION},
+    hint, warning,
+};
+
+/// Loads the configuration.
+pub fn load_config() -> Result<Config> {
+    let config = Config::load()?;
+
+    if config.version != VERSION {
+        warning!("The configuration in {CONFIG_FILE_NAME} is out of date.");
+        hint!("You can update it by running `git z update`.");
+    }
+
+    Ok(config)
+}
+
 /// Prints a success.
 #[macro_export]
 macro_rules! success {

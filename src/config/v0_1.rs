@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     /// The version of the configuration.
-    pub(super) version: String,
+    pub version: String,
     /// The valid commit types.
     pub types: Vec<String>,
     /// The valid scopes.
