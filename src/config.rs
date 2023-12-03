@@ -17,10 +17,6 @@
 
 mod v0_1;
 
-use std::{fs, io, path::PathBuf, process::Command};
-
-use thiserror::Error;
-
 // NOTE: When you switch to a new version:
 //
 // - write a new version module,
@@ -31,6 +27,10 @@ use thiserror::Error;
 // - write an updater in `git-z update`,
 // - update this message with instructions for next versions.
 pub use v0_1::Config;
+
+use std::{fs, io, path::PathBuf, process::Command};
+
+use thiserror::Error;
 
 /// An error that can occur when loading the config.
 #[derive(Debug, Error)]
