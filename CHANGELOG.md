@@ -13,6 +13,13 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * **BREAKING** [Config] Update the configuration format to allow for more
     options.
 
+## Fixed
+
+* [Config] Check the version before trying to parse using the latest
+    configuration format. Previously, the configuration was parsed, then its
+    `version` field was checked. This led to parsing errors instead of reporting
+    an out of date configuration.
+
 ## [0.1.0] - 2023-12-01
 
 ### Added

@@ -33,6 +33,7 @@ pub use v0_2_dev_0::{Config, Scopes, Templates, Ticket};
 use std::{fs, io, path::PathBuf, process::Command};
 
 use indexmap::IndexMap;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// An error that can occur when loading the configuration.
@@ -66,6 +67,17 @@ pub enum RepoRootError {
     EncodingError(#[from] std::string::FromUtf8Error),
 }
 
+/// A minimal configuration to get the version.
+///
+/// The configuration format for git-z can evolve with time. It is versioned for
+/// this purpose, so that git-z is able to select the proper parser. This struct
+/// allows to parse any configuration as long as it contains a version field.
+#[derive(Debug, Serialize, Deserialize)]
+struct MinimalConfig {
+    /// The version of the configuration.
+    version: String,
+}
+
 const CONFIG_FILE_NAME: &str = "git-z.toml";
 const VERSION: &str = "0.2-dev.0";
 
@@ -96,19 +108,19 @@ impl Default for Config {
 impl Config {
     /// Loads the configuration the repo or fallbacks to the default.
     pub fn load() -> Result<Self, LoadError> {
-        let config = match fs::read_to_string(config_file()?) {
-            Ok(config) => toml::from_str(&config)?,
+        match fs::read_to_string(config_file()?) {
+            Ok(config) => {
+                let minimal_config: MinimalConfig = toml::from_str(&config)?;
+                match minimal_config.version.as_str() {
+                    VERSION => Ok(toml::from_str(&config)?),
+                    _ => Err(LoadError::OutOfDate),
+                }
+            }
 
             Err(error) => match error.kind() {
-                io::ErrorKind::NotFound => Self::default(),
-                _ => return Err(LoadError::ReadError(error)),
+                io::ErrorKind::NotFound => Ok(Self::default()),
+                _ => Err(LoadError::ReadError(error)),
             },
-        };
-
-        if config.version == VERSION {
-            Ok(config)
-        } else {
-            Err(LoadError::OutOfDate)
         }
     }
 }
