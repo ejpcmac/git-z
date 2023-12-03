@@ -23,6 +23,7 @@ serde = { version = "1", features = ["derive"] }
 tera = "1"
 thiserror = "1"
 toml = "0.8"
+toml_edit = "0.21"
 
 [package.metadata.deb]
 depends = "git"

@@ -454,6 +454,7 @@ dependencies = [
  "tera",
  "thiserror",
  "toml",
+ "toml_edit",
 ]
 
 [[package]]
