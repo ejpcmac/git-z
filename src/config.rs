@@ -16,20 +16,23 @@
 //! Configuration for git-z.
 
 mod v0_1;
+mod v0_2_dev_0;
 
 // NOTE: When you switch to a new version:
 //
 // - write a new version module,
 // - switch the version here,
 // - update VERSION below,
+// - update the version in `git-z.toml[.sample]`,
 // - write a new `impl From<old::Config> for Config` implementations,
 // - write a new load_from_* method to load from the previous version,
 // - write an updater in `git-z update`,
 // - update this message with instructions for next versions.
-pub use v0_1::Config;
+pub use v0_2_dev_0::{Config, Scopes, Templates, Ticket};
 
 use std::{fs, io, path::PathBuf, process::Command};
 
+use indexmap::IndexMap;
 use thiserror::Error;
 
 /// An error that can occur when loading the configuration.
@@ -64,21 +67,28 @@ pub enum RepoRootError {
 }
 
 const CONFIG_FILE_NAME: &str = "git-z.toml";
-const VERSION: &str = "0.1";
+const VERSION: &str = "0.2-dev.0";
 
 const DEFAULT_TEMPLATE: &str = include_str!("../templates/COMMIT_EDITMSG");
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            version: String::from("0.1"),
-            types: vec![
-                String::from("feat  introduces a new feature"),
-                String::from("fix   patches a bug"),
-            ],
-            scopes: vec![],
-            template: String::from(DEFAULT_TEMPLATE),
-            ticket_prefixes: vec![String::from("")],
+            version: String::from(VERSION),
+            types: IndexMap::from([
+                (
+                    String::from("feat"),
+                    String::from("introduces a new feature"),
+                ),
+                (String::from("fix"), String::from("patches a bug")),
+            ]),
+            scopes: None,
+            ticket: Ticket {
+                prefixes: vec![String::from("")],
+            },
+            templates: Templates {
+                commit: String::from(DEFAULT_TEMPLATE),
+            },
         }
     }
 }

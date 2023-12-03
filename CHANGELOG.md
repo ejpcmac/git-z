@@ -8,6 +8,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## Changed
+
+* **BREAKING** [Config] Update the configuration format to allow for more
+    options.
+
 ## [0.1.0] - 2023-12-01
 
 ### Added
