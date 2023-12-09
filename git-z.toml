@@ -67,7 +67,7 @@ template = """
 
 # Feel free to enter a longer description here.
 
-Refs: {{ ticket }}
+Refs: #{{ ticket }}
 
 {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
 """
