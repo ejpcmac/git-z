@@ -8,6 +8,23 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## Added
+
+* [`git z update`] Add a command to update the configuration file without
+    loosing comments and formatting.
+
+## Changed
+
+* **BREAKING** [Config] Update the configuration format to allow for more
+    options.
+
+## Fixed
+
+* [Config] Check the version before trying to parse using the latest
+    configuration format. Previously, the configuration was parsed, then its
+    `version` field was checked. This led to parsing errors instead of reporting
+    an out of date configuration.
+
 ## [0.1.0] - 2023-12-01
 
 ### Added

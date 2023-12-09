@@ -17,12 +17,16 @@ use std::process::Command;
 
 use clap::Parser;
 use eyre::{bail, eyre, Result};
+use indexmap::IndexMap;
 use inquire::{validator::Validation, CustomUserError, Select, Text};
 use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
 
-use crate::config::Config;
+use crate::{
+    command::helpers::load_config,
+    config::{Config, Scopes},
+};
 
 const PAGE_SIZE: usize = 15;
 
@@ -48,11 +52,11 @@ struct CommitMessage {
 
 impl super::Command for Commit {
     fn run(&self) -> Result<()> {
-        let config = Config::load()?;
+        let config = load_config()?;
 
         let commit_message = CommitMessage::run_wizard(&config)?;
         let context = Context::from_serialize(commit_message)?;
-        let message = Tera::one_off(&config.template, &context, false)?;
+        let message = Tera::one_off(&config.templates.commit, &context, false)?;
 
         if self.print_only {
             println!("{message}");
@@ -84,7 +88,7 @@ impl CommitMessage {
 }
 
 fn ask_type(config: &Config) -> Result<String> {
-    let choice = Select::new("Commit type", config.types.clone())
+    let choice = Select::new("Commit type", format_types(&config.types))
         .with_page_size(PAGE_SIZE)
         .with_formatter(&|choice| remove_type_description(choice.value))
         .prompt()?;
@@ -92,20 +96,21 @@ fn ask_type(config: &Config) -> Result<String> {
 }
 
 fn ask_scope(config: &Config) -> Result<Option<String>> {
-    if config.scopes.is_empty() {
-        Ok(None)
-    } else {
-        let help_message = format!(
-            "{}, {}, {}",
-            "↑↓ to move, enter to select, type to filter",
-            "ESC to leave empty",
-            "update `commits.toml` to add new scopes"
-        );
+    match config.scopes {
+        None => Ok(None),
+        Some(Scopes::List { ref list }) => {
+            let help_message = format!(
+                "{}, {}, {}",
+                "↑↓ to move, enter to select, type to filter",
+                "ESC to leave empty",
+                "update `commits.toml` to add new scopes"
+            );
 
-        Ok(Select::new("Scope", config.scopes.clone())
-            .with_help_message(&help_message)
-            .with_page_size(PAGE_SIZE)
-            .prompt_skippable()?)
+            Ok(Select::new("Scope", list.clone())
+                .with_help_message(&help_message)
+                .with_page_size(PAGE_SIZE)
+                .prompt_skippable()?)
+        }
     }
 }
 
@@ -156,6 +161,20 @@ fn get_current_branch() -> Result<String> {
         .output()?;
     assert!(git_branch.status.success());
     Ok(String::from_utf8(git_branch.stdout)?)
+}
+
+fn format_types(types: &IndexMap<String, String>) -> Vec<String> {
+    let Some(max_type_len) = types.keys().map(String::len).max() else {
+        return vec![];
+    };
+
+    types
+        .iter()
+        .map(|(ty, doc)| {
+            let padding = " ".repeat(max_type_len - ty.len());
+            format!("{ty}{padding}  {doc}")
+        })
+        .collect()
 }
 
 fn remove_type_description(choice: &str) -> String {
@@ -209,7 +228,8 @@ fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
 
 fn ticket_regex(config: &Config) -> Result<String> {
     let valid_prefixes = config
-        .ticket_prefixes
+        .ticket
+        .prefixes
         .clone()
         .into_iter()
         .reduce(|acc, prefix| format!("{acc}|{prefix}"))
@@ -220,7 +240,8 @@ fn ticket_regex(config: &Config) -> Result<String> {
 
 fn ticket_placeholder(config: &Config) -> Result<String> {
     config
-        .ticket_prefixes
+        .ticket
+        .prefixes
         .iter()
         .map(|prefix| format!("{prefix}XXX"))
         .reduce(|acc, prefix| format!("{acc} or {prefix}"))

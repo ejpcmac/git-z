@@ -16,12 +16,14 @@ clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
 colored = "2"
 eyre = "0.6"
+indexmap = { version = "2", features = ["serde"] }
 inquire = "0.6"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
 thiserror = "1"
 toml = "0.8"
+toml_edit = "0.21"
 
 [package.metadata.deb]
 depends = "git"
