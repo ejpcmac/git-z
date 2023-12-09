@@ -44,9 +44,16 @@ pub enum LoadError {
     ConfigFileError(#[from] ConfigFileError),
     #[error("Failed to read {CONFIG_FILE_NAME}")]
     ReadError(#[from] io::Error),
-    #[error("Failed to parse {CONFIG_FILE_NAME}: config version {0} is not supported")]
+    #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
+    InvalidConfig(#[from] FromTomlError),
+}
+
+/// An error that can occur when parsing the TOML.
+#[derive(Debug, Error)]
+pub enum FromTomlError {
+    #[error("Configuration version {0} is not supported")]
     UnsupportedVersion(String),
-    #[error("Failed to parse {CONFIG_FILE_NAME}")]
+    #[error("Failed to parse into a valid configuration")]
     ParseError(#[from] toml::de::Error),
 }
 
@@ -112,24 +119,28 @@ impl Config {
     /// Loads the configuration the repo or fallbacks to the default.
     pub fn load() -> Result<Self, LoadError> {
         match fs::read_to_string(config_file()?) {
-            Ok(config) => {
-                let minimal_config: MinimalConfig = toml::from_str(&config)?;
-                match minimal_config.version.as_str() {
-                    VERSION => Ok(toml::from_str(&config)?),
-                    "0.1" => {
-                        let config: v0_1::Config = toml::from_str(&config)?;
-                        Ok(config.into())
-                    }
-                    version => {
-                        Err(LoadError::UnsupportedVersion(version.to_owned()))
-                    }
-                }
-            }
+            Ok(config) => Ok(Self::from_toml(&config)?),
 
             Err(error) => match error.kind() {
                 io::ErrorKind::NotFound => Ok(Self::default()),
                 _ => Err(LoadError::ReadError(error)),
             },
+        }
+    }
+
+    /// Builds the configuration from its TOML representation.
+    pub fn from_toml(toml: &str) -> Result<Self, FromTomlError> {
+        let minimal_config: MinimalConfig = toml::from_str(toml)?;
+
+        match minimal_config.version.as_str() {
+            VERSION => Ok(toml::from_str(toml)?),
+            "0.1" => {
+                let config: v0_1::Config = toml::from_str(toml)?;
+                Ok(config.into())
+            }
+            version => {
+                Err(FromTomlError::UnsupportedVersion(version.to_owned()))
+            }
         }
     }
 }
