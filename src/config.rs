@@ -182,11 +182,14 @@ impl From<v0_1::Config> for Config {
 fn split_types_and_docs(types: Vec<String>) -> IndexMap<String, String> {
     types
         .iter()
-        .map(|type_and_doc| {
-            let mut split = type_and_doc.splitn(2, ' ');
-            let ty = split.next().unwrap_or_default().to_owned();
-            let doc = split.next().unwrap_or_default().trim().to_owned();
-            (ty, doc)
-        })
+        .map(AsRef::as_ref)
+        .map(split_type_and_doc)
         .collect()
+}
+
+fn split_type_and_doc(type_and_doc: &str) -> (String, String) {
+    let mut split = type_and_doc.splitn(2, ' ');
+    let ty = split.next().unwrap_or_default().to_owned();
+    let doc = split.next().unwrap_or_default().trim().to_owned();
+    (ty, doc)
 }
