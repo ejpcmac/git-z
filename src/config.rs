@@ -32,10 +32,10 @@ use std::{fs, io, path::PathBuf, process::Command};
 
 use thiserror::Error;
 
-/// An error that can occur when loading the config.
+/// An error that can occur when loading the configuration.
 #[derive(Debug, Error)]
 pub enum LoadError {
-    #[error("Failed to get the config file path")]
+    #[error("Failed to get the configuration file path")]
     ConfigFileError(#[from] ConfigFileError),
     #[error("Failed to read {CONFIG_FILE_NAME}")]
     ReadError(#[from] io::Error),
