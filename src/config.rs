@@ -15,6 +15,8 @@
 
 //! Configuration for git-z.
 
+pub mod updater;
+
 mod v0_1;
 mod v0_2_dev_0;
 
@@ -27,8 +29,9 @@ mod v0_2_dev_0;
 // - update the `impl From<old::Config> for Config` implementations,
 // - write a new `impl From<previous::Config> for Config` implementation,
 // - handle the previous config in `Config::load`,
-// - write an updater in `git z update`,
-// - update the previous updaters as well.
+// - write an updater in `ConfigUpdater`,
+// - update the previous updaters as well,
+// - update `git z update`.
 pub use v0_2_dev_0::{Config, Scopes, Templates, Ticket};
 
 use std::{fs, io, path::PathBuf, process::Command};
