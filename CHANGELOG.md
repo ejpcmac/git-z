@@ -8,6 +8,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## Added
+
+* [`git z update`] Add a command to update the configuration file without
+    loosing comments and formatting.
+
 ## Changed
 
 * **BREAKING** [Config] Update the configuration format to allow for more

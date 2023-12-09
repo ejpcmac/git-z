@@ -54,6 +54,7 @@ list = [
 
     # Commands
     "c:commit",
+    "c:update",
 ]
 
 [ticket]

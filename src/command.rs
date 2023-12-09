@@ -15,11 +15,12 @@
 
 mod commit;
 mod helpers;
+mod update;
 
 use clap::Parser;
 use eyre::Result;
 
-use self::commit::Commit;
+use self::{commit::Commit, update::Update};
 
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
@@ -27,6 +28,8 @@ use self::commit::Commit;
 pub enum GitZ {
     /// Runs the commit wizard.
     Commit(Commit),
+    /// Updates the configuration.
+    Update(Update),
 }
 
 trait Command {
@@ -39,6 +42,7 @@ impl GitZ {
     pub fn run() -> Result<()> {
         let result = match Self::parse() {
             Self::Commit(commit) => commit.run(),
+            Self::Update(update) => update.run(),
         };
 
         match result {
