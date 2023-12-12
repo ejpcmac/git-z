@@ -137,19 +137,21 @@ fn ask_breaking_change() -> Result<Option<String>> {
 }
 
 fn ask_ticket(config: &Config) -> Result<String> {
-    let placeholder = ticket_placeholder(config)?;
+    let prefixes = &config.ticket.prefixes;
+
+    let placeholder = ticket_placeholder(prefixes)?;
+    let ticket_from_branch = get_ticket_from_branch(prefixes)?;
+
     let mut ticket = Text::new("Issue / ticket number")
         .with_placeholder(&placeholder)
         .with_validator(validate_ticket);
-
-    let ticket_from_branch = get_ticket_from_branch(config)?;
     ticket.initial_value = ticket_from_branch.as_deref();
 
     Ok(ticket.prompt()?)
 }
 
-fn get_ticket_from_branch(config: &Config) -> Result<Option<String>> {
-    let regex = ticket_regex(config)?;
+fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
+    let regex = ticket_regex(prefixes)?;
     Ok(Regex::new(&regex)?
         .captures(&get_current_branch()?)
         .map(|captures| captures[0].to_owned()))
@@ -211,8 +213,10 @@ fn validate_description(
 
 fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     let config = Config::load()?;
-    let regex = ticket_regex(&config)?;
-    let placeholder = ticket_placeholder(&config)?;
+    let prefixes = &config.ticket.prefixes;
+
+    let regex = ticket_regex(prefixes)?;
+    let placeholder = ticket_placeholder(prefixes)?;
 
     if Regex::new(&format!("^{regex}$"))?.is_match(ticket) {
         Ok(Validation::Valid)
@@ -226,22 +230,13 @@ fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     }
 }
 
-fn ticket_regex(config: &Config) -> Result<String> {
-    let valid_prefixes = config
-        .ticket
-        .prefixes
-        .clone()
-        .into_iter()
-        .reduce(|acc, prefix| format!("{acc}|{prefix}"))
-        .ok_or(eyre!("empty ticket prefix list"))?;
-
-    Ok(format!("(?:{valid_prefixes})\\d+"))
+fn ticket_regex(prefixes: &[String]) -> Result<String> {
+    let prefixes = prefixes.join("|");
+    Ok(format!("(?:{prefixes})\\d+"))
 }
 
-fn ticket_placeholder(config: &Config) -> Result<String> {
-    config
-        .ticket
-        .prefixes
+fn ticket_placeholder(prefixes: &[String]) -> Result<String> {
+    prefixes
         .iter()
         .map(|prefix| format!("{prefix}XXX"))
         .reduce(|acc, prefix| format!("{acc} or {prefix}"))
