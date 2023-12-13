@@ -35,6 +35,7 @@ impl super::Command for Update {
 
         match updater.config_version() {
             VERSION => success!("The configuration is already up to date."),
+            "0.2-dev.1" => update_from_v0_2_dev_1(updater)?,
             "0.2-dev.0" => update_from_v0_2_dev_0(updater)?,
             "0.1" => update_from_v0_1(updater)?,
             version => unknown_version(version),
@@ -44,10 +45,24 @@ impl super::Command for Update {
     }
 }
 
+fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
+    let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
+
+    updater
+        .update_from_v0_2_dev_1(empty_prefix_to_hash)?
+        .save()?;
+
+    success!("The configuration has been updated.");
+    Ok(())
+}
+
 fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
     let ticket = ask_ticket_management()?;
+    let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
 
-    updater.update_from_v0_2_dev_0(ticket)?.save()?;
+    updater
+        .update_from_v0_2_dev_0(ticket, empty_prefix_to_hash)?
+        .save()?;
 
     success!("The configuration has been updated.");
     Ok(())
@@ -55,14 +70,18 @@ fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
 
 fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
     let ask_for_ticket = ask_ticket_management()?;
+    let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
 
-    updater.update_from_v0_1(ask_for_ticket)?.save()?;
+    updater
+        .update_from_v0_1(ask_for_ticket, empty_prefix_to_hash)?
+        .save()?;
 
     success!("The configuration has been updated.");
     Ok(())
 }
 
 fn ask_ticket_management() -> Result<AskForTicket> {
+    hint!("");
     hint!("The ticket / issue number management has been updated. It is now possible to:");
     hint!("");
     hint!("- ask for a required ticket number (as before),");
@@ -87,6 +106,20 @@ fn ask_ticket_management() -> Result<AskForTicket> {
     };
 
     Ok(ask_for_ticket)
+}
+
+fn ask_empty_prefix_to_hash() -> Result<bool> {
+    hint!("");
+    hint!("\"#\" is now properly handled as a ticket prefix. This means that if \"#\" is ");
+    hint!("part of your prefix list, a ticket number `#23` would be properly extracted ");
+    hint!("from a branch named `feature/23-name`.");
+    hint!("");
+    Ok(
+        Confirm::new("Should any existing empty value in `ticket.prefixes` be replaced by \"#\"?")
+            .with_help_message("This will also remove any `#` prefix before `{{ ticket }}` in your commit template")
+            .with_default(true)
+            .prompt()?,
+    )
 }
 
 fn unknown_version(version: &str) {

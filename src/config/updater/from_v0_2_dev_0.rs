@@ -20,19 +20,23 @@ use toml_edit::{Document, Item};
 use super::{common, AskForTicket};
 
 /// Updates the configuration from version 0.2-dev.0.
-pub fn update(toml_config: &mut Document, ask_for_ticket: AskForTicket) {
+pub fn update(
+    toml_config: &mut Document,
+    ask_for_ticket: AskForTicket,
+    empty_prefix_to_hash: bool,
+) {
     common::update_version(toml_config);
 
     match ask_for_ticket {
         AskForTicket::Ask { require } => {
-            add_required_key_to_ticket(toml_config, require);
+            update_ticket(toml_config, require, empty_prefix_to_hash);
         }
         AskForTicket::DontAsk => {
             remove_ticket(toml_config);
         }
     }
 
-    update_commit_template(toml_config);
+    update_commit_template(toml_config, empty_prefix_to_hash);
 }
 
 // NOTE: Updaters make a heavy usage of `expect` instead of proper error
@@ -40,7 +44,11 @@ pub fn update(toml_config: &mut Document, ask_for_ticket: AskForTicket) {
 // configuration by parsing it to a `Config`. Any error occuring here is a bug,
 // hence should lead to a panic.
 
-fn add_required_key_to_ticket(toml_config: &mut Document, required: bool) {
+fn update_ticket(
+    toml_config: &mut Document,
+    required: bool,
+    empty_prefix_to_hash: bool,
+) {
     let ticket = toml_config
         .get_mut("ticket")
         .expect("No `ticket` key")
@@ -56,7 +64,12 @@ fn add_required_key_to_ticket(toml_config: &mut Document, required: bool) {
         .expect("Improper string in the prefix decorator of the `ticket.prefixes` key")
         .to_owned();
 
-    let prefixes = ticket.remove("prefixes").expect("No `ticket.prefixes` key");
+    let mut prefixes =
+        ticket.remove("prefixes").expect("No `ticket.prefixes` key");
+
+    if empty_prefix_to_hash {
+        common::empty_prefix_to_hash(&mut prefixes);
+    }
 
     ticket.insert("required", Item::Value(required.into()));
     ticket.insert("prefixes", prefixes);
@@ -70,7 +83,10 @@ fn remove_ticket(toml_config: &mut Document) {
     toml_config.remove("ticket");
 }
 
-fn update_commit_template(toml_config: &mut Document) {
+fn update_commit_template(
+    toml_config: &mut Document,
+    remove_hash_prefix: bool,
+) {
     let commit_template = toml_config
         .get_mut("templates")
         .expect("No `templates` key")
@@ -84,6 +100,11 @@ fn update_commit_template(toml_config: &mut Document) {
         .expect("The `templates.commit` key is not a string");
 
     let template = common::add_ticket_condition_to_commit_template(template);
+    let template = if remove_hash_prefix {
+        common::remove_hash_ticket_prefix_from_commit_template(&template)
+    } else {
+        template
+    };
 
     *commit_template = Item::Value(template.into());
 }

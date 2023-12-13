@@ -1,4 +1,4 @@
-version = "0.2-dev.1"
+version = "0.2-dev.2"
 
 # The available types of commits.
 [types]
@@ -60,7 +60,7 @@ list = [
 [ticket]
 required = false
 # The list of valid ticket prefixes.
-prefixes = [""]
+prefixes = ["#"]
 
 [templates]
 # The commit message template, written with the Tera [1] templating engine.
@@ -70,7 +70,7 @@ commit = """
 
 # Feel free to enter a longer description here.
 
-{% if ticket %}Refs: #{{ ticket }}{% endif %}
+{% if ticket %}Refs: {{ ticket }}{% endif %}
 
 {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
 """
