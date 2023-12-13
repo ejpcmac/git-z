@@ -15,10 +15,11 @@
 
 use clap::Parser;
 use eyre::Result;
+use inquire::Confirm;
 
 use crate::{
     config::{
-        updater::{ConfigUpdater, Init},
+        updater::{AskForTicket, ConfigUpdater, Init},
         VERSION,
     },
     error, hint, success,
@@ -34,6 +35,7 @@ impl super::Command for Update {
 
         match updater.config_version() {
             VERSION => success!("The configuration is already up to date."),
+            "0.2-dev.0" => update_from_v0_2_dev_0(updater)?,
             "0.1" => update_from_v0_1(updater)?,
             version => unknown_version(version),
         }
@@ -42,14 +44,53 @@ impl super::Command for Update {
     }
 }
 
-fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
-    updater.update_from_v0_1()?.save()?;
-    success!("the configuration has been updated.");
+fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
+    let ticket = ask_ticket_management()?;
+
+    updater.update_from_v0_2_dev_0(ticket)?.save()?;
+
+    success!("The configuration has been updated.");
     Ok(())
+}
+
+fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
+    let ask_for_ticket = ask_ticket_management()?;
+
+    updater.update_from_v0_1(ask_for_ticket)?.save()?;
+
+    success!("The configuration has been updated.");
+    Ok(())
+}
+
+fn ask_ticket_management() -> Result<AskForTicket> {
+    hint!("The ticket / issue number management has been updated. It is now possible to:");
+    hint!("");
+    hint!("- ask for a required ticket number (as before),");
+    hint!("- ask for an optional ticket number,");
+    hint!("- do not ask for any ticket number.");
+    hint!("");
+
+    let ask_for_ticket = Confirm::new(
+        "Should the commiter be proposed to enter a ticket number?",
+    )
+    .with_default(true)
+    .prompt()?;
+
+    let ask_for_ticket = if ask_for_ticket {
+        let require = Confirm::new("Should the ticket number be required?")
+            .with_default(true)
+            .prompt()?;
+
+        AskForTicket::Ask { require }
+    } else {
+        AskForTicket::DontAsk
+    };
+
+    Ok(ask_for_ticket)
 }
 
 fn unknown_version(version: &str) {
     error!("Unkown config version {version}.");
-    hint!("Your config file may have been created by a more recent version of command.");
+    hint!("Your config file may have been created by a more recent version of git-z.");
     std::process::exit(1);
 }

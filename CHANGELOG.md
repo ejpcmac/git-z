@@ -12,11 +12,16 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 * [`git z update`] Add a command to update the configuration file without
     loosing comments and formatting.
+* [Config] Add a `ticket.required` field: when set to `true`, the ticket is
+    required as in previous versions. When set to `false`, the ticket is still
+    asked for but optional.
 
 ## Changed
 
 * **BREAKING** [Config] Update the configuration format to allow for more
     options.
+* **BREAKING** [Config] Make the `ticket` key optional: when the ticket
+    configuration is not present, no ticket will be asked for.
 
 ## Fixed
 

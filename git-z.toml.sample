@@ -1,4 +1,4 @@
-version = "0.2-dev.0"
+version = "0.2-dev.1"
 
 # The available types of commits.
 [types]
@@ -34,6 +34,7 @@ list = [
 ]
 
 [ticket]
+required = false
 # The list of valid ticket prefixes.
 prefixes = ["PROJECT-", "OTHER-"]
 
@@ -45,7 +46,7 @@ commit = """
 
 # Feel free to enter a longer description here.
 
-Refs: {{ ticket }}
+{% if ticket %}Refs: {{ ticket }}{% endif %}
 
 {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
 """

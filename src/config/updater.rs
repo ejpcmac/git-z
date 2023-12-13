@@ -15,7 +15,9 @@
 
 //! Configuration updater.
 
+mod common;
 mod from_v0_1;
+mod from_v0_2_dev_0;
 
 use std::{fs, io, marker::PhantomData};
 
@@ -38,6 +40,17 @@ pub struct Init;
 
 /// Updated state of the updater.
 pub struct Updated;
+
+/// Whether to ask and require a ticket.
+pub enum AskForTicket {
+    /// Ask for a ticket.
+    Ask {
+        /// Require the ticket.
+        require: bool,
+    },
+    /// Do not ask for a ticket.
+    DontAsk,
+}
 
 /// An error that can occur when loading the configuration.
 #[derive(Debug, Error)]
@@ -100,9 +113,32 @@ impl ConfigUpdater<Init> {
         &self.parsed_config.version
     }
 
+    /// Updates the configuration from version 0.2-dev.0.
+    pub fn update_from_v0_2_dev_0(
+        mut self,
+        ask_for_ticket: AskForTicket,
+    ) -> Result<ConfigUpdater<Updated>, UpdateError> {
+        let version = self.config_version();
+        if version != "0.2-dev.0" {
+            return Err(UpdateError::IncorrectVersion {
+                tried_from: "0.2-dev.0".to_owned(),
+                actual: version.to_owned(),
+            });
+        }
+
+        from_v0_2_dev_0::update(&mut self.toml_config, ask_for_ticket);
+
+        Ok(ConfigUpdater {
+            toml_config: self.toml_config,
+            parsed_config: self.parsed_config,
+            _state: PhantomData,
+        })
+    }
+
     /// Updates the configuration from version 0.1.
     pub fn update_from_v0_1(
         mut self,
+        ask_for_ticket: AskForTicket,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
         let version = self.config_version();
         if version != "0.1" {
@@ -112,7 +148,7 @@ impl ConfigUpdater<Init> {
             });
         }
 
-        from_v0_1::update(&mut self.toml_config);
+        from_v0_1::update(&mut self.toml_config, ask_for_ticket);
 
         Ok(ConfigUpdater {
             toml_config: self.toml_config,

@@ -19,6 +19,7 @@ pub mod updater;
 
 mod v0_1;
 mod v0_2_dev_0;
+mod v0_2_dev_1;
 
 // NOTE: When you switch to a new version:
 //
@@ -32,7 +33,7 @@ mod v0_2_dev_0;
 // - write an updater in `ConfigUpdater`,
 // - update the previous updaters as well,
 // - update `git z update`.
-pub use v0_2_dev_0::{Config, Scopes, Templates, Ticket};
+pub use v0_2_dev_1::{Config, Scopes, Templates, Ticket};
 
 use std::{fs, io, path::PathBuf, process::Command};
 
@@ -92,7 +93,7 @@ struct MinimalConfig {
 /// The name of the configuration file.
 pub const CONFIG_FILE_NAME: &str = "git-z.toml";
 /// The current version of the configuration file.
-pub const VERSION: &str = "0.2-dev.0";
+pub const VERSION: &str = "0.2-dev.1";
 
 const DEFAULT_TEMPLATE: &str = include_str!("../templates/COMMIT_EDITMSG");
 
@@ -108,9 +109,7 @@ impl Default for Config {
                 (String::from("fix"), String::from("patches a bug")),
             ]),
             scopes: None,
-            ticket: Ticket {
-                prefixes: vec![String::from("")],
-            },
+            ticket: None,
             templates: Templates {
                 commit: String::from(DEFAULT_TEMPLATE),
             },
@@ -137,6 +136,10 @@ impl Config {
 
         match minimal_config.version.as_str() {
             VERSION => Ok(toml::from_str(toml)?),
+            "0.2-dev.0" => {
+                let config: v0_2_dev_0::Config = toml::from_str(toml)?;
+                Ok(config.into())
+            }
             "0.1" => {
                 let config: v0_1::Config = toml::from_str(toml)?;
                 Ok(config.into())
@@ -166,15 +169,41 @@ fn repo_root() -> Result<PathBuf, RepoRootError> {
     }
 }
 
+impl From<v0_2_dev_0::Config> for Config {
+    fn from(old: v0_2_dev_0::Config) -> Self {
+        Self {
+            version: old.version,
+            types: old.types,
+            scopes: old.scopes.map(Into::into),
+            ticket: Some(Ticket {
+                required: true,
+                prefixes: old.ticket.prefixes,
+            }),
+            templates: Templates {
+                commit: old.templates.commit,
+            },
+        }
+    }
+}
+
+impl From<v0_2_dev_0::Scopes> for Scopes {
+    fn from(old: v0_2_dev_0::Scopes) -> Self {
+        match old {
+            v0_2_dev_0::Scopes::List { list } => Self::List { list },
+        }
+    }
+}
+
 impl From<v0_1::Config> for Config {
     fn from(old: v0_1::Config) -> Self {
         Self {
             version: old.version,
             types: split_types_and_docs(old.types),
             scopes: Some(Scopes::List { list: old.scopes }),
-            ticket: Ticket {
+            ticket: Some(Ticket {
+                required: true,
                 prefixes: old.ticket_prefixes,
-            },
+            }),
             templates: Templates {
                 commit: old.template,
             },
