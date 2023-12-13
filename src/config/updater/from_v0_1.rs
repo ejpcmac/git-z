@@ -15,11 +15,12 @@
 
 //! Configuration updater from version 0.1.
 
+use regex::Regex;
 use toml_edit::{Document, Item, Table};
 
 use crate::config::VERSION;
 
-use super::super::split_type_and_doc;
+use super::{super::split_type_and_doc, AskForTicket};
 
 const OBSOLETE_TYPES_DOC: &str = "
 #
@@ -30,11 +31,16 @@ const OLD_SCOPES_DOC: &str = "The list of valid scopes.";
 const NEW_SCOPES_DOC: &str = "The accepted scopes.";
 
 /// Updates the configuration from version 0.1.
-pub fn update(toml_config: &mut Document) {
+pub fn update(toml_config: &mut Document, ask_for_ticket: AskForTicket) {
     update_version(toml_config);
     update_types(toml_config);
     update_scopes(toml_config);
-    update_ticket(toml_config);
+
+    match ask_for_ticket {
+        AskForTicket::Ask { require } => update_ticket(toml_config, require),
+        AskForTicket::DontAsk => remove_ticket(toml_config),
+    }
+
     update_templates(toml_config);
 }
 
@@ -99,7 +105,7 @@ fn update_scopes(toml_config: &mut Document) {
     toml_config.insert("scopes", Item::Table(scopes));
 }
 
-fn update_ticket(toml_config: &mut Document) {
+fn update_ticket(toml_config: &mut Document, required: bool) {
     let (key, value) = toml_config
         .get_key_value("ticket_prefixes")
         .expect("No `ticket_prefixes` key");
@@ -112,6 +118,7 @@ fn update_ticket(toml_config: &mut Document) {
         .expect("Improper string in the prefix decorator of the `ticket_prefixes` key");
 
     let mut ticket = Table::new();
+    ticket.insert("required", Item::Value(required.into()));
     ticket.insert("prefixes", value.clone());
     ticket
         .key_decor_mut("prefixes")
@@ -120,6 +127,10 @@ fn update_ticket(toml_config: &mut Document) {
 
     toml_config.remove("ticket_prefixes");
     toml_config.insert("ticket", Item::Table(ticket));
+}
+
+fn remove_ticket(toml_config: &mut Document) {
+    toml_config.remove("ticket_prefixes");
 }
 
 fn update_templates(toml_config: &mut Document) {
@@ -136,8 +147,14 @@ fn update_templates(toml_config: &mut Document) {
             "Improper string in the prefix decorator of the `template` key",
         );
 
+    let template = value.as_str().expect("The `template` key is not a string");
+
+    // Add a condition around the usage of the `ticket` variable.
+    let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").expect("Invalid regex");
+    let template = re.replace(template, "{% if ticket %}$1{% endif %}");
+
     let mut templates = Table::new();
-    templates.insert("commit", value.clone());
+    templates.insert("commit", Item::Value(template.as_ref().into()));
     templates
         .key_decor_mut("commit")
         .expect("No `commit` key")

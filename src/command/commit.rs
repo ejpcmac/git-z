@@ -25,7 +25,7 @@ use tera::{Context, Tera};
 
 use crate::{
     command::helpers::load_config,
-    config::{Config, Scopes},
+    config::{Config, Scopes, Ticket},
 };
 
 const PAGE_SIZE: usize = 15;
@@ -47,7 +47,7 @@ struct CommitMessage {
     scope: Option<String>,
     description: String,
     breaking_change: Option<String>,
-    ticket: String,
+    ticket: Option<String>,
 }
 
 impl super::Command for Commit {
@@ -136,18 +136,31 @@ fn ask_breaking_change() -> Result<Option<String>> {
         .filter(|s| !s.is_empty()))
 }
 
-fn ask_ticket(config: &Config) -> Result<String> {
-    let prefixes = &config.ticket.prefixes;
+fn ask_ticket(config: &Config) -> Result<Option<String>> {
+    match &config.ticket {
+        None => Ok(None),
+        Some(Ticket { required, prefixes }) => {
+            let placeholder = ticket_placeholder(prefixes)?;
+            let ticket_from_branch = get_ticket_from_branch(prefixes)?;
 
-    let placeholder = ticket_placeholder(prefixes)?;
-    let ticket_from_branch = get_ticket_from_branch(prefixes)?;
+            let mut ticket = Text::new("Issue / ticket number")
+                .with_placeholder(&placeholder)
+                .with_validator(validate_ticket);
+            ticket.initial_value = ticket_from_branch.as_deref();
 
-    let mut ticket = Text::new("Issue / ticket number")
-        .with_placeholder(&placeholder)
-        .with_validator(validate_ticket);
-    ticket.initial_value = ticket_from_branch.as_deref();
+            let ticket = if *required {
+                Some(ticket.prompt()?)
+            } else {
+                ticket
+                    .with_help_message(
+                        "Press ESC to omit the ticket reference.",
+                    )
+                    .prompt_skippable()?
+            };
 
-    Ok(ticket.prompt()?)
+            Ok(ticket)
+        }
+    }
 }
 
 fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
@@ -213,7 +226,10 @@ fn validate_description(
 
 fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     let config = Config::load()?;
-    let prefixes = &config.ticket.prefixes;
+    let prefixes = &config
+        .ticket
+        .ok_or(eyre!("no ticket prefix list"))?
+        .prefixes;
 
     let regex = ticket_regex(prefixes)?;
     let placeholder = ticket_placeholder(prefixes)?;
