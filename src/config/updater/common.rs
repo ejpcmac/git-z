@@ -31,9 +31,33 @@ pub fn update_version(toml_config: &mut Document) {
     *version = Item::Value(VERSION.into());
 }
 
+/// Replaces an empty ticket prefix by `#`.
+pub fn empty_prefix_to_hash(prefixes: &mut Item) {
+    let empty_prefix = prefixes
+        .as_array_mut()
+        .expect("The `ticket.prefixes` key is not an array")
+        .iter_mut()
+        .find(|i| {
+            i.as_str()
+                .expect("Items in `ticket.prefixes are not strings")
+                .is_empty()
+        });
+
+    if let Some(value) = empty_prefix {
+        *value = "#".into();
+    }
+}
+
 /// Adds a condition around the usage of the `ticket` variable.
 pub fn add_ticket_condition_to_commit_template(template: &str) -> String {
     let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").expect("Invalid regex");
     re.replace(template, "{% if ticket %}$1{% endif %}")
         .to_string()
+}
+
+/// Removes the `#` prefix before the `ticket` variable.
+pub fn remove_hash_ticket_prefix_from_commit_template(
+    template: &str,
+) -> String {
+    template.replace("#{{ ticket }}", "{{ ticket }}")
 }

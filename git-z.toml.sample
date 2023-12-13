@@ -1,4 +1,4 @@
-version = "0.2-dev.1"
+version = "0.2-dev.2"
 
 # The available types of commits.
 [types]
@@ -36,7 +36,7 @@ list = [
 [ticket]
 required = false
 # The list of valid ticket prefixes.
-prefixes = ["PROJECT-", "OTHER-"]
+prefixes = ["#", "GH-"]
 
 [templates]
 # The commit message template, written with the Tera [1] templating engine.
