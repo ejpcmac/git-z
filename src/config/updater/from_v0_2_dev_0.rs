@@ -15,15 +15,13 @@
 
 //! Configuration updater from version 0.2-dev.0.
 
-use regex::Regex;
 use toml_edit::{Document, Item};
 
-use super::AskForTicket;
-use crate::config::VERSION;
+use super::{common, AskForTicket};
 
 /// Updates the configuration from version 0.2-dev.0.
 pub fn update(toml_config: &mut Document, ask_for_ticket: AskForTicket) {
-    update_version(toml_config);
+    common::update_version(toml_config);
 
     match ask_for_ticket {
         AskForTicket::Ask { require } => {
@@ -34,18 +32,13 @@ pub fn update(toml_config: &mut Document, ask_for_ticket: AskForTicket) {
         }
     }
 
-    add_ticket_condition_to_commit_template(toml_config);
+    update_commit_template(toml_config);
 }
 
 // NOTE: Updaters make a heavy usage of `expect` instead of proper error
 // handling. This is because `ConfigUpdater::load` already validates the
 // configuration by parsing it to a `Config`. Any error occuring here is a bug,
 // hence should lead to a panic.
-
-fn update_version(toml_config: &mut Document) {
-    let version = toml_config.get_mut("version").expect("No `version` key");
-    *version = Item::Value(VERSION.into());
-}
 
 fn add_required_key_to_ticket(toml_config: &mut Document, required: bool) {
     let ticket = toml_config
@@ -77,7 +70,7 @@ fn remove_ticket(toml_config: &mut Document) {
     toml_config.remove("ticket");
 }
 
-fn add_ticket_condition_to_commit_template(toml_config: &mut Document) {
+fn update_commit_template(toml_config: &mut Document) {
     let commit_template = toml_config
         .get_mut("templates")
         .expect("No `templates` key")
@@ -90,9 +83,7 @@ fn add_ticket_condition_to_commit_template(toml_config: &mut Document) {
         .as_str()
         .expect("The `templates.commit` key is not a string");
 
-    // Add a condition around the usage of the `ticket` variable.
-    let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").expect("Invalid regex");
-    let template = re.replace(template, "{% if ticket %}$1{% endif %}");
+    let template = common::add_ticket_condition_to_commit_template(template);
 
-    *commit_template = Item::Value(template.as_ref().into());
+    *commit_template = Item::Value(template.into());
 }

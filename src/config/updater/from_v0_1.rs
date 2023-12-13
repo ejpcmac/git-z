@@ -15,12 +15,9 @@
 
 //! Configuration updater from version 0.1.
 
-use regex::Regex;
 use toml_edit::{Document, Item, Table};
 
-use crate::config::VERSION;
-
-use super::{super::split_type_and_doc, AskForTicket};
+use super::{super::split_type_and_doc, common, AskForTicket};
 
 const OBSOLETE_TYPES_DOC: &str = "
 #
@@ -32,7 +29,7 @@ const NEW_SCOPES_DOC: &str = "The accepted scopes.";
 
 /// Updates the configuration from version 0.1.
 pub fn update(toml_config: &mut Document, ask_for_ticket: AskForTicket) {
-    update_version(toml_config);
+    common::update_version(toml_config);
     update_types(toml_config);
     update_scopes(toml_config);
 
@@ -48,11 +45,6 @@ pub fn update(toml_config: &mut Document, ask_for_ticket: AskForTicket) {
 // handling. This is because `ConfigUpdater::load` already validates the
 // configuration by parsing it to a `Config`. Any error occuring here is a bug,
 // hence should lead to a panic.
-
-fn update_version(toml_config: &mut Document) {
-    let version = toml_config.get_mut("version").expect("No `version` key");
-    *version = Item::Value(VERSION.into());
-}
 
 fn update_types(toml_config: &mut Document) {
     let doc = toml_config
@@ -148,13 +140,10 @@ fn update_templates(toml_config: &mut Document) {
         );
 
     let template = value.as_str().expect("The `template` key is not a string");
-
-    // Add a condition around the usage of the `ticket` variable.
-    let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").expect("Invalid regex");
-    let template = re.replace(template, "{% if ticket %}$1{% endif %}");
+    let template = common::add_ticket_condition_to_commit_template(template);
 
     let mut templates = Table::new();
-    templates.insert("commit", Item::Value(template.as_ref().into()));
+    templates.insert("commit", Item::Value(template.into()));
     templates
         .key_decor_mut("commit")
         .expect("No `commit` key")

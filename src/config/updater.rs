@@ -15,6 +15,7 @@
 
 //! Configuration updater.
 
+mod common;
 mod from_v0_1;
 mod from_v0_2_dev_0;
 
