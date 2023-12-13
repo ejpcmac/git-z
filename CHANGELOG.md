@@ -27,6 +27,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
     `feature/23-name` are valid, and `#` is then added to the matching ticket
     number. In this example it would extract `#23` as ticket number from the
     branch name.
+* [`git z commit`] Henhance a bit the error message when failing to build a
+    regex from the list of prefixes.
 
 ## Fixed
 

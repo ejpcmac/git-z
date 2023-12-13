@@ -16,7 +16,7 @@
 use std::process::Command;
 
 use clap::Parser;
-use eyre::{bail, eyre, Result};
+use eyre::{bail, eyre, Context as _, Result};
 use indexmap::IndexMap;
 use inquire::{validator::Validation, CustomUserError, Select, Text};
 use regex::Regex;
@@ -169,7 +169,8 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     // GitHub or GitLab issues.
     let regex = ticket_regex(prefixes)?.replace('#', "");
 
-    let ticket = Regex::new(&regex)?
+    let ticket = Regex::new(&regex)
+        .wrap_err("Impossible to build a regex from the list of prefixes")?
         .captures(&get_current_branch()?)
         .map(|captures| captures[0].to_owned())
         .map(|ticket| {
