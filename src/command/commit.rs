@@ -164,10 +164,30 @@ fn ask_ticket(config: &Config) -> Result<Option<String>> {
 }
 
 fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
-    let regex = ticket_regex(prefixes)?;
-    Ok(Regex::new(&regex)?
+    // Replace `#` with an empty string in the regex, as we want to match
+    // branches like `feature/23-name` when `#` is a valid prefix like for
+    // GitHub or GitLab issues.
+    let regex = ticket_regex(prefixes)?.replace('#', "");
+
+    let ticket = Regex::new(&regex)?
         .captures(&get_current_branch()?)
-        .map(|captures| captures[0].to_owned()))
+        .map(|captures| captures[0].to_owned())
+        .map(|ticket| {
+            // If one of the valid prefixes is `#` and the matched ticket ID is
+            // only made of numbers, we are in the GitHub / GitLab style, so
+            // let’s add a `#` as a prefix to the ticket ID.
+            if prefixes.contains(&String::from("#"))
+                && Regex::new(r"^\d+$")
+                    .expect("Invalid regex")
+                    .is_match(&ticket)
+            {
+                format!("#{ticket}")
+            } else {
+                ticket
+            }
+        });
+
+    Ok(ticket)
 }
 
 fn get_current_branch() -> Result<String> {
