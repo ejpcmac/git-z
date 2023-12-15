@@ -4,13 +4,44 @@ A Git extension to go beyond.
 
 ## Setup
 
-### Installation
+### Installation with Nix
 
-With Nix:
+You can add `git-z` to your user profile by running:
 
     nix profile install github:ejpcmac/git-z
 
-With Cargo:
+Alternatively, you can add `git-z` to your development environment by setting
+up a `flake.nix` like this:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    flake-utils.url = "github:numtide/flake-utils";
+    git-z.url = "github:ejpcmac/git-z";
+  };
+
+  outputs = { flake-utils, ... }@inputs:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = inputs.nixpkgs.legacyPackages.${system};
+        git-z = inputs.git-z.packages.${system}.git-z;
+      in
+      {
+        devShell = pkgs.mkShell {
+          buildInputs = [
+            # Tools.
+            git-z
+
+            # Other dependencies.
+          ];
+        };
+      }
+    );
+}
+```
+
+### Installation with Cargo
 
     cargo install git-z
 
