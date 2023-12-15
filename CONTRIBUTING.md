@@ -26,6 +26,46 @@ branches. **Please never commit to `main`.**
 
         git checkout develop
 
+### Development environment (with Nix)
+
+1. Install Nix by running the script and following the instructions:
+
+        sh <(curl -L https://nixos.org/nix/install) --no-daemon
+
+2. Enable Nix flakes:
+
+        echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+
+3. Optionally install [direnv](https://github.com/direnv/direnv) to
+    automatically setup the environment when you enter the project directory:
+
+        nix profile install "nixpkgs#direnv"
+
+    In this case, you also need to add to your `~/.<shell>rc`:
+
+    ```sh
+    eval "$(direnv hook <shell>)"
+    ```
+
+    *Make sure to replace `<shell>` by your shell, namely `bash`, `zsh`, …*
+
+4. In the project directory, if you **did not** install direnv, start a Nix
+   shell:
+
+        nix develop
+
+    If you opted to use direnv, please allow the `.envrc` instead of running a
+    Nix shell manually:
+
+        direnv allow
+
+    In this case, direnv will automatically update your environment to behave
+    like a Nix shell whenever you enter the project directory.
+
+### Development environment (without Nix)
+
+Install a Rust toolchain, and optionally install `git-flow`.
+
 ### Building the project
 
 1. Build the project:
