@@ -20,8 +20,16 @@ use toml_edit::{Document, Item};
 use super::common;
 
 /// Updates the configuration from version 0.2-dev.1.
-pub fn update(toml_config: &mut Document, empty_prefix_to_hash: bool) {
+pub fn update(
+    toml_config: &mut Document,
+    switch_scopes_to_any: bool,
+    empty_prefix_to_hash: bool,
+) {
     common::update_version(toml_config);
+
+    if switch_scopes_to_any {
+        common::switch_scopes_to_any(toml_config);
+    }
 
     if empty_prefix_to_hash {
         update_ticket_prefix(toml_config);

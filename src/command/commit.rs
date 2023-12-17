@@ -98,6 +98,12 @@ fn ask_type(config: &Config) -> Result<String> {
 fn ask_scope(config: &Config) -> Result<Option<String>> {
     match config.scopes {
         None => Ok(None),
+
+        Some(Scopes::Any) => Ok(Text::new("Scope")
+            .with_help_message("Press ESC or leave empty to omit the scope.")
+            .prompt_skippable()?
+            .filter(|s| !s.is_empty())),
+
         Some(Scopes::List { ref list }) => {
             let help_message = format!(
                 "{}, {}, {}",

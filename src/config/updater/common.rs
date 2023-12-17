@@ -31,6 +31,18 @@ pub fn update_version(toml_config: &mut Document) {
     *version = Item::Value(VERSION.into());
 }
 
+/// Switches the accepted scopes from `list` to `any`.
+pub fn switch_scopes_to_any(toml_config: &mut Document) {
+    if let Some(scopes) = toml_config.get_mut("scopes") {
+        let scopes = scopes
+            .as_table_mut()
+            .expect("The `scopes` key is not a table.");
+
+        scopes.insert("accept", Item::Value("any".into()));
+        scopes.remove("list");
+    }
+}
+
 /// Replaces an empty ticket prefix by `#`.
 pub fn empty_prefix_to_hash(prefixes: &mut Item) {
     let empty_prefix = prefixes
