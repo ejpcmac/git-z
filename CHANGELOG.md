@@ -22,6 +22,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
     options.
 * **BREAKING** [Config] Make the `ticket` key optional: when the ticket
     configuration is not present, no ticket will be asked for.
+* **BREAKING** [Config] Allow scopes to be arbitrary.
 * [`git z commit`] Consider `#` as a special ticket prefix: when matching in the
     branch name, `#` is omitted from the match so that branches like
     `feature/23-name` are valid, and `#` is then added to the matching ticket

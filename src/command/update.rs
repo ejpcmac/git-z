@@ -35,6 +35,7 @@ impl super::Command for Update {
 
         match updater.config_version() {
             VERSION => success!("The configuration is already up to date."),
+            "0.2-dev.2" => update_from_v0_2_dev_2(updater)?,
             "0.2-dev.1" => update_from_v0_2_dev_1(updater)?,
             "0.2-dev.0" => update_from_v0_2_dev_0(updater)?,
             "0.1" => update_from_v0_1(updater)?,
@@ -45,11 +46,23 @@ impl super::Command for Update {
     }
 }
 
+fn update_from_v0_2_dev_2(updater: ConfigUpdater<Init>) -> Result<()> {
+    let switch_scopes_to_any = ask_scopes_any()?;
+
+    updater
+        .update_from_v0_2_dev_2(switch_scopes_to_any)?
+        .save()?;
+
+    success!("The configuration has been updated.");
+    Ok(())
+}
+
 fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
+    let switch_scopes_to_any = ask_scopes_any()?;
     let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
 
     updater
-        .update_from_v0_2_dev_1(empty_prefix_to_hash)?
+        .update_from_v0_2_dev_1(switch_scopes_to_any, empty_prefix_to_hash)?
         .save()?;
 
     success!("The configuration has been updated.");
@@ -57,11 +70,16 @@ fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
 }
 
 fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
+    let switch_scopes_to_any = ask_scopes_any()?;
     let ticket = ask_ticket_management()?;
     let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
 
     updater
-        .update_from_v0_2_dev_0(ticket, empty_prefix_to_hash)?
+        .update_from_v0_2_dev_0(
+            switch_scopes_to_any,
+            ticket,
+            empty_prefix_to_hash,
+        )?
         .save()?;
 
     success!("The configuration has been updated.");
@@ -69,15 +87,33 @@ fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
 }
 
 fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
+    let switch_scopes_to_any = ask_scopes_any()?;
     let ask_for_ticket = ask_ticket_management()?;
     let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
 
     updater
-        .update_from_v0_1(ask_for_ticket, empty_prefix_to_hash)?
+        .update_from_v0_1(
+            switch_scopes_to_any,
+            ask_for_ticket,
+            empty_prefix_to_hash,
+        )?
         .save()?;
 
     success!("The configuration has been updated.");
     Ok(())
+}
+
+fn ask_scopes_any() -> Result<bool> {
+    hint!("");
+    hint!("It is now possible to accept any arbitrary scope instead of a pre-defined list.");
+    hint!("");
+
+    Ok(Confirm::new(
+        "Do you want to accept any scope instead of a pre-defined list?",
+    )
+    .with_help_message("Answer no to keep the current behaviour (default)")
+    .with_default(false)
+    .prompt()?)
 }
 
 fn ask_ticket_management() -> Result<AskForTicket> {

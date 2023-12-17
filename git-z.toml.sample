@@ -1,4 +1,4 @@
-version = "0.2-dev.2"
+version = "0.2-dev.3"
 
 # The available types of commits.
 [types]
@@ -22,16 +22,17 @@ debug = "commit used for debugging purposes, not to be integrated"
 
 # The accepted scopes.
 [scopes]
-accept = "list"
-list = [
-    "changelog",
-    "config",
-    "contributing",
-    "git-z",
-    "lib",
-    "readme",
-    "version",
-]
+accept = "any"
+# accept = "list"
+# list = [
+#     "changelog",
+#     "config",
+#     "contributing",
+#     "git-z",
+#     "lib",
+#     "readme",
+#     "version",
+# ]
 
 [ticket]
 required = false

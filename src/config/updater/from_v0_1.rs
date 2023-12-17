@@ -30,12 +30,13 @@ const NEW_SCOPES_DOC: &str = "The accepted scopes.";
 /// Updates the configuration from version 0.1.
 pub fn update(
     toml_config: &mut Document,
+    switch_scopes_to_any: bool,
     ask_for_ticket: AskForTicket,
     empty_prefix_to_hash: bool,
 ) {
     common::update_version(toml_config);
     update_types(toml_config);
-    update_scopes(toml_config);
+    update_scopes(toml_config, switch_scopes_to_any);
 
     match ask_for_ticket {
         AskForTicket::Ask { require } => {
@@ -81,7 +82,7 @@ fn update_types(toml_config: &mut Document) {
     toml_config.insert("types", Item::Table(types));
 }
 
-fn update_scopes(toml_config: &mut Document) {
+fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
     let (key, value) = toml_config
         .get_key_value("scopes")
         .expect("No `scopes` key");
@@ -94,8 +95,14 @@ fn update_scopes(toml_config: &mut Document) {
         .expect("Improper string in the prefix decorator of the `scopes` key");
 
     let mut scopes = Table::new();
-    scopes.insert("accept", Item::Value("list".into()));
-    scopes.insert("list", value.clone());
+
+    if switch_scopes_to_any {
+        scopes.insert("accept", Item::Value("any".into()));
+    } else {
+        scopes.insert("accept", Item::Value("list".into()));
+        scopes.insert("list", value.clone());
+    }
+
     scopes
         .decor_mut()
         .set_prefix(doc.replace(OLD_SCOPES_DOC, NEW_SCOPES_DOC));

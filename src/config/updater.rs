@@ -19,6 +19,7 @@ mod common;
 mod from_v0_1;
 mod from_v0_2_dev_0;
 mod from_v0_2_dev_1;
+mod from_v0_2_dev_2;
 
 use std::{fs, io, marker::PhantomData};
 
@@ -114,20 +115,47 @@ impl ConfigUpdater<Init> {
         &self.parsed_config.version
     }
 
+    /// Updates the configuration from version 0.2-dev.2.
+    pub fn update_from_v0_2_dev_2(
+        mut self,
+        switch_scopes_to_any: bool,
+    ) -> Result<ConfigUpdater<Updated>, UpdateError> {
+        let version = self.config_version();
+        if version != "0.2-dev.2" {
+            return Err(UpdateError::IncorrectVersion {
+                tried_from: "0.2-dev.2".to_owned(),
+                actual: version.to_owned(),
+            });
+        }
+
+        from_v0_2_dev_2::update(&mut self.toml_config, switch_scopes_to_any);
+
+        Ok(ConfigUpdater {
+            toml_config: self.toml_config,
+            parsed_config: self.parsed_config,
+            _state: PhantomData,
+        })
+    }
+
     /// Updates the configuration from version 0.2-dev.1.
     pub fn update_from_v0_2_dev_1(
         mut self,
+        switch_scopes_to_any: bool,
         empty_prefix_to_hash: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
         let version = self.config_version();
         if version != "0.2-dev.1" {
             return Err(UpdateError::IncorrectVersion {
-                tried_from: "0.2-dev.0".to_owned(),
+                tried_from: "0.2-dev.1".to_owned(),
                 actual: version.to_owned(),
             });
         }
 
-        from_v0_2_dev_1::update(&mut self.toml_config, empty_prefix_to_hash);
+        from_v0_2_dev_1::update(
+            &mut self.toml_config,
+            switch_scopes_to_any,
+            empty_prefix_to_hash,
+        );
 
         Ok(ConfigUpdater {
             toml_config: self.toml_config,
@@ -139,6 +167,7 @@ impl ConfigUpdater<Init> {
     /// Updates the configuration from version 0.2-dev.0.
     pub fn update_from_v0_2_dev_0(
         mut self,
+        switch_scopes_to_any: bool,
         ask_for_ticket: AskForTicket,
         empty_prefix_to_hash: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
@@ -152,6 +181,7 @@ impl ConfigUpdater<Init> {
 
         from_v0_2_dev_0::update(
             &mut self.toml_config,
+            switch_scopes_to_any,
             ask_for_ticket,
             empty_prefix_to_hash,
         );
@@ -166,6 +196,7 @@ impl ConfigUpdater<Init> {
     /// Updates the configuration from version 0.1.
     pub fn update_from_v0_1(
         mut self,
+        switch_scopes_to_any: bool,
         ask_for_ticket: AskForTicket,
         empty_prefix_to_hash: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
@@ -179,6 +210,7 @@ impl ConfigUpdater<Init> {
 
         from_v0_1::update(
             &mut self.toml_config,
+            switch_scopes_to_any,
             ask_for_ticket,
             empty_prefix_to_hash,
         );
