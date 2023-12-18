@@ -52,28 +52,18 @@ Run:
     git add <your modifications>
     git z commit
 
-You can define a list of valid commit types, scopes, ticket prefixes and a
-commit template by using a `git-z.toml` file at the root of your repository:
+You can customise the behaviour of `git-z`:
 
-```toml
-version = "0.1"
-types = ["chore", "docs", "feat", "fix", "refactor", "revert", "style", "test"]
-scopes = ["backend", "frontend"]
-ticket_prefixes = [""]
+* define the list of valid types with their description,
+* choose whether to ask for a scope,
+* define a list pre-defined valid scopes,
+* ask or require a ticket / issue number.
 
-template = """
-{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+To do this, initialise a configuration by running:
 
-# Feel free to enter a longer description here.
+    git z init
 
-Refs: {{ ticket }}
-
-{% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
-"""
-```
-
-For a more detailed description, please look at
-[`commits.toml.sample`](./git-z.toml.sample).
+Then, edit the `git-z.toml` at the root of your repository.
 
 ## Building an installer
 

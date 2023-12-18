@@ -10,6 +10,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Added
 
+* [`git z init`] Add a command to create a `git-z.toml` in the current
+    repository.
 * [`git z update`] Add a command to update the configuration file without
     loosing comments and formatting.
 * [Config] Add a `ticket.required` field: when set to `true`, the ticket is
