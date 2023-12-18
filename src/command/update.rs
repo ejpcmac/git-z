@@ -47,7 +47,7 @@ impl super::Command for Update {
 }
 
 fn update_from_v0_2_dev_2(updater: ConfigUpdater<Init>) -> Result<()> {
-    let switch_scopes_to_any = ask_scopes_any()?;
+    let switch_scopes_to_any = ask_scopes_any(&updater)?;
 
     updater
         .update_from_v0_2_dev_2(switch_scopes_to_any)?
@@ -58,8 +58,8 @@ fn update_from_v0_2_dev_2(updater: ConfigUpdater<Init>) -> Result<()> {
 }
 
 fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
-    let switch_scopes_to_any = ask_scopes_any()?;
-    let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
+    let switch_scopes_to_any = ask_scopes_any(&updater)?;
+    let empty_prefix_to_hash = ask_empty_prefix_to_hash(&updater)?;
 
     updater
         .update_from_v0_2_dev_1(switch_scopes_to_any, empty_prefix_to_hash)?
@@ -70,14 +70,18 @@ fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
 }
 
 fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
-    let switch_scopes_to_any = ask_scopes_any()?;
-    let ticket = ask_ticket_management()?;
-    let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
+    let switch_scopes_to_any = ask_scopes_any(&updater)?;
+    let ask_for_ticket = ask_ticket_management()?;
+
+    let empty_prefix_to_hash = match ask_for_ticket {
+        AskForTicket::Ask { .. } => ask_empty_prefix_to_hash(&updater)?,
+        AskForTicket::DontAsk => false,
+    };
 
     updater
         .update_from_v0_2_dev_0(
             switch_scopes_to_any,
-            ticket,
+            ask_for_ticket,
             empty_prefix_to_hash,
         )?
         .save()?;
@@ -87,9 +91,13 @@ fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
 }
 
 fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
-    let switch_scopes_to_any = ask_scopes_any()?;
+    let switch_scopes_to_any = ask_scopes_any(&updater)?;
     let ask_for_ticket = ask_ticket_management()?;
-    let empty_prefix_to_hash = ask_empty_prefix_to_hash()?;
+
+    let empty_prefix_to_hash = match ask_for_ticket {
+        AskForTicket::Ask { .. } => ask_empty_prefix_to_hash(&updater)?,
+        AskForTicket::DontAsk => false,
+    };
 
     updater
         .update_from_v0_1(
@@ -103,7 +111,11 @@ fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
     Ok(())
 }
 
-fn ask_scopes_any() -> Result<bool> {
+fn ask_scopes_any(updater: &ConfigUpdater<Init>) -> Result<bool> {
+    if updater.parsed_config.scopes.is_none() {
+        return Ok(false);
+    }
+
     hint!("");
     hint!("It is now possible to accept any arbitrary scope instead of a pre-defined list.");
     hint!("");
@@ -144,7 +156,11 @@ fn ask_ticket_management() -> Result<AskForTicket> {
     Ok(ask_for_ticket)
 }
 
-fn ask_empty_prefix_to_hash() -> Result<bool> {
+fn ask_empty_prefix_to_hash(updater: &ConfigUpdater<Init>) -> Result<bool> {
+    if updater.parsed_config.ticket.is_none() {
+        return Ok(false);
+    }
+
     hint!("");
     hint!("\"#\" is now properly handled as a ticket prefix. This means that if \"#\" is ");
     hint!("part of your prefix list, a ticket number `#23` would be properly extracted ");
