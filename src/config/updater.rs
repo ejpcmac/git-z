@@ -32,8 +32,8 @@ use super::{
 
 /// A configuration updater.
 pub struct ConfigUpdater<State> {
+    pub parsed_config: Config,
     toml_config: Document,
-    parsed_config: Config,
     _state: PhantomData<State>,
 }
 
@@ -97,8 +97,8 @@ impl ConfigUpdater<Init> {
                 let toml_config = toml.parse()?;
 
                 Ok(Self {
-                    toml_config,
                     parsed_config,
+                    toml_config,
                     _state: PhantomData,
                 })
             }
@@ -131,8 +131,8 @@ impl ConfigUpdater<Init> {
         from_v0_2_dev_2::update(&mut self.toml_config, switch_scopes_to_any);
 
         Ok(ConfigUpdater {
-            toml_config: self.toml_config,
             parsed_config: self.parsed_config,
+            toml_config: self.toml_config,
             _state: PhantomData,
         })
     }
@@ -158,8 +158,8 @@ impl ConfigUpdater<Init> {
         );
 
         Ok(ConfigUpdater {
-            toml_config: self.toml_config,
             parsed_config: self.parsed_config,
+            toml_config: self.toml_config,
             _state: PhantomData,
         })
     }
@@ -187,8 +187,8 @@ impl ConfigUpdater<Init> {
         );
 
         Ok(ConfigUpdater {
-            toml_config: self.toml_config,
             parsed_config: self.parsed_config,
+            toml_config: self.toml_config,
             _state: PhantomData,
         })
     }
@@ -216,8 +216,8 @@ impl ConfigUpdater<Init> {
         );
 
         Ok(ConfigUpdater {
-            toml_config: self.toml_config,
             parsed_config: self.parsed_config,
+            toml_config: self.toml_config,
             _state: PhantomData,
         })
     }
