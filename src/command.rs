@@ -15,17 +15,25 @@
 
 mod commit;
 mod helpers;
+mod init;
 mod update;
 
 use clap::Parser;
 use eyre::Result;
 
-use self::{commit::Commit, update::Update};
+use self::{
+    commit::Commit,
+    init::{Init, InitError},
+    update::Update,
+};
+use crate::{error, hint};
 
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
 #[command(author, version = env!("VERSION_WITH_GIT"))]
 pub enum GitZ {
+    /// Initialises the configuration.
+    Init(Init),
     /// Runs the commit wizard.
     Commit(Commit),
     /// Updates the configuration.
@@ -41,6 +49,7 @@ impl GitZ {
     /// Runs git-z.
     pub fn run() -> Result<()> {
         let result = match Self::parse() {
+            Self::Init(init) => init.run(),
             Self::Commit(commit) => commit.run(),
             Self::Update(update) => update.run(),
         };
@@ -53,15 +62,15 @@ impl GitZ {
 }
 
 fn handle_errors(e: color_eyre::Report) -> Result<()> {
-    // if let Some(e) = e.downcast_ref::<ErrorType>() {
-    //     match e {
-    //         ErrorType::ErrorKind => {
-    //             error!("{e}");
-    //             hint!("Some help message.");
-    //         }
-    //     }
-    //     std::process::exit(1);
-    // } else {
-    Err(e)
-    // }
+    if let Some(e) = e.downcast_ref::<InitError>() {
+        match e {
+            InitError::ExistingConfig => {
+                error!("{e}");
+                hint!("You can force the command by running `git z init -f`.");
+            }
+        }
+        std::process::exit(1);
+    } else {
+        Err(e)
+    }
 }

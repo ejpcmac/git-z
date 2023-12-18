@@ -28,7 +28,7 @@ mod v0_2_dev_3;
 // - write a new version module,
 // - switch the version here,
 // - update VERSION below,
-// - update the version in `git-z.toml[.sample]`,
+// - update the version in `templates/git-z.toml.jinja`,
 // - update the `impl From<old::Config> for Config` implementations,
 // - write a new `impl From<previous::Config> for Config` implementation,
 // - handle the previous config in `Config::load`,
@@ -161,7 +161,8 @@ impl Config {
     }
 }
 
-fn config_file() -> Result<PathBuf, ConfigFileError> {
+/// Returns the path of the configuration file.
+pub fn config_file() -> Result<PathBuf, ConfigFileError> {
     Ok(repo_root()?.join(CONFIG_FILE_NAME))
 }
 
