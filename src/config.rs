@@ -39,7 +39,7 @@ pub use v0_2_dev_3::{Config, Scopes, Templates, Ticket};
 
 use std::{fs, io, path::PathBuf, process::Command};
 
-use indexmap::IndexMap;
+use indexmap::{indexmap, IndexMap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -101,15 +101,32 @@ const DEFAULT_TEMPLATE: &str = include_str!("../templates/COMMIT_EDITMSG");
 
 impl Default for Config {
     fn default() -> Self {
+        let default_types = indexmap! {
+            "feat" => "adds a new feature in the code",
+            "sec" => "patches a security issue",
+            "fix" => "patches a code bug",
+            "perf" => "enhances the performance, without adding a new feature",
+            "refactor" => "refactors the code",
+            "test" => "adds, updates or removes tests only",
+            "docs" => "updates the documentation only",
+            "style" => "updates the style, like running clang-format or changing headers",
+            "deps" => "adds, updates or removes external dependencies",
+            "build" => "updates the build system or build scripts",
+            "env" => "updates the development environment",
+            "ide" => "updates the IDE configuration",
+            "ci" => "updates the CI configuration",
+            "revert" => "reverts a previous commit",
+            "chore" => "updates something that is not covered by any other type",
+            "wip" => "work in progress / to be rebased and squashed later",
+            "debug" => "commit used for debugging purposes, not to be integrated",
+        };
+
         Self {
             version: String::from(VERSION),
-            types: IndexMap::from([
-                (
-                    String::from("feat"),
-                    String::from("introduces a new feature"),
-                ),
-                (String::from("fix"), String::from("patches a bug")),
-            ]),
+            types: default_types
+                .into_iter()
+                .map(|(k, v)| (String::from(k), String::from(v)))
+                .collect(),
             scopes: Some(Scopes::Any),
             ticket: None,
             templates: Templates {
