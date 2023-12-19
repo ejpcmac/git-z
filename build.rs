@@ -1,3 +1,5 @@
+//! The build script for git-z.
+
 use std::{io, process::Command};
 
 fn main() {
@@ -44,6 +46,7 @@ fn git_describe() -> io::Result<String> {
     let output = Command::new("git")
         .args(["describe", "--always", "--dirty=-modified"])
         .output()?;
+    #[allow(clippy::unwrap_used)]
     Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
 }
 
@@ -60,6 +63,7 @@ fn git_revision() -> io::Result<String> {
     let output = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .output()?;
+    #[allow(clippy::unwrap_used)]
     Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
 }
 

@@ -38,6 +38,22 @@ thiserror = "1"
 toml = "0.8"
 toml_edit = "0.21"
 
+[lints.rust]
+# Forbidden
+unsafe_code = "forbid"
+
+# Denied
+missing_docs = "deny"
+unused_must_use = "deny"
+
+# Warnings
+rust_2018_idioms = "warn"
+
+[lints.clippy]
+redundant_pub_crate = "warn"
+unwrap_used = "warn"
+use_self = "warn"
+
 [package.metadata.deb]
 depends = "git"
 
