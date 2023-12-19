@@ -11,6 +11,18 @@ repository = "https://github.com/ejpcmac/git-z"
 resolver = "2"
 description = "A Git extension to go beyond."
 
+exclude = [
+    "/.*",
+    "/CHANGELOG.md",
+    "/CONTRIBUTING.md",
+    "/build-deb.sh",
+    "/flake.*",
+    "/git-z.toml",
+    "/rust-toolchain.toml",
+    "/rustfmt.toml",
+    "/wix/",
+]
+
 [dependencies]
 askama = "0.12"
 clap = { version = "4", features = ["derive", "wrap_help"] }
