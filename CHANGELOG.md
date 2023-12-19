@@ -34,6 +34,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
     branch name.
 * [`git z commit`] Henhance a bit the error message when failing to build a
     regex from the list of prefixes.
+* [Cargo] Exclude unneeded files from the package.
 
 ## Fixed
 
