@@ -15,6 +15,12 @@
 
 //! Configuration updater from version 0.1.
 
+// NOTE: Updaters make a heavy usage of `expect` instead of proper error
+// handling. This is because `ConfigUpdater::load` already validates the
+// configuration by parsing it to a `Config`. Any error occuring here is a bug,
+// hence should lead to a panic.
+#![allow(clippy::expect_used)]
+
 use toml_edit::{Document, Item, Table};
 
 use super::{super::split_type_and_doc, common, AskForTicket};
@@ -40,18 +46,13 @@ pub fn update(
 
     match ask_for_ticket {
         AskForTicket::Ask { require } => {
-            update_ticket(toml_config, require, empty_prefix_to_hash)
+            update_ticket(toml_config, require, empty_prefix_to_hash);
         }
         AskForTicket::DontAsk => remove_ticket(toml_config),
     }
 
     update_templates(toml_config, empty_prefix_to_hash);
 }
-
-// NOTE: Updaters make a heavy usage of `expect` instead of proper error
-// handling. This is because `ConfigUpdater::load` already validates the
-// configuration by parsing it to a `Config`. Any error occuring here is a bug,
-// hence should lead to a panic.
 
 fn update_types(toml_config: &mut Document) {
     let doc = toml_config

@@ -15,6 +15,12 @@
 
 //! Configuration updater from version 0.2-dev.0.
 
+// NOTE: Updaters make a heavy usage of `expect` instead of proper error
+// handling. This is because `ConfigUpdater::load` already validates the
+// configuration by parsing it to a `Config`. Any error occuring here is a bug,
+// hence should lead to a panic.
+#![allow(clippy::expect_used)]
+
 use toml_edit::{Document, Item};
 
 use super::{common, AskForTicket};
@@ -43,11 +49,6 @@ pub fn update(
 
     update_commit_template(toml_config, empty_prefix_to_hash);
 }
-
-// NOTE: Updaters make a heavy usage of `expect` instead of proper error
-// handling. This is because `ConfigUpdater::load` already validates the
-// configuration by parsing it to a `Config`. Any error occuring here is a bug,
-// hence should lead to a panic.
 
 fn update_ticket(
     toml_config: &mut Document,

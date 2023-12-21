@@ -15,15 +15,16 @@
 
 //! Common helper functions between updaters.
 
-use regex::Regex;
-use toml_edit::{Document, Item};
-
-use crate::config::VERSION;
-
 // NOTE: Updaters make a heavy usage of `expect` instead of proper error
 // handling. This is because `ConfigUpdater::load` already validates the
 // configuration by parsing it to a `Config`. Any error occuring here is a bug,
 // hence should lead to a panic.
+#![allow(clippy::expect_used)]
+
+use regex::Regex;
+use toml_edit::{Document, Item};
+
+use crate::config::VERSION;
 
 /// Updates the version.
 pub fn update_version(toml_config: &mut Document) {
@@ -49,8 +50,8 @@ pub fn empty_prefix_to_hash(prefixes: &mut Item) {
         .as_array_mut()
         .expect("The `ticket.prefixes` key is not an array")
         .iter_mut()
-        .find(|i| {
-            i.as_str()
+        .find(|item| {
+            item.as_str()
                 .expect("Items in `ticket.prefixes are not strings")
                 .is_empty()
         });
@@ -62,7 +63,9 @@ pub fn empty_prefix_to_hash(prefixes: &mut Item) {
 
 /// Adds a condition around the usage of the `ticket` variable.
 pub fn add_ticket_condition_to_commit_template(template: &str) -> String {
-    let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").expect("Invalid regex");
+    // NOTE(unwrap): This regex is known to be valid.
+    #[allow(clippy::unwrap_used)]
+    let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").unwrap();
     re.replace(template, "{% if ticket %}$1{% endif %}")
         .to_string()
 }

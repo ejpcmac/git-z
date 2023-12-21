@@ -125,7 +125,7 @@ impl Default for Config {
             version: String::from(VERSION),
             types: default_types
                 .into_iter()
-                .map(|(k, v)| (String::from(k), String::from(v)))
+                .map(|(key, value)| (String::from(key), String::from(value)))
                 .collect(),
             scopes: Some(Scopes::Any),
             ticket: None,
@@ -296,7 +296,7 @@ impl From<v0_1::Config> for Config {
     fn from(old: v0_1::Config) -> Self {
         Self {
             version: old.version,
-            types: split_types_and_docs(old.types),
+            types: split_types_and_docs(&old.types),
             scopes: Some(Scopes::List { list: old.scopes }),
             ticket: Some(Ticket {
                 required: true,
@@ -309,7 +309,7 @@ impl From<v0_1::Config> for Config {
     }
 }
 
-fn split_types_and_docs(types: Vec<String>) -> IndexMap<String, String> {
+fn split_types_and_docs(types: &[String]) -> IndexMap<String, String> {
     types
         .iter()
         .map(AsRef::as_ref)

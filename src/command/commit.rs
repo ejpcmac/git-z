@@ -16,7 +16,7 @@
 use std::process::Command;
 
 use clap::Parser;
-use eyre::{bail, eyre, Context as _, Result};
+use eyre::{bail, ensure, eyre, Context as _, Result};
 use indexmap::IndexMap;
 use inquire::{validator::Validation, CustomUserError, Select, Text};
 use regex::Regex;
@@ -143,9 +143,12 @@ fn ask_breaking_change() -> Result<Option<String>> {
 }
 
 fn ask_ticket(config: &Config) -> Result<Option<String>> {
-    match &config.ticket {
+    match config.ticket {
         None => Ok(None),
-        Some(Ticket { required, prefixes }) => {
+        Some(Ticket {
+            ref required,
+            ref prefixes,
+        }) => {
             let placeholder = ticket_placeholder(prefixes)?;
             let ticket_from_branch = get_ticket_from_branch(prefixes)?;
 
@@ -173,20 +176,26 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     // Replace `#` with an empty string in the regex, as we want to match
     // branches like `feature/23-name` when `#` is a valid prefix like for
     // GitHub or GitLab issues.
-    let regex = ticket_regex(prefixes)?.replace('#', "");
+    let regex = ticket_regex(prefixes).replace('#', "");
 
     let ticket = Regex::new(&regex)
         .wrap_err("Impossible to build a regex from the list of prefixes")?
         .captures(&get_current_branch()?)
-        .map(|captures| captures[0].to_owned())
+        .map(|captures| {
+            // NOTE(indexing): Capture group 0 always corresponds to an implicit
+            // unnamed group that includes the entire match.
+            #[allow(clippy::indexing_slicing)]
+            captures[0].to_owned()
+        })
         .map(|ticket| {
+            // NOTE(unwrap): This regex is known to be valid.
+            #[allow(clippy::unwrap_used)]
+            let regex = &Regex::new(r"^\d+$").unwrap();
+
             // If one of the valid prefixes is `#` and the matched ticket ID is
             // only made of numbers, we are in the GitHub / GitLab style, so
             // let’s add a `#` as a prefix to the ticket ID.
-            if prefixes.contains(&String::from("#"))
-                && Regex::new(r"^\d+$")
-                    .expect("Invalid regex")
-                    .is_match(&ticket)
+            if prefixes.contains(&String::from("#")) && regex.is_match(&ticket)
             {
                 format!("#{ticket}")
             } else {
@@ -201,7 +210,12 @@ fn get_current_branch() -> Result<String> {
     let git_branch = Command::new("git")
         .args(["branch", "--show-current"])
         .output()?;
-    assert!(git_branch.status.success());
+
+    ensure!(
+        git_branch.status.success(),
+        "Failed to run `git branch --show-current`"
+    );
+
     Ok(String::from_utf8(git_branch.stdout)?)
 }
 
@@ -226,6 +240,7 @@ fn remove_type_description(choice: &str) -> String {
     choice.split(' ').next().unwrap().to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn validate_description(
     description: &str,
 ) -> Result<Validation, CustomUserError> {
@@ -258,7 +273,7 @@ fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
         .ok_or(eyre!("no ticket prefix list"))?
         .prefixes;
 
-    let regex = ticket_regex(prefixes)?;
+    let regex = ticket_regex(prefixes);
     let placeholder = ticket_placeholder(prefixes)?;
 
     if Regex::new(&format!("^{regex}$"))?.is_match(ticket) {
@@ -273,9 +288,9 @@ fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     }
 }
 
-fn ticket_regex(prefixes: &[String]) -> Result<String> {
+fn ticket_regex(prefixes: &[String]) -> String {
     let prefixes = prefixes.join("|");
-    Ok(format!("(?:{prefixes})\\d+"))
+    format!("(?:{prefixes})\\d+")
 }
 
 fn ticket_placeholder(prefixes: &[String]) -> Result<String> {

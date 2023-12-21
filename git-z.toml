@@ -27,6 +27,7 @@ list = [
     # General scopes
     "cargo",
     "changelog",
+    "clippy",
     "contributing",
     "deb",
     "devshell",
