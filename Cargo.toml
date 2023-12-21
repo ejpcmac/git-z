@@ -23,6 +23,12 @@ exclude = [
     "/wix/",
 ]
 
+[package.metadata.deb]
+depends = "git"
+
+[package.metadata.wix]
+license = "wix/gpl-3.0.rtf"
+
 [dependencies]
 askama = "0.12"
 clap = { version = "4", features = ["derive", "wrap_help"] }
@@ -131,9 +137,3 @@ verbose_file_reads = "warn"
 cargo = "warn"
 redundant_pub_crate = "warn"
 use_self = "warn"
-
-[package.metadata.deb]
-depends = "git"
-
-[package.metadata.wix]
-license = "wix/gpl-3.0.rtf"
