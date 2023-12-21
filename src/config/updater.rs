@@ -32,7 +32,7 @@ use super::{
 
 /// A configuration updater.
 pub struct ConfigUpdater<State> {
-    pub parsed_config: Config,
+    parsed_config: Config,
     toml_config: Document,
     _state: PhantomData<State>,
 }
@@ -44,6 +44,7 @@ pub struct Init;
 pub struct Updated;
 
 /// Whether to ask and require a ticket.
+#[derive(Debug, Clone, Copy)]
 pub enum AskForTicket {
     /// Ask for a ticket.
     Ask {
@@ -108,6 +109,11 @@ impl ConfigUpdater<Init> {
                 _ => Err(LoadError::ReadError(error)),
             },
         }
+    }
+
+    /// Returns the parsed configuration.
+    pub fn parsed_config(&self) -> &Config {
+        &self.parsed_config
     }
 
     /// Returns the current version of the configuration.

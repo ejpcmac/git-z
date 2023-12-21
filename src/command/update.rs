@@ -14,8 +14,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use clap::Parser;
-use eyre::Result;
+use eyre::{bail, Result};
 use inquire::Confirm;
+use thiserror::Error;
 
 use crate::{
     config::{
@@ -29,6 +30,13 @@ use crate::{
 #[derive(Debug, Parser)]
 pub struct Update;
 
+/// Usage errors of `git z init`.
+#[derive(Debug, Error)]
+pub enum UpdateError {
+    #[error("Unkown config version {version}.")]
+    UnknownVersion { version: String },
+}
+
 impl super::Command for Update {
     fn run(&self) -> Result<()> {
         let updater = ConfigUpdater::load()?;
@@ -39,7 +47,9 @@ impl super::Command for Update {
             "0.2-dev.1" => update_from_v0_2_dev_1(updater)?,
             "0.2-dev.0" => update_from_v0_2_dev_0(updater)?,
             "0.1" => update_from_v0_1(updater)?,
-            version => unknown_version(version),
+            version => bail!(UpdateError::UnknownVersion {
+                version: version.to_owned()
+            }),
         }
 
         Ok(())
@@ -112,7 +122,7 @@ fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
 }
 
 fn ask_scopes_any(updater: &ConfigUpdater<Init>) -> Result<bool> {
-    if updater.parsed_config.scopes.is_none() {
+    if updater.parsed_config().scopes.is_none() {
         return Ok(false);
     }
 
@@ -157,7 +167,7 @@ fn ask_ticket_management() -> Result<AskForTicket> {
 }
 
 fn ask_empty_prefix_to_hash(updater: &ConfigUpdater<Init>) -> Result<bool> {
-    if updater.parsed_config.ticket.is_none() {
+    if updater.parsed_config().ticket.is_none() {
         return Ok(false);
     }
 
@@ -172,10 +182,4 @@ fn ask_empty_prefix_to_hash(updater: &ConfigUpdater<Init>) -> Result<bool> {
             .with_default(true)
             .prompt()?,
     )
-}
-
-fn unknown_version(version: &str) {
-    error!("Unkown config version {version}.");
-    hint!("Your config file may have been created by a more recent version of git-z.");
-    std::process::exit(1);
 }

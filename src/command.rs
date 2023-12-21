@@ -24,7 +24,7 @@ use eyre::Result;
 use self::{
     commit::Commit,
     init::{Init, InitError},
-    update::Update,
+    update::{Update, UpdateError},
 };
 use crate::{error, hint};
 
@@ -55,22 +55,34 @@ impl GitZ {
         };
 
         match result {
-            Err(e) => handle_errors(e),
+            Err(error) => handle_errors(error),
             Ok(()) => Ok(()),
         }
     }
 }
 
-fn handle_errors(e: color_eyre::Report) -> Result<()> {
-    if let Some(e) = e.downcast_ref::<InitError>() {
-        match e {
+fn handle_errors(error: color_eyre::Report) -> Result<()> {
+    if let Some(error) = error.downcast_ref::<InitError>() {
+        match *error {
             InitError::ExistingConfig => {
-                error!("{e}");
+                error!("{error}");
                 hint!("You can force the command by running `git z init -f`.");
             }
         }
+
+        #[allow(clippy::exit)]
+        std::process::exit(1);
+    } else if let Some(error) = error.downcast_ref::<UpdateError>() {
+        match *error {
+            UpdateError::UnknownVersion { .. } => {
+                error!("{error}");
+                hint!("Your config file may have been created by a more recent version of git-z.");
+            }
+        }
+
+        #[allow(clippy::exit)]
         std::process::exit(1);
     } else {
-        Err(e)
+        Err(error)
     }
 }
