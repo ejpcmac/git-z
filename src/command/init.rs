@@ -23,6 +23,8 @@ use thiserror::Error;
 
 use crate::{config::config_file, hint, success};
 
+use super::helpers::ensure_in_git_worktree;
+
 /// The init command.
 #[derive(Debug, Parser)]
 pub struct Init {
@@ -69,6 +71,8 @@ enum Ticket {
 
 impl super::Command for Init {
     fn run(&self) -> Result<()> {
+        ensure_in_git_worktree()?;
+
         let config_file = config_file()?;
 
         if !self.force && config_file.exists() {

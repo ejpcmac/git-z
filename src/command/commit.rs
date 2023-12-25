@@ -28,6 +28,8 @@ use crate::{
     config::{Config, Scopes, Ticket},
 };
 
+use super::helpers::ensure_in_git_worktree;
+
 const PAGE_SIZE: usize = 15;
 
 /// The commit command.
@@ -52,6 +54,8 @@ struct CommitMessage {
 
 impl super::Command for Commit {
     fn run(&self) -> Result<()> {
+        ensure_in_git_worktree()?;
+
         let config = load_config()?;
 
         let commit_message = CommitMessage::run_wizard(&config)?;
