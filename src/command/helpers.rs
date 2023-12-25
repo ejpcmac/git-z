@@ -48,7 +48,7 @@ macro_rules! warning {
     ($($arg:tt)*) => {{
         use colored::Colorize;
         let message = format!($($arg)*).yellow().bold();
-        println!("{message}");
+        eprintln!("{message}");
     }};
 }
 
@@ -58,7 +58,7 @@ macro_rules! error {
     ($($arg:tt)*) => {{
         use colored::Colorize;
         let message = format!($($arg)*).red().bold();
-        println!("{message}");
+        eprintln!("{message}");
     }};
 }
 
@@ -68,6 +68,6 @@ macro_rules! hint {
     ($($arg:tt)*) => {{
         use colored::Colorize;
         let message = format!($($arg)*).blue();
-        println!("{message}");
+        eprintln!("{message}");
     }};
 }
