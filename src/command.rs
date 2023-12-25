@@ -23,6 +23,7 @@ use eyre::Result;
 
 use self::{
     commit::Commit,
+    helpers::NotInGitWorktree,
     init::{Init, InitError},
     update::{Update, UpdateError},
 };
@@ -62,7 +63,25 @@ impl GitZ {
 }
 
 fn handle_errors(error: color_eyre::Report) -> Result<()> {
-    if let Some(error) = error.downcast_ref::<InitError>() {
+    if let Some(error) = error.downcast_ref::<NotInGitWorktree>() {
+        match *error {
+            NotInGitWorktree::CannotRunGit(ref os_error) => {
+                error!("{error}.");
+                hint!("The OS reports: {os_error}.");
+            }
+            NotInGitWorktree::NotInRepo => {
+                error!("{error}.");
+                hint!("You can initialise a Git repository by running `git init`.");
+            }
+            NotInGitWorktree::NotInWorktree => {
+                error!("{error}.");
+                hint!("You seem to be inside a Git repository, but not in a worktree.");
+            }
+        }
+
+        #[allow(clippy::exit)]
+        std::process::exit(1);
+    } else if let Some(error) = error.downcast_ref::<InitError>() {
         match *error {
             InitError::ExistingConfig => {
                 error!("{error}.");
