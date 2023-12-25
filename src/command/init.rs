@@ -37,7 +37,7 @@ pub struct Init {
 /// Usage errors of `git z init`.
 #[derive(Debug, Error)]
 pub enum InitError {
-    #[error("There is already a git-z.toml in the current repository.")]
+    #[error("There is already a git-z.toml in the current repository")]
     ExistingConfig,
 }
 

@@ -65,7 +65,7 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
     if let Some(error) = error.downcast_ref::<InitError>() {
         match *error {
             InitError::ExistingConfig => {
-                error!("{error}");
+                error!("{error}.");
                 hint!("You can force the command by running `git z init -f`.");
             }
         }
@@ -75,7 +75,7 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
     } else if let Some(error) = error.downcast_ref::<UpdateError>() {
         match *error {
             UpdateError::UnknownVersion { .. } => {
-                error!("{error}");
+                error!("{error}.");
                 hint!("Your config file may have been created by a more recent version of git-z.");
             }
         }
