@@ -49,6 +49,7 @@
 
             ${packageName} = naersk.buildPackage {
               src = ./.;
+              RUSTFLAGS = "-Amissing_docs";
 
               nativeBuildInputs = with pkgs; [ makeWrapper ];
 
