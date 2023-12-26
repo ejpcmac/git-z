@@ -27,7 +27,10 @@ use self::{
     init::{Init, InitError},
     update::{Update, UpdateError},
 };
-use crate::{error, hint};
+use crate::{
+    config::{self, updater, FromTomlError, CONFIG_FILE_NAME},
+    error, hint,
+};
 
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
@@ -81,6 +84,14 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
 
         #[allow(clippy::exit)]
         std::process::exit(1);
+    } else if let Some(config::LoadError::InvalidConfig(from_toml_error)) =
+        error.downcast_ref::<config::LoadError>()
+    {
+        handle_from_toml_error(from_toml_error)
+    } else if let Some(updater::LoadError::InvalidConfig(from_toml_error)) =
+        error.downcast_ref::<updater::LoadError>()
+    {
+        handle_from_toml_error(from_toml_error)
     } else if let Some(error) = error.downcast_ref::<InitError>() {
         match error {
             InitError::ExistingConfig => {
@@ -104,4 +115,20 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
     } else {
         Err(error)
     }
+}
+
+fn handle_from_toml_error(error: &FromTomlError) -> ! {
+    match error {
+        FromTomlError::UnsupportedVersion(_) => {
+            error!("{error}.");
+            hint!("The {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
+        }
+        FromTomlError::ParseError(parse_error) => {
+            error!("Invalid configuration in {CONFIG_FILE_NAME}.");
+            hint!("\n{parse_error}");
+        }
+    }
+
+    #[allow(clippy::exit)]
+    std::process::exit(1);
 }
