@@ -100,7 +100,7 @@ fn ask_type(config: &Config) -> Result<String> {
 }
 
 fn ask_scope(config: &Config) -> Result<Option<String>> {
-    match config.scopes {
+    match &config.scopes {
         None => Ok(None),
 
         Some(Scopes::Any) => Ok(Text::new("Scope")
@@ -108,7 +108,7 @@ fn ask_scope(config: &Config) -> Result<Option<String>> {
             .prompt_skippable()?
             .filter(|s| !s.is_empty())),
 
-        Some(Scopes::List { ref list }) => {
+        Some(Scopes::List { list }) => {
             let help_message = format!(
                 "{}, {}, {}",
                 "↑↓ to move, enter to select, type to filter",
@@ -147,12 +147,9 @@ fn ask_breaking_change() -> Result<Option<String>> {
 }
 
 fn ask_ticket(config: &Config) -> Result<Option<String>> {
-    match config.ticket {
+    match &config.ticket {
         None => Ok(None),
-        Some(Ticket {
-            ref required,
-            ref prefixes,
-        }) => {
+        Some(Ticket { required, prefixes }) => {
             let placeholder = ticket_placeholder(prefixes)?;
             let ticket_from_branch = get_ticket_from_branch(prefixes)?;
 

@@ -64,8 +64,8 @@ impl GitZ {
 
 fn handle_errors(error: color_eyre::Report) -> Result<()> {
     if let Some(error) = error.downcast_ref::<NotInGitWorktree>() {
-        match *error {
-            NotInGitWorktree::CannotRunGit(ref os_error) => {
+        match error {
+            NotInGitWorktree::CannotRunGit(os_error) => {
                 error!("{error}.");
                 hint!("The OS reports: {os_error}.");
             }
@@ -82,7 +82,7 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
         #[allow(clippy::exit)]
         std::process::exit(1);
     } else if let Some(error) = error.downcast_ref::<InitError>() {
-        match *error {
+        match error {
             InitError::ExistingConfig => {
                 error!("{error}.");
                 hint!("You can force the command by running `git z init -f`.");
@@ -92,7 +92,7 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
         #[allow(clippy::exit)]
         std::process::exit(1);
     } else if let Some(error) = error.downcast_ref::<UpdateError>() {
-        match *error {
+        match error {
             UpdateError::UnknownVersion { .. } => {
                 error!("{error}.");
                 hint!("Your config file may have been created by a more recent version of git-z.");
