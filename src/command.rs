@@ -18,6 +18,8 @@ mod helpers;
 mod init;
 mod update;
 
+use std::error::Error;
+
 use clap::Parser;
 use eyre::Result;
 
@@ -97,6 +99,16 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
             CommitError::Git { status_code } => {
                 #[allow(clippy::exit)]
                 std::process::exit(status_code.unwrap_or(1_i32));
+            }
+            CommitError::Template(tera_error) => {
+                error!("{tera_error} from the configuration.");
+
+                if let Some(parse_error) = tera_error.source() {
+                    hint!("\n{parse_error}\n");
+                }
+
+                #[allow(clippy::exit)]
+                std::process::exit(1);
             }
         }
     } else if let Some(error) = error.downcast_ref::<InitError>() {
