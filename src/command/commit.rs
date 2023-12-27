@@ -22,6 +22,7 @@ use inquire::{validator::Validation, CustomUserError, Select, Text};
 use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
+use thiserror::Error;
 
 use crate::{
     command::helpers::load_config,
@@ -31,6 +32,13 @@ use crate::{
 use super::helpers::ensure_in_git_worktree;
 
 const PAGE_SIZE: usize = 15;
+
+/// Usage errors of `git z commit`.
+#[derive(Debug, Error)]
+pub enum CommitError {
+    #[error("Git has returned an error")]
+    Git { status_code: Option<i32> },
+}
 
 /// The commit command.
 #[derive(Debug, Parser)]
@@ -71,7 +79,9 @@ impl super::Command for Commit {
                 .status()?;
 
             if !status.success() {
-                bail!("Git commit failed");
+                bail!(CommitError::Git {
+                    status_code: status.code()
+                });
             }
         }
 

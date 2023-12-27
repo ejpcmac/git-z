@@ -22,7 +22,7 @@ use clap::Parser;
 use eyre::Result;
 
 use self::{
-    commit::Commit,
+    commit::{Commit, CommitError},
     helpers::NotInGitWorktree,
     init::{Init, InitError},
     update::{Update, UpdateError},
@@ -92,6 +92,13 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
         error.downcast_ref::<updater::LoadError>()
     {
         handle_from_toml_error(from_toml_error)
+    } else if let Some(error) = error.downcast_ref::<CommitError>() {
+        match error {
+            CommitError::Git { status_code } => {
+                #[allow(clippy::exit)]
+                std::process::exit(status_code.unwrap_or(1_i32));
+            }
+        }
     } else if let Some(error) = error.downcast_ref::<InitError>() {
         match error {
             InitError::ExistingConfig => {
