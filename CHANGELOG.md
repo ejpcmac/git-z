@@ -41,6 +41,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [`git z commit`] Henhance a bit the error message when failing to build a
     regex from the list of prefixes.
 * [Cargo] Exclude unneeded files from the package.
+* [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.0 to 1.74.1.
 
 ## Fixed
