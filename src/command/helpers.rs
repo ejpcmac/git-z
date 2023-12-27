@@ -32,6 +32,15 @@ pub fn load_config() -> Result<Config> {
     Ok(config)
 }
 
+/// Uncapitalises the first character in s.
+pub fn uncapitalise(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(c) => c.to_lowercase().collect::<String>() + chars.as_str(),
+    }
+}
+
 /// Prints a success.
 #[macro_export]
 macro_rules! success {
@@ -57,7 +66,9 @@ macro_rules! warning {
 macro_rules! error {
     ($($arg:tt)*) => {{
         use colored::Colorize;
-        let message = format!($($arg)*).red().bold();
+        let message = format!($($arg)*);
+        let message = $crate::command::helpers::uncapitalise(&message);
+        let message = format!("Error: {message}").red().bold();
         eprintln!("{message}");
     }};
 }
