@@ -79,6 +79,7 @@
               rust-analyzer
 
               # Tools.
+              cargo-outdated
               cargo-watch
               git
               git-z
