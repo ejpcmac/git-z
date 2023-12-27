@@ -22,13 +22,25 @@ use inquire::{validator::Validation, CustomUserError, Select, Text};
 use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
+use thiserror::Error;
 
 use crate::{
     command::helpers::load_config,
     config::{Config, Scopes, Ticket},
 };
 
+use super::helpers::ensure_in_git_worktree;
+
 const PAGE_SIZE: usize = 15;
+
+/// Usage errors of `git z commit`.
+#[derive(Debug, Error)]
+pub enum CommitError {
+    #[error("Failed to parse the commit template")]
+    Template(#[from] tera::Error),
+    #[error("Git has returned an error")]
+    Git { status_code: Option<i32> },
+}
 
 /// The commit command.
 #[derive(Debug, Parser)]
@@ -52,11 +64,14 @@ struct CommitMessage {
 
 impl super::Command for Commit {
     fn run(&self) -> Result<()> {
+        ensure_in_git_worktree()?;
+
         let config = load_config()?;
+        let tera = build_and_check_template(&config)?;
 
         let commit_message = CommitMessage::run_wizard(&config)?;
         let context = Context::from_serialize(commit_message)?;
-        let message = Tera::one_off(&config.templates.commit, &context, false)?;
+        let message = tera.render("templates.commit", &context)?;
 
         if self.print_only {
             println!("{message}");
@@ -67,7 +82,9 @@ impl super::Command for Commit {
                 .status()?;
 
             if !status.success() {
-                bail!("Git commit failed");
+                bail!(CommitError::Git {
+                    status_code: status.code()
+                });
             }
         }
 
@@ -76,6 +93,7 @@ impl super::Command for Commit {
 }
 
 impl CommitMessage {
+    /// Runs the wizard to build a commit message from user input.
     fn run_wizard(config: &Config) -> Result<Self> {
         Ok(Self {
             r#type: ask_type(config)?,
@@ -85,6 +103,33 @@ impl CommitMessage {
             ticket: ask_ticket(config)?,
         })
     }
+
+    /// Builds a dummy commit message.
+    fn dummy() -> Self {
+        Self {
+            r#type: String::from("dummy"),
+            scope: Some(String::from("dummy")),
+            description: String::from("dummy commit"),
+            breaking_change: Some(String::from("Dummy breaking change.")),
+            ticket: Some(String::from("#0")),
+        }
+    }
+}
+
+fn build_and_check_template(config: &Config) -> Result<Tera> {
+    let mut tera = Tera::default();
+
+    tera.add_raw_template("templates.commit", &config.templates.commit)
+        .map_err(CommitError::Template)?;
+
+    // Render a dummy commit to catch early any variable error.
+    tera.render(
+        "templates.commit",
+        &Context::from_serialize(CommitMessage::dummy())?,
+    )
+    .map_err(CommitError::Template)?;
+
+    Ok(tera)
 }
 
 fn ask_type(config: &Config) -> Result<String> {
@@ -96,7 +141,7 @@ fn ask_type(config: &Config) -> Result<String> {
 }
 
 fn ask_scope(config: &Config) -> Result<Option<String>> {
-    match config.scopes {
+    match &config.scopes {
         None => Ok(None),
 
         Some(Scopes::Any) => Ok(Text::new("Scope")
@@ -104,7 +149,7 @@ fn ask_scope(config: &Config) -> Result<Option<String>> {
             .prompt_skippable()?
             .filter(|s| !s.is_empty())),
 
-        Some(Scopes::List { ref list }) => {
+        Some(Scopes::List { list }) => {
             let help_message = format!(
                 "{}, {}, {}",
                 "↑↓ to move, enter to select, type to filter",
@@ -143,12 +188,9 @@ fn ask_breaking_change() -> Result<Option<String>> {
 }
 
 fn ask_ticket(config: &Config) -> Result<Option<String>> {
-    match config.ticket {
+    match &config.ticket {
         None => Ok(None),
-        Some(Ticket {
-            ref required,
-            ref prefixes,
-        }) => {
+        Some(Ticket { required, prefixes }) => {
             let placeholder = ticket_placeholder(prefixes)?;
             let ticket_from_branch = get_ticket_from_branch(prefixes)?;
 

@@ -13,12 +13,43 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::{io, process::Command};
+
 use eyre::Result;
+use thiserror::Error;
 
 use crate::{
     config::{Config, CONFIG_FILE_NAME, VERSION},
     hint, warning,
 };
+
+/// An error occuring when not inside a Git worktree.
+#[derive(Debug, Error)]
+pub enum NotInGitWorktree {
+    #[error("Failed to run the git command")]
+    CannotRunGit(#[from] io::Error),
+    #[error("Not in a Git repository")]
+    NotInRepo,
+    #[error("Not inside a Git worktree")]
+    NotInWorktree,
+}
+
+/// Ensures the command is run from a Git worktree.
+pub fn ensure_in_git_worktree() -> Result<(), NotInGitWorktree> {
+    let is_inside_work_tree = Command::new("git")
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .output()?;
+
+    if !is_inside_work_tree.status.success() {
+        return Err(NotInGitWorktree::NotInRepo);
+    }
+
+    if is_inside_work_tree.stdout == b"true\n" {
+        Ok(())
+    } else {
+        Err(NotInGitWorktree::NotInWorktree)
+    }
+}
 
 /// Loads the configuration.
 pub fn load_config() -> Result<Config> {
@@ -30,6 +61,15 @@ pub fn load_config() -> Result<Config> {
     }
 
     Ok(config)
+}
+
+/// Uncapitalises the first character in s.
+pub fn uncapitalise(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(c) => c.to_lowercase().collect::<String>() + chars.as_str(),
+    }
 }
 
 /// Prints a success.
@@ -48,7 +88,7 @@ macro_rules! warning {
     ($($arg:tt)*) => {{
         use colored::Colorize;
         let message = format!($($arg)*).yellow().bold();
-        println!("{message}");
+        eprintln!("{message}");
     }};
 }
 
@@ -57,8 +97,10 @@ macro_rules! warning {
 macro_rules! error {
     ($($arg:tt)*) => {{
         use colored::Colorize;
-        let message = format!($($arg)*).red().bold();
-        println!("{message}");
+        let message = format!($($arg)*);
+        let message = $crate::command::helpers::uncapitalise(&message);
+        let message = format!("Error: {message}").red().bold();
+        eprintln!("{message}");
     }};
 }
 
@@ -68,6 +110,6 @@ macro_rules! hint {
     ($($arg:tt)*) => {{
         use colored::Colorize;
         let message = format!($($arg)*).blue();
-        println!("{message}");
+        eprintln!("{message}");
     }};
 }

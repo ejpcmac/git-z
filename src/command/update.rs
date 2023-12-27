@@ -26,6 +26,8 @@ use crate::{
     error, hint, success,
 };
 
+use super::helpers::ensure_in_git_worktree;
+
 /// The update command.
 #[derive(Debug, Parser)]
 pub struct Update;
@@ -33,12 +35,14 @@ pub struct Update;
 /// Usage errors of `git z init`.
 #[derive(Debug, Error)]
 pub enum UpdateError {
-    #[error("Unkown config version {version}.")]
+    #[error("Unkown config version {version}")]
     UnknownVersion { version: String },
 }
 
 impl super::Command for Update {
     fn run(&self) -> Result<()> {
+        ensure_in_git_worktree()?;
+
         let updater = ConfigUpdater::load()?;
 
         match updater.config_version() {
