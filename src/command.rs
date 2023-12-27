@@ -22,6 +22,7 @@ use std::error::Error;
 
 use clap::Parser;
 use eyre::Result;
+use inquire::InquireError;
 
 use self::{
     commit::{Commit, CommitError},
@@ -129,6 +130,16 @@ fn handle_errors(error: color_eyre::Report) -> Result<()> {
             }
         }
 
+        #[allow(clippy::exit)]
+        std::process::exit(1);
+    } else if let Some(InquireError::OperationCanceled) =
+        error.downcast_ref::<InquireError>()
+    {
+        #[allow(clippy::exit)]
+        std::process::exit(1);
+    } else if let Some(InquireError::OperationInterrupted) =
+        error.downcast_ref::<InquireError>()
+    {
         #[allow(clippy::exit)]
         std::process::exit(1);
     } else {
