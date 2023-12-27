@@ -18,10 +18,10 @@ mod helpers;
 mod init;
 mod update;
 
-use std::error::Error;
+use std::error::Error as _;
 
 use clap::Parser;
-use eyre::Result;
+use eyre::{Report, Result};
 use inquire::InquireError;
 
 use self::{
@@ -68,86 +68,73 @@ impl GitZ {
     }
 }
 
-fn handle_errors(error: color_eyre::Report) -> Result<()> {
-    if let Some(error) = error.downcast_ref::<NotInGitWorktree>() {
-        match error {
-            NotInGitWorktree::CannotRunGit(os_error) => {
-                error!("{error}.");
-                hint!("The OS reports: {os_error}.");
-            }
-            NotInGitWorktree::NotInRepo => {
-                error!("{error}.");
-                hint!("You can initialise a Git repository by running `git init`.");
-            }
-            NotInGitWorktree::NotInWorktree => {
-                error!("{error}.");
-                hint!("You seem to be inside a Git repository, but not in a worktree.");
-            }
-        }
+/// How to handle the error.
+enum ErrorHandling {
+    /// Return the report.
+    Return(Report),
+    /// Exit the program with the given status code.
+    Exit(i32),
+}
 
-        #[allow(clippy::exit)]
-        std::process::exit(1);
-    } else if let Some(config::LoadError::InvalidConfig(from_toml_error)) =
+fn handle_errors(error: Report) -> Result<()> {
+    let handling = if let Some(error) = error.downcast_ref::<NotInGitWorktree>()
+    {
+        handle_not_in_git_worktree(error)
+    } else if let Some(config::LoadError::InvalidConfig(error)) =
         error.downcast_ref::<config::LoadError>()
     {
-        handle_from_toml_error(from_toml_error)
-    } else if let Some(updater::LoadError::InvalidConfig(from_toml_error)) =
+        handle_from_toml_error(error)
+    } else if let Some(updater::LoadError::InvalidConfig(error)) =
         error.downcast_ref::<updater::LoadError>()
     {
-        handle_from_toml_error(from_toml_error)
-    } else if let Some(error) = error.downcast_ref::<CommitError>() {
-        match error {
-            CommitError::Git { status_code } => {
-                #[allow(clippy::exit)]
-                std::process::exit(status_code.unwrap_or(1_i32));
-            }
-            CommitError::Template(tera_error) => {
-                error!("{tera_error} from the configuration.");
-
-                if let Some(parse_error) = tera_error.source() {
-                    hint!("\n{parse_error}\n");
-                }
-
-                #[allow(clippy::exit)]
-                std::process::exit(1);
-            }
-        }
+        handle_from_toml_error(error)
     } else if let Some(error) = error.downcast_ref::<InitError>() {
-        match error {
-            InitError::ExistingConfig => {
-                error!("{error}.");
-                hint!("You can force the command by running `git z init -f`.");
-            }
-        }
-
-        #[allow(clippy::exit)]
-        std::process::exit(1);
+        handle_init_error(error)
+    } else if let Some(error) = error.downcast_ref::<CommitError>() {
+        handle_commit_error(error)
     } else if let Some(error) = error.downcast_ref::<UpdateError>() {
-        match error {
-            UpdateError::UnknownVersion { .. } => {
-                error!("{error}.");
-                hint!("Your config file may have been created by a more recent version of git-z.");
-            }
-        }
-
-        #[allow(clippy::exit)]
-        std::process::exit(1);
+        handle_update_error(error)
     } else if let Some(InquireError::OperationCanceled) =
         error.downcast_ref::<InquireError>()
     {
-        #[allow(clippy::exit)]
-        std::process::exit(1);
+        ErrorHandling::Exit(1)
     } else if let Some(InquireError::OperationInterrupted) =
         error.downcast_ref::<InquireError>()
     {
-        #[allow(clippy::exit)]
-        std::process::exit(1);
+        ErrorHandling::Exit(1)
     } else {
-        Err(error)
+        ErrorHandling::Return(error)
+    };
+
+    match handling {
+        ErrorHandling::Return(error) => Err(error),
+        ErrorHandling::Exit(code) => {
+            #[allow(clippy::exit)]
+            std::process::exit(code);
+        }
     }
 }
 
-fn handle_from_toml_error(error: &FromTomlError) -> ! {
+fn handle_not_in_git_worktree(error: &NotInGitWorktree) -> ErrorHandling {
+    match error {
+        NotInGitWorktree::CannotRunGit(os_error) => {
+            error!("{error}.");
+            hint!("The OS reports: {os_error}.");
+        }
+        NotInGitWorktree::NotInRepo => {
+            error!("{error}.");
+            hint!("You can initialise a Git repository by running `git init`.");
+        }
+        NotInGitWorktree::NotInWorktree => {
+            error!("{error}.");
+            hint!("You seem to be inside a Git repository, but not in a worktree.");
+        }
+    }
+
+    ErrorHandling::Exit(1)
+}
+
+fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     match error {
         FromTomlError::UnsupportedVersion(_) => {
             error!("{error}.");
@@ -159,6 +146,44 @@ fn handle_from_toml_error(error: &FromTomlError) -> ! {
         }
     }
 
-    #[allow(clippy::exit)]
-    std::process::exit(1);
+    ErrorHandling::Exit(1)
+}
+
+fn handle_init_error(error: &InitError) -> ErrorHandling {
+    match error {
+        InitError::ExistingConfig => {
+            error!("{error}.");
+            hint!("You can force the command by running `git z init -f`.");
+        }
+    }
+
+    ErrorHandling::Exit(1)
+}
+
+fn handle_commit_error(error: &CommitError) -> ErrorHandling {
+    match error {
+        CommitError::Git { status_code } => {
+            ErrorHandling::Exit(status_code.unwrap_or(1_i32))
+        }
+        CommitError::Template(tera_error) => {
+            error!("{tera_error} from the configuration.");
+
+            if let Some(parse_error) = tera_error.source() {
+                hint!("\n{parse_error}\n");
+            }
+
+            ErrorHandling::Exit(1)
+        }
+    }
+}
+
+fn handle_update_error(error: &UpdateError) -> ErrorHandling {
+    match error {
+        UpdateError::UnknownVersion { .. } => {
+            error!("{error}.");
+            hint!("Your config file may have been created by a more recent version of git-z.");
+        }
+    }
+
+    ErrorHandling::Exit(1)
 }
