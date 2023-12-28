@@ -18,6 +18,7 @@
 pub mod updater;
 
 mod v0_1;
+mod v0_2;
 mod v0_2_dev_0;
 mod v0_2_dev_1;
 mod v0_2_dev_2;
@@ -35,7 +36,7 @@ mod v0_2_dev_3;
 // - write an updater in `ConfigUpdater`,
 // - update the previous updaters as well,
 // - update `git z update`.
-pub use v0_2_dev_3::{Config, Scopes, Templates, Ticket};
+pub use v0_2::{Config, Scopes, Templates, Ticket};
 
 use std::{fs, io, path::PathBuf, process::Command};
 
@@ -94,8 +95,9 @@ struct MinimalConfig {
 
 /// The name of the configuration file.
 pub const CONFIG_FILE_NAME: &str = "git-z.toml";
+
 /// The current version of the configuration file.
-pub const VERSION: &str = "0.2-dev.3";
+pub const VERSION: &str = "0.2";
 
 const DEFAULT_TEMPLATE: &str = include_str!("../templates/COMMIT_EDITMSG");
 
@@ -155,6 +157,10 @@ impl Config {
 
         match minimal_config.version.as_str() {
             VERSION => Ok(toml::from_str(toml)?),
+            "0.2-dev.3" => {
+                let config: v0_2_dev_3::Config = toml::from_str(toml)?;
+                Ok(config.into())
+            }
             "0.2-dev.2" => {
                 let config: v0_2_dev_2::Config = toml::from_str(toml)?;
                 Ok(config.into())
@@ -194,6 +200,42 @@ fn repo_root() -> Result<PathBuf, RepoRootError> {
     } else {
         let git_error = String::from_utf8(git_rev_parse.stderr)?;
         Err(RepoRootError::GitError(git_error.trim().to_owned()))
+    }
+}
+
+impl From<v0_2_dev_3::Config> for Config {
+    fn from(old: v0_2_dev_3::Config) -> Self {
+        Self {
+            version: old.version,
+            types: old.types,
+            scopes: old.scopes.map(Into::into),
+            ticket: old.ticket.map(Into::into),
+            templates: old.templates.into(),
+        }
+    }
+}
+
+impl From<v0_2_dev_3::Scopes> for Scopes {
+    fn from(old: v0_2_dev_3::Scopes) -> Self {
+        match old {
+            v0_2_dev_3::Scopes::Any => Self::Any,
+            v0_2_dev_3::Scopes::List { list } => Self::List { list },
+        }
+    }
+}
+
+impl From<v0_2_dev_3::Ticket> for Ticket {
+    fn from(old: v0_2_dev_3::Ticket) -> Self {
+        Self {
+            required: old.required,
+            prefixes: old.prefixes,
+        }
+    }
+}
+
+impl From<v0_2_dev_3::Templates> for Templates {
+    fn from(old: v0_2_dev_3::Templates) -> Self {
+        Self { commit: old.commit }
     }
 }
 

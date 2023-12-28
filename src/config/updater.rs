@@ -20,6 +20,7 @@ mod from_v0_1;
 mod from_v0_2_dev_0;
 mod from_v0_2_dev_1;
 mod from_v0_2_dev_2;
+mod from_v0_2_dev_3;
 
 use std::{fs, io, marker::PhantomData};
 
@@ -119,6 +120,27 @@ impl ConfigUpdater<Init> {
     /// Returns the current version of the configuration.
     pub fn config_version(&self) -> &str {
         &self.parsed_config.version
+    }
+
+    /// Updates the configuration from version 0.2-dev.3.
+    pub fn update_from_v0_2_dev_3(
+        mut self,
+    ) -> Result<ConfigUpdater<Updated>, UpdateError> {
+        let version = self.config_version();
+        if version != "0.2-dev.3" {
+            return Err(UpdateError::IncorrectVersion {
+                tried_from: "0.2-dev.3".to_owned(),
+                actual: version.to_owned(),
+            });
+        }
+
+        from_v0_2_dev_3::update(&mut self.toml_config);
+
+        Ok(ConfigUpdater {
+            parsed_config: self.parsed_config,
+            toml_config: self.toml_config,
+            _state: PhantomData,
+        })
     }
 
     /// Updates the configuration from version 0.2-dev.2.

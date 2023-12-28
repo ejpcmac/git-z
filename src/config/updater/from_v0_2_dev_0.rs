@@ -48,6 +48,11 @@ pub fn update(
     }
 
     update_commit_template(toml_config, empty_prefix_to_hash);
+
+    common::update_types_doc(toml_config);
+    common::update_scopes_doc(toml_config);
+    common::update_ticket_doc(toml_config);
+    common::update_templates_doc(toml_config);
 }
 
 fn update_ticket(
