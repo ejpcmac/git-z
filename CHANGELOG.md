@@ -8,9 +8,9 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.0] - 2023-12-28
 
-## Highlights
+### Highlights
 
-### New configuration format
+#### New configuration format
 
 The `git-z.toml` format has been updated to version 0.2 to provide a much better
 configurability. It is now possible to:
@@ -27,7 +27,7 @@ format, you can run:
 semantics. However, **previous version of git-z cannot run with a configuration
 version 0.2**.
 
-### Working in any repository
+#### Working in any repository
 
 The default configuration without a `git-z.toml` has been updated to be much
 more sensible. You can then run `git z commit` without a configuration file and
@@ -36,7 +36,7 @@ still get something usable.
 In addition, a new `git z init` command has been added to create a `git-z.toml`
 in the current repository.
 
-## Added
+### Added
 
 * [`git z init`] Add a command to create a `git-z.toml` in the current
     repository.
@@ -46,7 +46,7 @@ in the current repository.
     required as in previous versions. When set to `false`, the ticket is still
     asked for but optional.
 
-## Changed
+### Changed
 
 * **BREAKING** [Config] Update the configuration format to allow for more
     options.
@@ -72,7 +72,7 @@ in the current repository.
 * [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.0 to 1.74.1.
 
-## Fixed
+### Fixed
 
 * [Config] Check the version before trying to parse using the latest
     configuration format. Previously, the configuration was parsed, then its
