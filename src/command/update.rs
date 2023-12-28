@@ -35,7 +35,7 @@ pub struct Update;
 /// Usage errors of `git z init`.
 #[derive(Debug, Error)]
 pub enum UpdateError {
-    #[error("Unkown config version {version}")]
+    #[error("Unknown configuration version {version}")]
     UnknownVersion { version: String },
 }
 

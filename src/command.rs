@@ -138,7 +138,7 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     match error {
         FromTomlError::UnsupportedVersion(_) => {
             error!("{error}.");
-            hint!("The {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
+            hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
         }
         FromTomlError::ParseError(parse_error) => {
             error!("Invalid configuration in {CONFIG_FILE_NAME}.");
@@ -181,7 +181,7 @@ fn handle_update_error(error: &UpdateError) -> ErrorHandling {
     match error {
         UpdateError::UnknownVersion { .. } => {
             error!("{error}.");
-            hint!("Your config file may have been created by a more recent version of git-z.");
+            hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
         }
     }
 
