@@ -5,6 +5,29 @@
 
 A Git extension to go beyond.
 
+## Features
+
+Currently available:
+
+* A wizard to format commit messages according to [Conventional
+    Commits](https://www.conventionalcommits.org/en/v1.0.0/). It is configurable
+    with:
+    * a list of valid commit types and their descriptions,
+    * whether to ask for a scope,
+    * if applicable, a list of valid scopes,
+    * whether to ask for a ticket / issue reference,
+    * automated ticket / issue reference information from the name of the
+        branch,
+    * a custom commit template.
+
+On the roadmap:
+
+* A validator to ensure commit messages follow [Conventional
+    Commits](https://www.conventionalcommits.org/en/v1.0.0/), optionally
+    including a valid ticket reference.
+* A wizard to create a branch—and optionally a worktree—from a GitHub / GitLab
+    issue or Jira ticket.
+
 ## Setup
 
 ### Installation with Nix
