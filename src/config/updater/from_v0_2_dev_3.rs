@@ -13,10 +13,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! A Git extension to go beyond.
+//! Configuration updater from version 0.2-dev.3.
 
-mod command;
-mod config;
+use toml_edit::Document;
 
-#[doc(hidden)]
-pub use command::GitZ;
+use super::common;
+
+/// Updates the configuration from version 0.2-dev.3.
+pub fn update(toml_config: &mut Document) {
+    common::update_version(toml_config);
+    common::update_types_doc(toml_config);
+    common::update_scopes_doc(toml_config);
+    common::update_ticket_doc(toml_config);
+    common::update_templates_doc(toml_config);
+}

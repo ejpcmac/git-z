@@ -13,11 +13,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Configuration for git-z, version 0.1.
+//! Configuration for git-z, version 0.2-dev.2.
 
 // NOTE: Never update the fields of the types defined in this file. Create a new
 // version instead.
 
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 /// The git-z configuration.
@@ -26,11 +27,35 @@ pub struct Config {
     /// The version of the configuration.
     pub version: String,
     /// The valid commit types.
-    pub types: Vec<String>,
-    /// The valid scopes.
-    pub scopes: Vec<String>,
-    /// The commit message template.
-    pub template: String,
+    pub types: IndexMap<String, String>,
+    /// The accepted scopes.
+    pub scopes: Option<Scopes>,
+    /// The ticket reference configuration.
+    pub ticket: Option<Ticket>,
+    /// The templates.
+    pub templates: Templates,
+}
+
+/// Types of accepted scopes.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "accept", rename_all = "snake_case")]
+pub enum Scopes {
+    /// The list of accepted scopes.
+    List { list: Vec<String> },
+}
+
+/// Ticket reference configuration.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Ticket {
+    /// Whether the ticket reference is required.
+    pub required: bool,
     /// The valid ticket prefixes.
-    pub ticket_prefixes: Vec<String>,
+    pub prefixes: Vec<String>,
+}
+
+/// Templates.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Templates {
+    /// The commit message template.
+    pub commit: String,
 }

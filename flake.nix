@@ -49,6 +49,7 @@
 
             ${packageName} = naersk.buildPackage {
               src = ./.;
+              RUSTFLAGS = "-Amissing_docs";
 
               nativeBuildInputs = with pkgs; [ makeWrapper ];
 
@@ -78,6 +79,7 @@
               rust-analyzer
 
               # Tools.
+              cargo-outdated
               cargo-watch
               git
               git-z

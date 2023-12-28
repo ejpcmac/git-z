@@ -25,59 +25,78 @@ debug = "commit used for debugging purposes, not to be integrated"
 # The accepted scopes.
 #
 # This table is optional: if omitted, no scope will be asked for.
+<% match scopes -%>
+<%- when Scopes::Ask with { accept } -%>
 [scopes]
 # What kind of scope to accept.
 #
 # Can be one of: "any", "list". If it is "list", a `list` key containing a list
 # of valid scopes is required.
+<% match accept -%>
+<%- when AcceptScopes::Any -%>
+accept = "any"
+# list = [
+#     "changelog",
+#     "config",
+#     "contributing",
+#     "git-z",
+#     "lib",
+#     "readme",
+#     "version",
+# ]
+<%- when AcceptScopes::List -%>
 accept = "list"
 list = [
-    # General scopes
-    "cargo",
     "changelog",
-    "clippy",
-    "contributing",
-    "deb",
-    "devshell",
-    "direnv",
-    "editorconfig",
-    "flake",
-    "git",
-    "git-z",
-    "readme",
-    "rustfmt",
-    "toolchain",
-    "version",
-    "vscode",
-    "wix",
-
-    # Binary
-    "main",
-
-    # Lib
-    "cli",
-    "command",
     "config",
-    "helpers",
+    "contributing",
+    "git-z",
     "lib",
-
-    # Commands
-    "c:commit",
-    "c:init",
-    "c:update",
+    "readme",
+    "version",
 ]
+<%- endmatch %>
+<%- when Scopes::DontAsk -%>
+# [scopes]
+# # What kind of scope to accept.
+# #
+# # Can be one of: "any", "list". If it is "list", a `list` key containing a list
+# # of valid scopes is required.
+# accept = "any"
+# # list = [
+# #     "changelog",
+# #     "config",
+# #     "contributing",
+# #     "git-z",
+# #     "lib",
+# #     "readme",
+# #     "version",
+# # ]
+<%- endmatch %>
 
 # The ticket / issue reference configuration.
 #
 # This table is optional: if omitted, no ticket will be asked for.
+<% match ticket -%>
+<%- when Ticket::Ask with { required } -%>
 [ticket]
 # Set to true to require a ticket number.
 # Set to false to ask for a ticket without requiring it.
-required = false
+required = <<required>>
 # The list of valid ticket prefixes.
 #
 # Can be a `#` for GitHub / GitLab issues, or a Jira key for instance.
-prefixes = ["#"]
+prefixes = ["#", "GH-"]
+<%- when Ticket::DontAsk -%>
+# [ticket]
+# # Set to true to require a ticket number.
+# # Set to false to ask for a ticket without requiring it.
+# required = false
+# # The list of valid ticket prefixes.
+# #
+# # Can be a `#` for GitHub / GitLab issues, or a Jira key for instance.
+# prefixes = ["#", "GH-"]
+<%- endmatch %>
 
 # Templates written with the Tera [1] templating engine.
 #

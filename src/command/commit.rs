@@ -16,15 +16,31 @@
 use std::process::Command;
 
 use clap::Parser;
-use eyre::{bail, eyre, Result};
+use eyre::{bail, ensure, eyre, Context as _, Result};
+use indexmap::IndexMap;
 use inquire::{validator::Validation, CustomUserError, Select, Text};
 use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
+use thiserror::Error;
 
-use crate::config::Config;
+use crate::{
+    command::helpers::load_config,
+    config::{Config, Scopes, Ticket},
+};
+
+use super::helpers::ensure_in_git_worktree;
 
 const PAGE_SIZE: usize = 15;
+
+/// Usage errors of `git z commit`.
+#[derive(Debug, Error)]
+pub enum CommitError {
+    #[error("Failed to parse the commit template")]
+    Template(#[from] tera::Error),
+    #[error("Git has returned an error")]
+    Git { status_code: Option<i32> },
+}
 
 /// The commit command.
 #[derive(Debug, Parser)]
@@ -43,16 +59,19 @@ struct CommitMessage {
     scope: Option<String>,
     description: String,
     breaking_change: Option<String>,
-    ticket: String,
+    ticket: Option<String>,
 }
 
 impl super::Command for Commit {
     fn run(&self) -> Result<()> {
-        let config = Config::load()?;
+        ensure_in_git_worktree()?;
+
+        let config = load_config()?;
+        let tera = build_and_check_template(&config)?;
 
         let commit_message = CommitMessage::run_wizard(&config)?;
         let context = Context::from_serialize(commit_message)?;
-        let message = Tera::one_off(&config.template, &context, false)?;
+        let message = tera.render("templates.commit", &context)?;
 
         if self.print_only {
             println!("{message}");
@@ -63,7 +82,9 @@ impl super::Command for Commit {
                 .status()?;
 
             if !status.success() {
-                bail!("Git commit failed");
+                bail!(CommitError::Git {
+                    status_code: status.code()
+                });
             }
         }
 
@@ -72,6 +93,7 @@ impl super::Command for Commit {
 }
 
 impl CommitMessage {
+    /// Runs the wizard to build a commit message from user input.
     fn run_wizard(config: &Config) -> Result<Self> {
         Ok(Self {
             r#type: ask_type(config)?,
@@ -81,10 +103,37 @@ impl CommitMessage {
             ticket: ask_ticket(config)?,
         })
     }
+
+    /// Builds a dummy commit message.
+    fn dummy() -> Self {
+        Self {
+            r#type: String::from("dummy"),
+            scope: Some(String::from("dummy")),
+            description: String::from("dummy commit"),
+            breaking_change: Some(String::from("Dummy breaking change.")),
+            ticket: Some(String::from("#0")),
+        }
+    }
+}
+
+fn build_and_check_template(config: &Config) -> Result<Tera> {
+    let mut tera = Tera::default();
+
+    tera.add_raw_template("templates.commit", &config.templates.commit)
+        .map_err(CommitError::Template)?;
+
+    // Render a dummy commit to catch early any variable error.
+    tera.render(
+        "templates.commit",
+        &Context::from_serialize(CommitMessage::dummy())?,
+    )
+    .map_err(CommitError::Template)?;
+
+    Ok(tera)
 }
 
 fn ask_type(config: &Config) -> Result<String> {
-    let choice = Select::new("Commit type", config.types.clone())
+    let choice = Select::new("Commit type", format_types(&config.types))
         .with_page_size(PAGE_SIZE)
         .with_formatter(&|choice| remove_type_description(choice.value))
         .prompt()?;
@@ -92,20 +141,27 @@ fn ask_type(config: &Config) -> Result<String> {
 }
 
 fn ask_scope(config: &Config) -> Result<Option<String>> {
-    if config.scopes.is_empty() {
-        Ok(None)
-    } else {
-        let help_message = format!(
-            "{}, {}, {}",
-            "↑↓ to move, enter to select, type to filter",
-            "ESC to leave empty",
-            "update `commits.toml` to add new scopes"
-        );
+    match &config.scopes {
+        None => Ok(None),
 
-        Ok(Select::new("Scope", config.scopes.clone())
-            .with_help_message(&help_message)
-            .with_page_size(PAGE_SIZE)
-            .prompt_skippable()?)
+        Some(Scopes::Any) => Ok(Text::new("Scope")
+            .with_help_message("Press ESC or leave empty to omit the scope.")
+            .prompt_skippable()?
+            .filter(|s| !s.is_empty())),
+
+        Some(Scopes::List { list }) => {
+            let help_message = format!(
+                "{}, {}, {}",
+                "↑↓ to move, enter to select, type to filter",
+                "ESC to leave empty",
+                "update `commits.toml` to add new scopes"
+            );
+
+            Ok(Select::new("Scope", list.clone())
+                .with_help_message(&help_message)
+                .with_page_size(PAGE_SIZE)
+                .prompt_skippable()?)
+        }
     }
 }
 
@@ -131,31 +187,92 @@ fn ask_breaking_change() -> Result<Option<String>> {
         .filter(|s| !s.is_empty()))
 }
 
-fn ask_ticket(config: &Config) -> Result<String> {
-    let placeholder = ticket_placeholder(config)?;
-    let mut ticket = Text::new("Issue / ticket number")
-        .with_placeholder(&placeholder)
-        .with_validator(validate_ticket);
+fn ask_ticket(config: &Config) -> Result<Option<String>> {
+    match &config.ticket {
+        None => Ok(None),
+        Some(Ticket { required, prefixes }) => {
+            let placeholder = ticket_placeholder(prefixes)?;
+            let ticket_from_branch = get_ticket_from_branch(prefixes)?;
 
-    let ticket_from_branch = get_ticket_from_branch(config)?;
-    ticket.initial_value = ticket_from_branch.as_deref();
+            let mut ticket = Text::new("Issue / ticket number")
+                .with_placeholder(&placeholder)
+                .with_validator(validate_ticket);
+            ticket.initial_value = ticket_from_branch.as_deref();
 
-    Ok(ticket.prompt()?)
+            let ticket = if *required {
+                Some(ticket.prompt()?)
+            } else {
+                ticket
+                    .with_help_message(
+                        "Press ESC to omit the ticket reference.",
+                    )
+                    .prompt_skippable()?
+            };
+
+            Ok(ticket)
+        }
+    }
 }
 
-fn get_ticket_from_branch(config: &Config) -> Result<Option<String>> {
-    let regex = ticket_regex(config)?;
-    Ok(Regex::new(&regex)?
+fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
+    // Replace `#` with an empty string in the regex, as we want to match
+    // branches like `feature/23-name` when `#` is a valid prefix like for
+    // GitHub or GitLab issues.
+    let regex = ticket_regex(prefixes).replace('#', "");
+
+    let ticket = Regex::new(&regex)
+        .wrap_err("Impossible to build a regex from the list of prefixes")?
         .captures(&get_current_branch()?)
-        .map(|captures| captures[0].to_owned()))
+        .map(|captures| {
+            // NOTE(indexing): Capture group 0 always corresponds to an implicit
+            // unnamed group that includes the entire match.
+            #[allow(clippy::indexing_slicing)]
+            captures[0].to_owned()
+        })
+        .map(|ticket| {
+            // NOTE(unwrap): This regex is known to be valid.
+            #[allow(clippy::unwrap_used)]
+            let regex = &Regex::new(r"^\d+$").unwrap();
+
+            // If one of the valid prefixes is `#` and the matched ticket ID is
+            // only made of numbers, we are in the GitHub / GitLab style, so
+            // let’s add a `#` as a prefix to the ticket ID.
+            if prefixes.contains(&String::from("#")) && regex.is_match(&ticket)
+            {
+                format!("#{ticket}")
+            } else {
+                ticket
+            }
+        });
+
+    Ok(ticket)
 }
 
 fn get_current_branch() -> Result<String> {
     let git_branch = Command::new("git")
         .args(["branch", "--show-current"])
         .output()?;
-    assert!(git_branch.status.success());
+
+    ensure!(
+        git_branch.status.success(),
+        "Failed to run `git branch --show-current`"
+    );
+
     Ok(String::from_utf8(git_branch.stdout)?)
+}
+
+fn format_types(types: &IndexMap<String, String>) -> Vec<String> {
+    let Some(max_type_len) = types.keys().map(String::len).max() else {
+        return vec![];
+    };
+
+    types
+        .iter()
+        .map(|(ty, doc)| {
+            let padding = " ".repeat(max_type_len - ty.len());
+            format!("{ty}{padding}  {doc}")
+        })
+        .collect()
 }
 
 fn remove_type_description(choice: &str) -> String {
@@ -165,6 +282,7 @@ fn remove_type_description(choice: &str) -> String {
     choice.split(' ').next().unwrap().to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn validate_description(
     description: &str,
 ) -> Result<Validation, CustomUserError> {
@@ -192,8 +310,13 @@ fn validate_description(
 
 fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     let config = Config::load()?;
-    let regex = ticket_regex(&config)?;
-    let placeholder = ticket_placeholder(&config)?;
+    let prefixes = &config
+        .ticket
+        .ok_or(eyre!("no ticket prefix list"))?
+        .prefixes;
+
+    let regex = ticket_regex(prefixes);
+    let placeholder = ticket_placeholder(prefixes)?;
 
     if Regex::new(&format!("^{regex}$"))?.is_match(ticket) {
         Ok(Validation::Valid)
@@ -207,20 +330,13 @@ fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     }
 }
 
-fn ticket_regex(config: &Config) -> Result<String> {
-    let valid_prefixes = config
-        .ticket_prefixes
-        .clone()
-        .into_iter()
-        .reduce(|acc, prefix| format!("{acc}|{prefix}"))
-        .ok_or(eyre!("empty ticket prefix list"))?;
-
-    Ok(format!("(?:{valid_prefixes})\\d+"))
+fn ticket_regex(prefixes: &[String]) -> String {
+    let prefixes = prefixes.join("|");
+    format!("(?:{prefixes})\\d+")
 }
 
-fn ticket_placeholder(config: &Config) -> Result<String> {
-    config
-        .ticket_prefixes
+fn ticket_placeholder(prefixes: &[String]) -> Result<String> {
+    prefixes
         .iter()
         .map(|prefix| format!("{prefix}XXX"))
         .reduce(|acc, prefix| format!("{acc} or {prefix}"))
