@@ -1,6 +1,32 @@
 # git-z
 
+[![Crates.io](https://img.shields.io/crates/v/git-z)](https://crates.io/crates/git-z)
+[![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
+
 A Git extension to go beyond.
+
+## Features
+
+Currently available:
+
+* A wizard to format commit messages according to [Conventional
+    Commits](https://www.conventionalcommits.org/en/v1.0.0/). It is configurable
+    with:
+    * a list of valid commit types and their descriptions,
+    * whether to ask for a scope,
+    * if applicable, a list of valid scopes,
+    * whether to ask for a ticket / issue reference,
+    * automated ticket / issue reference information from the name of the
+        branch,
+    * a custom commit template.
+
+On the roadmap:
+
+* A validator to ensure commit messages follow [Conventional
+    Commits](https://www.conventionalcommits.org/en/v1.0.0/), optionally
+    including a valid ticket reference.
+* A wizard to create a branch—and optionally a worktree—from a GitHub / GitLab
+    issue or Jira ticket.
 
 ## Setup
 
@@ -17,27 +43,30 @@ up a `flake.nix` like this:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     git-z.url = "github:ejpcmac/git-z";
   };
 
-  outputs = { flake-utils, ... }@inputs:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = inputs.nixpkgs.legacyPackages.${system};
-        git-z = inputs.git-z.packages.${system}.git-z;
-      in
-      {
-        devShell = pkgs.mkShell {
-          buildInputs = [
-            # Tools.
-            git-z
+  outputs = { flake-parts, ... }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "x86_64-linux" ];
 
-            # Other dependencies.
-          ];
+      perSystem = { system, ... }:
+        let
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
+          git-z = inputs.git-z.packages.${system}.git-z;
+        in
+        {
+          devShells.default = pkgs.mkShell {
+            buildInputs = [
+              # Tools.
+              git-z
+
+              # Other dependencies.
+            ];
+          };
         };
-      }
-    );
+    };
 }
 ```
 

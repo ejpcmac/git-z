@@ -20,6 +20,7 @@ mod from_v0_1;
 mod from_v0_2_dev_0;
 mod from_v0_2_dev_1;
 mod from_v0_2_dev_2;
+mod from_v0_2_dev_3;
 
 use std::{fs, io, marker::PhantomData};
 
@@ -121,18 +122,27 @@ impl ConfigUpdater<Init> {
         &self.parsed_config.version
     }
 
+    /// Updates the configuration from version 0.2-dev.3.
+    pub fn update_from_v0_2_dev_3(
+        mut self,
+    ) -> Result<ConfigUpdater<Updated>, UpdateError> {
+        self.check_version("0.2-dev.3")?;
+
+        from_v0_2_dev_3::update(&mut self.toml_config);
+
+        Ok(ConfigUpdater {
+            parsed_config: self.parsed_config,
+            toml_config: self.toml_config,
+            _state: PhantomData,
+        })
+    }
+
     /// Updates the configuration from version 0.2-dev.2.
     pub fn update_from_v0_2_dev_2(
         mut self,
         switch_scopes_to_any: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
-        let version = self.config_version();
-        if version != "0.2-dev.2" {
-            return Err(UpdateError::IncorrectVersion {
-                tried_from: "0.2-dev.2".to_owned(),
-                actual: version.to_owned(),
-            });
-        }
+        self.check_version("0.2-dev.2")?;
 
         from_v0_2_dev_2::update(&mut self.toml_config, switch_scopes_to_any);
 
@@ -149,13 +159,7 @@ impl ConfigUpdater<Init> {
         switch_scopes_to_any: bool,
         empty_prefix_to_hash: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
-        let version = self.config_version();
-        if version != "0.2-dev.1" {
-            return Err(UpdateError::IncorrectVersion {
-                tried_from: "0.2-dev.1".to_owned(),
-                actual: version.to_owned(),
-            });
-        }
+        self.check_version("0.2-dev.1")?;
 
         from_v0_2_dev_1::update(
             &mut self.toml_config,
@@ -177,13 +181,7 @@ impl ConfigUpdater<Init> {
         ask_for_ticket: AskForTicket,
         empty_prefix_to_hash: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
-        let version = self.config_version();
-        if version != "0.2-dev.0" {
-            return Err(UpdateError::IncorrectVersion {
-                tried_from: "0.2-dev.0".to_owned(),
-                actual: version.to_owned(),
-            });
-        }
+        self.check_version("0.2-dev.0")?;
 
         from_v0_2_dev_0::update(
             &mut self.toml_config,
@@ -206,13 +204,7 @@ impl ConfigUpdater<Init> {
         ask_for_ticket: AskForTicket,
         empty_prefix_to_hash: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
-        let version = self.config_version();
-        if version != "0.1" {
-            return Err(UpdateError::IncorrectVersion {
-                tried_from: "0.1".to_owned(),
-                actual: version.to_owned(),
-            });
-        }
+        self.check_version("0.1")?;
 
         from_v0_1::update(
             &mut self.toml_config,
@@ -226,6 +218,20 @@ impl ConfigUpdater<Init> {
             toml_config: self.toml_config,
             _state: PhantomData,
         })
+    }
+
+    /// Checks the configuration version matches the updater.
+    fn check_version(&self, updater_version: &str) -> Result<(), UpdateError> {
+        let config_version = self.config_version();
+
+        if config_version == updater_version {
+            Ok(())
+        } else {
+            Err(UpdateError::IncorrectVersion {
+                tried_from: updater_version.to_owned(),
+                actual: config_version.to_owned(),
+            })
+        }
     }
 }
 

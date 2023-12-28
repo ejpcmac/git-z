@@ -35,7 +35,7 @@ pub struct Update;
 /// Usage errors of `git z init`.
 #[derive(Debug, Error)]
 pub enum UpdateError {
-    #[error("Unkown config version {version}")]
+    #[error("Unknown configuration version {version}")]
     UnknownVersion { version: String },
 }
 
@@ -47,6 +47,7 @@ impl super::Command for Update {
 
         match updater.config_version() {
             VERSION => success!("The configuration is already up to date."),
+            "0.2-dev.3" => update_from_v0_2_dev_3(updater)?,
             "0.2-dev.2" => update_from_v0_2_dev_2(updater)?,
             "0.2-dev.1" => update_from_v0_2_dev_1(updater)?,
             "0.2-dev.0" => update_from_v0_2_dev_0(updater)?,
@@ -58,6 +59,12 @@ impl super::Command for Update {
 
         Ok(())
     }
+}
+
+fn update_from_v0_2_dev_3(updater: ConfigUpdater<Init>) -> Result<()> {
+    updater.update_from_v0_2_dev_3()?.save()?;
+    success!("The configuration has been updated.");
+    Ok(())
 }
 
 fn update_from_v0_2_dev_2(updater: ConfigUpdater<Init>) -> Result<()> {

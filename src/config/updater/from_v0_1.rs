@@ -25,13 +25,16 @@ use toml_edit::{Document, Item, Table};
 
 use super::{super::split_type_and_doc, common, AskForTicket};
 
-const OBSOLETE_TYPES_DOC: &str = "
+const OLD_TYPES_DOC: &str = "
+# The available types of commits.
 #
 # This is a list of types (1 word) and their description, separated by one or
-# more spaces.";
+# more spaces.
+";
 
-const OLD_SCOPES_DOC: &str = "The list of valid scopes.";
-const NEW_SCOPES_DOC: &str = "The accepted scopes.";
+const OLD_SCOPES_DOC: &str = "
+#The list of valid scopes.
+";
 
 /// Updates the configuration from version 0.1.
 pub fn update(
@@ -55,17 +58,18 @@ pub fn update(
 }
 
 fn update_types(toml_config: &mut Document) {
-    let doc = toml_config
-        .key_decor("types")
-        .expect("No decorator for key `types`")
+    let (key, value) =
+        toml_config.get_key_value("types").expect("No `types` key");
+
+    let doc = key
+        .decor()
         .prefix()
         .expect("No prefix decorator for key `types`")
         .as_str()
         .expect("Improper string in the prefix decorator of the `types` key");
 
-    let mut types: Table = toml_config
-        .get("types")
-        .expect("No `types` key")
+    // Update the configuration format.
+    let mut types: Table = value
         .as_array()
         .expect("The `types` key is not an array")
         .iter()
@@ -76,10 +80,12 @@ fn update_types(toml_config: &mut Document) {
         .map(split_type_and_doc)
         .collect();
 
+    // Update the documentation.
     types
         .decor_mut()
-        .set_prefix(doc.replace(OBSOLETE_TYPES_DOC, ""));
+        .set_prefix(doc.replace(OLD_TYPES_DOC, common::NEW_TYPES_DOC));
 
+    // Replace the old configuration with the new one.
     toml_config.insert("types", Item::Table(types));
 }
 
@@ -95,6 +101,7 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
         .as_str()
         .expect("Improper string in the prefix decorator of the `scopes` key");
 
+    // Update the configuration format.
     let mut scopes = Table::new();
 
     if switch_scopes_to_any {
@@ -104,10 +111,16 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
         scopes.insert("list", value.clone());
     }
 
+    // Update the documentation.
     scopes
         .decor_mut()
-        .set_prefix(doc.replace(OLD_SCOPES_DOC, NEW_SCOPES_DOC));
+        .set_prefix(doc.replace(OLD_SCOPES_DOC, common::NEW_SCOPES_DOC));
+    scopes
+        .key_decor_mut("accept")
+        .expect("No `scopes.accept` key")
+        .set_prefix(common::SCOPES_ACCEPT_DOC);
 
+    // Replace the old configuration with the new one.
     toml_config.insert("scopes", Item::Table(scopes));
 }
 
@@ -127,19 +140,32 @@ fn update_ticket(
         .as_str()
         .expect("Improper string in the prefix decorator of the `ticket_prefixes` key");
 
+    // Update the value itself.
     let mut prefixes = value.clone();
     if empty_prefix_to_hash {
         common::empty_prefix_to_hash(&mut prefixes);
     }
 
+    // Update the configuration format.
     let mut ticket = Table::new();
     ticket.insert("required", Item::Value(required.into()));
     ticket.insert("prefixes", prefixes);
+
+    // Update the documentation.
+    ticket.decor_mut().set_prefix(common::TICKET_DOC);
+    ticket
+        .key_decor_mut("required")
+        .expect("No `ticket.required` key")
+        .set_prefix(common::TICKET_REQUIRED_DOC);
     ticket
         .key_decor_mut("prefixes")
-        .expect("No `prefixes` key")
-        .set_prefix(doc.trim_start());
+        .expect("No `ticket.prefixes` key")
+        .set_prefix(doc.trim_start().replace(
+            common::OLD_TICKET_PREFIXES_DOC,
+            common::NEW_TICKET_PREFIXES_DOC,
+        ));
 
+    // Replace the old configuration with the new one.
     toml_config.remove("ticket_prefixes");
     toml_config.insert("ticket", Item::Table(ticket));
 }
@@ -162,6 +188,7 @@ fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
             "Improper string in the prefix decorator of the `template` key",
         );
 
+    // Update the template itself.
     let template = value.as_str().expect("The `template` key is not a string");
     let template = common::add_ticket_condition_to_commit_template(template);
     let template = if remove_hash_prefix {
@@ -170,13 +197,21 @@ fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
         template
     };
 
+    // Update the configuration format.
     let mut templates = Table::new();
     templates.insert("commit", Item::Value(template.into()));
+
+    // Update the documentation.
+    templates.decor_mut().set_prefix(common::TEMPLATES_DOC);
     templates
         .key_decor_mut("commit")
         .expect("No `commit` key")
-        .set_prefix(doc.trim_start());
+        .set_prefix(doc.trim_start().replace(
+            common::OLD_TEMPLATES_COMMIT_DOC,
+            common::NEW_TEMPLATES_COMMIT_DOC,
+        ));
 
+    // Replace the old configuration with the new one.
     toml_config.remove("template");
     toml_config.insert("templates", Item::Table(templates));
 }

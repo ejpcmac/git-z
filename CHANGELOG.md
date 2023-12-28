@@ -6,9 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic
 Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2023-12-28
 
-## Added
+### Highlights
+
+#### New configuration format
+
+The `git-z.toml` format has been updated to version 0.2 to provide a much better
+configurability. It is now possible to:
+
+* allow scopes to be arbitrary, instead of a list;
+* allow the ticket reference to be optional, or even not asked for;
+
+After updating git-z, to update your `git-z.toml` to the new configuration
+format, you can run:
+
+    git z update
+
+`git-z 0.2.0` is still compatible with previous configurations, keeping their
+semantics. However, **previous version of git-z cannot run with a configuration
+version 0.2**.
+
+#### Working in any repository
+
+The default configuration without a `git-z.toml` has been updated to be much
+more sensible. You can then run `git z commit` without a configuration file and
+still get something usable.
+
+In addition, a new `git z init` command has been added to create a `git-z.toml`
+in the current repository.
+
+### Added
 
 * [`git z init`] Add a command to create a `git-z.toml` in the current
     repository.
@@ -18,7 +46,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
     required as in previous versions. When set to `false`, the ticket is still
     asked for but optional.
 
-## Changed
+### Changed
 
 * **BREAKING** [Config] Update the configuration format to allow for more
     options.
@@ -38,13 +66,13 @@ Versioning](https://semver.org/spec/v2.0.0.html).
     `feature/23-name` are valid, and `#` is then added to the matching ticket
     number. In this example it would extract `#23` as ticket number from the
     branch name.
-* [`git z commit`] Henhance a bit the error message when failing to build a
+* [`git z commit`] Enhance a bit the error message when failing to build a
     regex from the list of prefixes.
 * [Cargo] Exclude unneeded files from the package.
 * [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.0 to 1.74.1.
 
-## Fixed
+### Fixed
 
 * [Config] Check the version before trying to parse using the latest
     configuration format. Previously, the configuration was parsed, then its
@@ -69,5 +97,5 @@ Versioning](https://semver.org/spec/v2.0.0.html).
         * the valid ticket prefixes,
         * the commit template.
 
-[Unreleased]: https://github.com/ejpcmac/git-z/compare/main...develop
+[0.2.0]: https://github.com/ejpcmac/git-z/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ejpcmac/git-z/releases/tag/v0.1.0
