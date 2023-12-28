@@ -16,6 +16,7 @@ exclude = [
     "/CHANGELOG.md",
     "/CONTRIBUTING.md",
     "/build-deb.sh",
+    "/clippy.toml",
     "/flake.*",
     "/git-z.toml",
     "/rust-toolchain.toml",
