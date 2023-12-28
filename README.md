@@ -43,27 +43,30 @@ up a `flake.nix` like this:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     git-z.url = "github:ejpcmac/git-z";
   };
 
-  outputs = { flake-utils, ... }@inputs:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = inputs.nixpkgs.legacyPackages.${system};
-        git-z = inputs.git-z.packages.${system}.git-z;
-      in
-      {
-        devShell = pkgs.mkShell {
-          buildInputs = [
-            # Tools.
-            git-z
+  outputs = { flake-parts, ... }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "x86_64-linux" ];
 
-            # Other dependencies.
-          ];
+      perSystem = { system, ... }:
+        let
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
+          git-z = inputs.git-z.packages.${system}.git-z;
+        in
+        {
+          devShells.default = pkgs.mkShell {
+            buildInputs = [
+              # Tools.
+              git-z
+
+              # Other dependencies.
+            ];
+          };
         };
-      }
-    );
+    };
 }
 ```
 
