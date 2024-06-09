@@ -69,16 +69,17 @@
             '';
 
             packages = with pkgs; with self'.packages; [
-              # Build toolchain.
+              # Build toolchain
               rust-toolchain
               clang
 
-              # IDE toolchain.
+              # IDE toolchain
               nil
               nixpkgs-fmt
               rust-analyzer
 
-              # Tools.
+              # Tools
+              cargo-bloat
               cargo-outdated
               cargo-watch
               git
