@@ -51,7 +51,7 @@ unsafe_code = "forbid"
 unsafe_op_in_unsafe_fn = "forbid"
 
 # Denied
-let_underscore = "deny"
+let_underscore = { level = "deny", priority = -1 }
 missing_docs = "deny"
 unused_must_use = "deny"
 
@@ -59,8 +59,8 @@ unused_must_use = "deny"
 macro_use_extern_crate = "warn"
 missing_abi = "warn"
 missing_debug_implementations = "warn"
-nonstandard_style = "warn"
-rust_2018_idioms = "warn"
+nonstandard_style = { level = "warn", priority = -1 }
+rust_2018_idioms = { level = "warn", priority = -1 }
 single_use_lifetimes = "warn"
 
 [lints.clippy]
@@ -69,7 +69,7 @@ multiple_unsafe_ops_per_block = "deny"
 undocumented_unsafe_blocks = "deny"
 
 # Enable all pedantic warnings except a few.
-pedantic = "warn"
+pedantic = { level = "warn", priority = -1 }
 case_sensitive_file_extension_comparisons = "allow"
 inline_always = "allow"
 linkedlist = "allow"
@@ -133,6 +133,6 @@ unwrap_used = "warn"
 verbose_file_reads = "warn"
 
 # Other groups
-cargo = "warn"
+cargo = { level = "warn", priority = -1 }
 redundant_pub_crate = "warn"
 use_self = "warn"
