@@ -37,7 +37,7 @@ color-eyre = "0.6"
 colored = "2"
 eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
-inquire = "0.6"
+inquire = "0.7"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
