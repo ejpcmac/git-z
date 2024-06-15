@@ -36,6 +36,17 @@ use super::helpers::ensure_in_git_worktree;
 /// The size of a page in the terminal.
 const PAGE_SIZE: usize = 15;
 
+/// The commit command.
+#[derive(Debug, Parser)]
+pub struct Commit {
+    /// Print the commit message instead of calling `git commit`.
+    #[arg(long)]
+    print_only: bool,
+    /// Extra arguments to be passed to `git commit`.
+    #[arg(last = true)]
+    extra_args: Vec<String>,
+}
+
 /// Usage errors of `git z commit`.
 #[derive(Debug, Error)]
 pub enum CommitError {
@@ -48,17 +59,6 @@ pub enum CommitError {
         /// The status code returned by Git.
         status_code: Option<i32>,
     },
-}
-
-/// The commit command.
-#[derive(Debug, Parser)]
-pub struct Commit {
-    /// Print the commit message instead of calling `git commit`.
-    #[arg(long)]
-    print_only: bool,
-    /// Extra arguments to be passed to `git commit`.
-    #[arg(last = true)]
-    extra_args: Vec<String>,
 }
 
 /// A conventional commit message.
