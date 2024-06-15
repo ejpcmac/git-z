@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//! The `init` subcommand.
+
 use std::fs;
 
 use askama::Template;
@@ -39,33 +41,52 @@ pub struct Init {
 /// Usage errors of `git z init`.
 #[derive(Debug, Error)]
 pub enum InitError {
+    /// A configuration already exists.
     #[error("There is already a git-z.toml in the current repository")]
     ExistingConfig,
 }
 
+/// Parameters to generate a `git-z.toml`.
 #[derive(Debug, Default, Template)]
 #[template(path = "git-z.toml.jinja", syntax = "template")]
 struct Config {
+    /// Whether to ask for a scope.
     scopes: Scopes,
+    /// Whether to ask for a ticket.
     ticket: Ticket,
 }
 
+/// Whether to ask for a scope.
 #[derive(Debug)]
 enum Scopes {
-    Ask { accept: AcceptScopes },
+    /// Ask for a scope.
+    Ask {
+        /// What scopes to accept.
+        accept: AcceptScopes,
+    },
+    /// Do not ask for a scope.
     DontAsk,
 }
 
+/// The scopes to accept.
 #[derive(Debug, Default)]
 enum AcceptScopes {
+    /// Accept arbitrary scopes.
     #[default]
     Any,
+    /// Accept scopes from a list.
     List,
 }
 
+/// Whether to ask for a ticket.
 #[derive(Debug)]
 enum Ticket {
-    Ask { required: bool },
+    /// Ask for a ticket.
+    Ask {
+        /// Whether to require a ticket.
+        required: bool,
+    },
+    /// Do not ask for a ticket.
     DontAsk,
 }
 
@@ -95,6 +116,7 @@ impl super::Command for Init {
 }
 
 impl Config {
+    /// Runs the wizard to fill the parameters for the configuration.
     fn run_wizard() -> Result<Self> {
         Ok(Self {
             scopes: Scopes::run_wizard()?,
@@ -104,6 +126,7 @@ impl Config {
 }
 
 impl Scopes {
+    /// Runs the wizard for scope configuration.
     fn run_wizard() -> Result<Self> {
         let options = vec![
             "Ask for a scope, accept any",
@@ -130,6 +153,7 @@ impl Scopes {
 }
 
 impl Ticket {
+    /// Runs the wizard for ticket configuration.
     fn run_wizard() -> Result<Self> {
         let options = vec![
             "Require a ticket number",

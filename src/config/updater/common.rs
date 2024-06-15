@@ -19,58 +19,68 @@
 // handling. This is because `ConfigUpdater::load` already validates the
 // configuration by parsing it to a `Config`. Any error occuring here is a bug,
 // hence should lead to a panic.
-#![allow(clippy::expect_used)]
+#![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
 use regex::Regex;
 use toml_edit::{Document, Item, Table};
 
 use crate::config::VERSION;
 
+/// The old documentation for `types`.
 pub const OLD_TYPES_DOC: &str = "
 # The available types of commits.
 ";
 
+/// The new documentation for `types`.
 pub const NEW_TYPES_DOC: &str = "
 # The available types of commits and their description.
 #
 # Types are shown in the dialog in the order they appear in this configuration.
 ";
 
+/// The old documentation for `scopes`.
 pub const OLD_SCOPES_DOC: &str = "
 # The accepted scopes.
 ";
 
+/// The new documentation for `scopes`.
 pub const NEW_SCOPES_DOC: &str = "
 # The accepted scopes.
 #
 # This table is optional: if omitted, no scope will be asked for.
 ";
 
+/// The documentation for `scopes.accept`.
 pub const SCOPES_ACCEPT_DOC: &str = "# What kind of scope to accept.
 #
 # Can be one of: \"any\", \"list\". If it is \"list\", a `list` key containing a list
 # of valid scopes is required.
 ";
 
+/// The documentation for `ticket`.
 pub const TICKET_DOC: &str = "
 # The ticket / issue reference configuration.
 #
 # This table is optional: if omitted, no ticket will be asked for.
 ";
 
+/// The documentation for `ticket.required`.
 pub const TICKET_REQUIRED_DOC: &str =
     "# Set to true to require a ticket number.
 # Set to false to ask for a ticket without requiring it.
 ";
 
+/// The old documentation for `ticket.prefixes`.
 pub const OLD_TICKET_PREFIXES_DOC: &str = "# The list of valid ticket prefixes.
 ";
 
+/// The new documentation for `ticket.prefixes`.
 pub const NEW_TICKET_PREFIXES_DOC: &str = "# The list of valid ticket prefixes.
 #
 # Can be a `#` for GitHub / GitLab issues, or a Jira key for instance.
 ";
 
+/// The documentation for `templates`.
 pub const TEMPLATES_DOC: &str = "
 # Templates written with the Tera [1] templating engine.
 #
@@ -81,10 +91,12 @@ pub const TEMPLATES_DOC: &str = "
 # [1] https://tera.netlify.app/
 ";
 
+/// The old documentation for `templates.commit`.
 pub const OLD_TEMPLATES_COMMIT_DOC: &str = "# The commit message template, written with the Tera [1] templating engine.
 # [1] https://tera.netlify.app/
 ";
 
+/// The new documentation for `templates.commit`.
 pub const NEW_TEMPLATES_COMMIT_DOC: &str = "# The commit template.
 #
 # Available variables:

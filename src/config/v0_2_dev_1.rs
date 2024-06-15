@@ -40,8 +40,11 @@ pub struct Config {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "accept", rename_all = "snake_case")]
 pub enum Scopes {
-    /// The list of accepted scopes.
-    List { list: Vec<String> },
+    /// Accepts only scopes from a list.
+    List {
+        /// The list of accepted scopes.
+        list: Vec<String>,
+    },
 }
 
 /// Ticket reference configuration.

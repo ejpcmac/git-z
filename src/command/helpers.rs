@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//! Helpers for writing CLIs.
+
 use std::{io, process::Command};
 
 use eyre::Result;
@@ -23,13 +25,16 @@ use crate::{
     hint, warning,
 };
 
-/// An error occuring when not inside a Git worktree.
+/// Errors that can occur when not inside a Git worktree.
 #[derive(Debug, Error)]
 pub enum NotInGitWorktree {
+    /// Git cannot be run.
     #[error("Failed to run the git command")]
     CannotRunGit(#[from] io::Error),
+    /// The command is not run from inside a Git repository.
     #[error("Not in a Git repository")]
     NotInRepo,
+    /// The command is not run from inside a Git worktree.
     #[error("Not inside a Git worktree")]
     NotInWorktree,
 }

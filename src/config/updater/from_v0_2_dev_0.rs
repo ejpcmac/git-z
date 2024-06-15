@@ -19,7 +19,7 @@
 // handling. This is because `ConfigUpdater::load` already validates the
 // configuration by parsing it to a `Config`. Any error occuring here is a bug,
 // hence should lead to a panic.
-#![allow(clippy::expect_used)]
+#![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
 use toml_edit::{Document, Item};
 
@@ -55,6 +55,7 @@ pub fn update(
     common::update_templates_doc(toml_config);
 }
 
+/// Updates the configuration for ticket references.
 fn update_ticket(
     toml_config: &mut Document,
     required: bool,
@@ -90,10 +91,12 @@ fn update_ticket(
         .set_prefix(prefixes_doc);
 }
 
+/// Removes the configuration for ticket references.
 fn remove_ticket(toml_config: &mut Document) {
     toml_config.remove("ticket");
 }
 
+/// Updates the configuration for commit templates.
 fn update_commit_template(
     toml_config: &mut Document,
     remove_hash_prefix: bool,

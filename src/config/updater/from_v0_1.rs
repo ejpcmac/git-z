@@ -19,12 +19,13 @@
 // handling. This is because `ConfigUpdater::load` already validates the
 // configuration by parsing it to a `Config`. Any error occuring here is a bug,
 // hence should lead to a panic.
-#![allow(clippy::expect_used)]
+#![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
 use toml_edit::{Document, Item, Table};
 
 use super::{super::split_type_and_doc, common, AskForTicket};
 
+/// The old configuration for `types`.
 const OLD_TYPES_DOC: &str = "
 # The available types of commits.
 #
@@ -32,6 +33,7 @@ const OLD_TYPES_DOC: &str = "
 # more spaces.
 ";
 
+/// The old configuration for `scopes`.
 const OLD_SCOPES_DOC: &str = "
 #The list of valid scopes.
 ";
@@ -57,6 +59,7 @@ pub fn update(
     update_templates(toml_config, empty_prefix_to_hash);
 }
 
+/// Updates the configuration for the types.
 fn update_types(toml_config: &mut Document) {
     let (key, value) =
         toml_config.get_key_value("types").expect("No `types` key");
@@ -89,6 +92,7 @@ fn update_types(toml_config: &mut Document) {
     toml_config.insert("types", Item::Table(types));
 }
 
+/// Updates the configuration for scopes.
 fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
     let (key, value) = toml_config
         .get_key_value("scopes")
@@ -124,6 +128,7 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
     toml_config.insert("scopes", Item::Table(scopes));
 }
 
+/// Updates the configuration for ticket references.
 fn update_ticket(
     toml_config: &mut Document,
     required: bool,
@@ -170,10 +175,12 @@ fn update_ticket(
     toml_config.insert("ticket", Item::Table(ticket));
 }
 
+/// Removes the configuration for ticket references.
 fn remove_ticket(toml_config: &mut Document) {
     toml_config.remove("ticket_prefixes");
 }
 
+/// Updates the configuration for templates.
 fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
     let (key, value) = toml_config
         .get_key_value("template")

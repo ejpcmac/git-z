@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//! The `commit` subcommand.
+
 use std::process::Command;
 
 use clap::Parser;
@@ -31,15 +33,21 @@ use crate::{
 
 use super::helpers::ensure_in_git_worktree;
 
+/// The size of a page in the terminal.
 const PAGE_SIZE: usize = 15;
 
 /// Usage errors of `git z commit`.
 #[derive(Debug, Error)]
 pub enum CommitError {
+    /// The commit template is invalid.
     #[error("Failed to parse the commit template")]
     Template(#[from] tera::Error),
+    /// Git has returned an error.
     #[error("Git has returned an error")]
-    Git { status_code: Option<i32> },
+    Git {
+        /// The status code returned by Git.
+        status_code: Option<i32>,
+    },
 }
 
 /// The commit command.
@@ -53,12 +61,18 @@ pub struct Commit {
     extra_args: Vec<String>,
 }
 
+/// A conventional commit message.
 #[derive(Debug, Serialize)]
 struct CommitMessage {
+    /// The type of commit.
     r#type: String,
+    /// The optional scope of the commit.
     scope: Option<String>,
+    /// The short commit description.
     description: String,
+    /// The optional breaking change description.
     breaking_change: Option<String>,
+    /// The optional linked ticket.
     ticket: Option<String>,
 }
 
@@ -116,6 +130,7 @@ impl CommitMessage {
     }
 }
 
+/// Loads the commit template and checks for errors.
 fn build_and_check_template(config: &Config) -> Result<Tera> {
     let mut tera = Tera::default();
 
@@ -132,6 +147,7 @@ fn build_and_check_template(config: &Config) -> Result<Tera> {
     Ok(tera)
 }
 
+/// Asks the user which type of commit they wants.
 fn ask_type(config: &Config) -> Result<String> {
     let choice = Select::new("Commit type", format_types(&config.types))
         .with_page_size(PAGE_SIZE)
@@ -140,6 +156,7 @@ fn ask_type(config: &Config) -> Result<String> {
     Ok(remove_type_description(&choice))
 }
 
+/// Asks the user to which scope the changes are applicable.
 fn ask_scope(config: &Config) -> Result<Option<String>> {
     match &config.scopes {
         None => Ok(None),
@@ -165,6 +182,7 @@ fn ask_scope(config: &Config) -> Result<Option<String>> {
     }
 }
 
+/// Asks the user for a commit description.
 fn ask_description() -> Result<String> {
     let placeholder =
         "describe your change with a short description (5-50 characters)";
@@ -177,6 +195,7 @@ fn ask_description() -> Result<String> {
         .prompt()?)
 }
 
+/// Asks the user for an optional breaking change description.
 fn ask_breaking_change() -> Result<Option<String>> {
     Ok(Text::new("BREAKING CHANGE")
         .with_placeholder("Summary of the breaking change.")
@@ -187,6 +206,7 @@ fn ask_breaking_change() -> Result<Option<String>> {
         .filter(|s| !s.is_empty()))
 }
 
+/// Optionally asks the user for a ticket reference.
 fn ask_ticket(config: &Config) -> Result<Option<String>> {
     match &config.ticket {
         None => Ok(None),
@@ -214,6 +234,9 @@ fn ask_ticket(config: &Config) -> Result<Option<String>> {
     }
 }
 
+/// Tries to extract a ticket number from the name of the current Git branch.
+// NOTE(allow): This function cannot actually panic. See the notes below.
+#[allow(clippy::missing_panics_doc)]
 fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     // Replace `#` with an empty string in the regex, as we want to match
     // branches like `feature/23-name` when `#` is a valid prefix like for
@@ -248,6 +271,7 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     Ok(ticket)
 }
 
+/// Gets the name of the current Git branch.
 fn get_current_branch() -> Result<String> {
     let git_branch = Command::new("git")
         .args(["branch", "--show-current"])
@@ -261,6 +285,7 @@ fn get_current_branch() -> Result<String> {
     Ok(String::from_utf8(git_branch.stdout)?)
 }
 
+/// Formats the list of types and their description.
 fn format_types(types: &IndexMap<String, String>) -> Vec<String> {
     let Some(max_type_len) = types.keys().map(String::len).max() else {
         return vec![];
@@ -275,6 +300,9 @@ fn format_types(types: &IndexMap<String, String>) -> Vec<String> {
         .collect()
 }
 
+/// Removes the type description from the choice.
+// NOTE(allow): This function cannot actually panic. See the notes below.
+#[allow(clippy::missing_panics_doc)]
 fn remove_type_description(choice: &str) -> String {
     // NOTE(unwrap): Even an empty string will contain at list one split, so the
     // only call to next will always return Some(value).
@@ -282,6 +310,10 @@ fn remove_type_description(choice: &str) -> String {
     choice.split(' ').next().unwrap().to_owned()
 }
 
+/// Validates the commit description.
+// NOTE(allow): This function cannot actually panic. See the notes below.
+#[allow(clippy::missing_panics_doc)]
+// NOTE(allow): The signature of the function is imposed by Inquire.
 #[allow(clippy::unnecessary_wraps)]
 fn validate_description(
     description: &str,
@@ -308,6 +340,7 @@ fn validate_description(
     }
 }
 
+/// Validates the ticket reference.
 fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     let config = Config::load()?;
     let prefixes = &config
@@ -330,11 +363,13 @@ fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     }
 }
 
+/// Builds a regex to match valid tickets from the list of valid prefixes.
 fn ticket_regex(prefixes: &[String]) -> String {
     let prefixes = prefixes.join("|");
     format!("(?:{prefixes})\\d+")
 }
 
+/// Builds the ticket placeholder from the list of valid prefixes.
 fn ticket_placeholder(prefixes: &[String]) -> Result<String> {
     prefixes
         .iter()

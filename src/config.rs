@@ -44,40 +44,49 @@ use indexmap::{indexmap, IndexMap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// An error that can occur when loading the configuration.
+/// Errors that can occur when loading the configuration.
 #[derive(Debug, Error)]
 pub enum LoadError {
+    /// The path of the configuration cannot be resolved.
     #[error("Failed to get the configuration file path")]
     ConfigFileError(#[from] ConfigFileError),
+    /// An error has occured while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
     ReadError(#[from] io::Error),
+    /// The configuration is invalid.
     #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
     InvalidConfig(#[from] FromTomlError),
 }
 
-/// An error that can occur when parsing the TOML.
+/// Errors that can occur when parsing the TOML.
 #[derive(Debug, Error)]
 pub enum FromTomlError {
+    /// The version of the configuration is not supported.
     #[error("Configuration version {0} is not supported")]
     UnsupportedVersion(String),
+    /// The configuration file cannot be parsed.
     #[error("Failed to parse into a valid configuration")]
     ParseError(#[from] toml::de::Error),
 }
 
-/// An error that can occur when building the config file path.
+/// Errors that can occur when building the config file path.
 #[derive(Debug, Error)]
 pub enum ConfigFileError {
+    /// An error has occured while getting the root of the Git repository.
     #[error("Failed to get the Git repo root")]
     RepoRootError(#[from] RepoRootError),
 }
 
-/// An error that can occur when getting the Git repo root.
+/// Errors that can occur when getting the Git repo root.
 #[derive(Debug, Error)]
 pub enum RepoRootError {
+    /// The `git` command cannot be run.
     #[error("Failed to run the git command")]
     CannotRunGit(#[from] io::Error),
+    /// Git has returned an error.
     #[error("{0}")]
     GitError(String),
+    /// The output of the git command is not proper UTF-8.
     #[error("The output of the git command is not proper UTF-8")]
     EncodingError(#[from] std::string::FromUtf8Error),
 }
@@ -99,6 +108,7 @@ pub const CONFIG_FILE_NAME: &str = "git-z.toml";
 /// The current version of the configuration file.
 pub const VERSION: &str = "0.2";
 
+/// The default commit message template.
 const DEFAULT_TEMPLATE: &str = include_str!("../templates/COMMIT_EDITMSG");
 
 impl Default for Config {
@@ -189,6 +199,7 @@ pub fn config_file() -> Result<PathBuf, ConfigFileError> {
     Ok(repo_root()?.join(CONFIG_FILE_NAME))
 }
 
+/// Returns the path of the root of the current Git repository.
 fn repo_root() -> Result<PathBuf, RepoRootError> {
     let git_rev_parse = Command::new("git")
         .args(["rev-parse", "--show-toplevel"])
@@ -351,6 +362,12 @@ impl From<v0_1::Config> for Config {
     }
 }
 
+/// Splits the types from their documentation.
+///
+/// In the config version 0.1, the list of types is just a list of strings. The
+/// documentation for each type is simply separated from the type itself by a
+/// space, which is kind of a hack. This function splits the types from their
+/// documentation, putting them in two separate strings.
 fn split_types_and_docs(types: &[String]) -> IndexMap<String, String> {
     types
         .iter()
@@ -359,6 +376,7 @@ fn split_types_and_docs(types: &[String]) -> IndexMap<String, String> {
         .collect()
 }
 
+/// Splits a type from its documentation.
 fn split_type_and_doc(type_and_doc: &str) -> (String, String) {
     let mut split = type_and_doc.splitn(2, ' ');
     let ty = split.next().unwrap_or_default().to_owned();

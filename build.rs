@@ -31,6 +31,7 @@ fn define_version_with_git() {
     println!("cargo:rustc-env=VERSION_WITH_GIT={version}");
 }
 
+/// Returns the version from cargo with a Git revision.
 fn version_with_git(cargo_version: &str) -> io::Result<String> {
     if git_describe()? == format!("v{cargo_version}")
         || is_cargo_checkout()? && !is_dev_version(cargo_version)
@@ -42,6 +43,11 @@ fn version_with_git(cargo_version: &str) -> io::Result<String> {
     }
 }
 
+/// Returns the result of `git describe --always --dirty=-modified`.
+///
+/// # Panics
+///
+/// This function panics if the output of `git describe` is not valid UTF-8.
 fn git_describe() -> io::Result<String> {
     let output = Command::new("git")
         .args(["describe", "--always", "--dirty=-modified"])
@@ -50,6 +56,7 @@ fn git_describe() -> io::Result<String> {
     Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
 }
 
+/// Returns the current Git revision and its dirtiness.
 fn git_revision_and_state() -> io::Result<String> {
     let revision = git_revision()?;
     if git_is_dirty()? && !is_cargo_checkout()? {
@@ -59,6 +66,11 @@ fn git_revision_and_state() -> io::Result<String> {
     }
 }
 
+/// Returns the current Git revision.
+///
+/// # Panics
+///
+/// This function panics if the output of `git rev-parse` is not valid UTF-8.
 fn git_revision() -> io::Result<String> {
     let output = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
@@ -67,6 +79,7 @@ fn git_revision() -> io::Result<String> {
     Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
 }
 
+/// Returns whether the current Git worktree is dirty.
 fn git_is_dirty() -> io::Result<bool> {
     let output = Command::new("git")
         .args(["status", "--porcelain"])
@@ -74,6 +87,7 @@ fn git_is_dirty() -> io::Result<bool> {
     Ok(!output.stdout.is_empty())
 }
 
+/// Returns whether the current wortree is a checkout from cargo.
 fn is_cargo_checkout() -> io::Result<bool> {
     let output = Command::new("git")
         .args(["status", "--porcelain"])
@@ -81,6 +95,7 @@ fn is_cargo_checkout() -> io::Result<bool> {
     Ok(output.stdout == b"?? .cargo-ok\n")
 }
 
+/// Returns whether the current version is a development version.
 fn is_dev_version(cargo_version: &str) -> bool {
     cargo_version.contains("-dev")
 }

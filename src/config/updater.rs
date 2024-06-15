@@ -33,8 +33,11 @@ use super::{
 
 /// A configuration updater.
 pub struct ConfigUpdater<State> {
+    /// The parsed configuration.
     parsed_config: Config,
+    /// The editable TOML document.
     toml_config: Document,
+    /// The state of the updater.
     _state: PhantomData<State>,
 }
 
@@ -56,35 +59,48 @@ pub enum AskForTicket {
     DontAsk,
 }
 
-/// An error that can occur when loading the configuration.
+/// Errors that can occur when loading the configuration.
 #[derive(Debug, Error)]
 pub enum LoadError {
+    /// The path of the configuration cannot be resolved.
     #[error("Failed to get the configuration file path")]
     ConfigFileError(#[from] ConfigFileError),
+    /// There is no configuration file.
     #[error("No configuration file")]
     NoConfigFile,
+    /// An error has occured while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
     ReadError(#[from] io::Error),
+    /// The configuration is invalid.
     #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
     InvalidConfig(#[from] FromTomlError),
+    /// The configuration is not a valid TOML document.
     #[error("Failed to parse {CONFIG_FILE_NAME} into a TOML document")]
     TomlEditError(#[from] toml_edit::TomlError),
 }
 
-/// An error that can occur when updating the configuration.
+/// Errors that can occur when updating the configuration.
 #[derive(Debug, Error)]
 pub enum UpdateError {
+    /// The version of the configuration is not matching the updater.
     #[error(
         "Tried to update from version {tried_from}, but the actual version is {actual}."
     )]
-    IncorrectVersion { tried_from: String, actual: String },
+    IncorrectVersion {
+        /// The version from which the updater knows how to update.
+        tried_from: String,
+        /// The actual version of the configuration.
+        actual: String,
+    },
 }
 
-/// An error that can occur when saving the configuration.
+/// Errors that can occur when saving the configuration.
 #[derive(Debug, Error)]
 pub enum SaveError {
+    /// The path of the configuration file cannot be resolved.
     #[error("Failed to get the configuration file path")]
     ConfigFileError(#[from] ConfigFileError),
+    /// Error while writing the configuration file.
     #[error("Failed to write {CONFIG_FILE_NAME}")]
     WriteError(#[from] io::Error),
 }

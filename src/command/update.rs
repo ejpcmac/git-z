@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//! The `update` subcommand.
+
 use clap::Parser;
 use eyre::{bail, Result};
 use inquire::Confirm;
@@ -35,8 +37,12 @@ pub struct Update;
 /// Usage errors of `git z init`.
 #[derive(Debug, Error)]
 pub enum UpdateError {
+    /// The version of the current configuration is unknown.
     #[error("Unknown configuration version {version}")]
-    UnknownVersion { version: String },
+    UnknownVersion {
+        /// The unknown version.
+        version: String,
+    },
 }
 
 impl super::Command for Update {
@@ -61,12 +67,14 @@ impl super::Command for Update {
     }
 }
 
+/// Updates the configuration from version 0.2-dev.3.
 fn update_from_v0_2_dev_3(updater: ConfigUpdater<Init>) -> Result<()> {
     updater.update_from_v0_2_dev_3()?.save()?;
     success!("The configuration has been updated.");
     Ok(())
 }
 
+/// Updates the configuration from version 0.2-dev.2.
 fn update_from_v0_2_dev_2(updater: ConfigUpdater<Init>) -> Result<()> {
     let switch_scopes_to_any = ask_scopes_any(&updater)?;
 
@@ -78,6 +86,7 @@ fn update_from_v0_2_dev_2(updater: ConfigUpdater<Init>) -> Result<()> {
     Ok(())
 }
 
+/// Updates the configuration from version 0.2-dev.1.
 fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
     let switch_scopes_to_any = ask_scopes_any(&updater)?;
     let empty_prefix_to_hash = ask_empty_prefix_to_hash(&updater)?;
@@ -90,6 +99,7 @@ fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
     Ok(())
 }
 
+/// Updates the configuration from version 0.2-dev.0.
 fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
     let switch_scopes_to_any = ask_scopes_any(&updater)?;
     let ask_for_ticket = ask_ticket_management()?;
@@ -111,6 +121,7 @@ fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
     Ok(())
 }
 
+/// Updates the configuration from version 0.1.
 fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
     let switch_scopes_to_any = ask_scopes_any(&updater)?;
     let ask_for_ticket = ask_ticket_management()?;
@@ -132,6 +143,7 @@ fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
     Ok(())
 }
 
+/// Asks the user whether to switch the scopes to `"any"`.
 fn ask_scopes_any(updater: &ConfigUpdater<Init>) -> Result<bool> {
     if updater.parsed_config().scopes.is_none() {
         return Ok(false);
@@ -149,6 +161,7 @@ fn ask_scopes_any(updater: &ConfigUpdater<Init>) -> Result<bool> {
     .prompt()?)
 }
 
+/// Asks the user whether a ticket should be asked for / required.
 fn ask_ticket_management() -> Result<AskForTicket> {
     hint!("");
     hint!("The ticket / issue number management has been updated. It is now possible to:");
@@ -177,6 +190,7 @@ fn ask_ticket_management() -> Result<AskForTicket> {
     Ok(ask_for_ticket)
 }
 
+/// Asks the user whether to convert an empty ticket prefix to `#`.
 fn ask_empty_prefix_to_hash(updater: &ConfigUpdater<Init>) -> Result<bool> {
     if updater.parsed_config().ticket.is_none() {
         return Ok(false);

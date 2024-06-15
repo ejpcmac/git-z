@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//! The Command Line Interface for git-z.
+
 mod commit;
 mod helpers;
 mod init;
@@ -47,6 +49,7 @@ pub enum GitZ {
     Update(Update),
 }
 
+/// A command.
 trait Command {
     /// Runs the command.
     fn run(&self) -> Result<()>;
@@ -76,6 +79,7 @@ enum ErrorHandling {
     Exit(i32),
 }
 
+/// Handles typical usage errors to enhance their output.
 fn handle_errors(error: Report) -> Result<()> {
     let handling = if let Some(error) = error.downcast_ref::<NotInGitWorktree>()
     {
@@ -115,6 +119,7 @@ fn handle_errors(error: Report) -> Result<()> {
     }
 }
 
+/// Prints proper error messages when running `git-z` outside of a Git worktree.
 fn handle_not_in_git_worktree(error: &NotInGitWorktree) -> ErrorHandling {
     match error {
         NotInGitWorktree::CannotRunGit(os_error) => {
@@ -134,6 +139,7 @@ fn handle_not_in_git_worktree(error: &NotInGitWorktree) -> ErrorHandling {
     ErrorHandling::Exit(1)
 }
 
+/// Prints proper error messages for configuration loading errors.
 fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     match error {
         FromTomlError::UnsupportedVersion(_) => {
@@ -149,6 +155,7 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     ErrorHandling::Exit(1)
 }
 
+/// Prints proper error messages for `git z init` usage errors.
 fn handle_init_error(error: &InitError) -> ErrorHandling {
     match error {
         InitError::ExistingConfig => {
@@ -160,6 +167,7 @@ fn handle_init_error(error: &InitError) -> ErrorHandling {
     ErrorHandling::Exit(1)
 }
 
+/// Prints proper error messages for `git z commit` usage errors.
 fn handle_commit_error(error: &CommitError) -> ErrorHandling {
     match error {
         CommitError::Git { status_code } => {
@@ -177,6 +185,7 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
     }
 }
 
+/// Prints proper error messages for `git z update` usage errors.
 fn handle_update_error(error: &UpdateError) -> ErrorHandling {
     match error {
         UpdateError::UnknownVersion { .. } => {
