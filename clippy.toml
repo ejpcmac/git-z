@@ -12,3 +12,5 @@ allowed-duplicate-crates = [
 ]
 
 allowed-idents-below-min-chars = ["c", "i", "j", "n", "s", "w", "x", "y", "z"]
+check-private-items = true
+doc-valid-idents = [".."]
