@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,10 +37,10 @@ pub struct Update;
 /// Usage errors of `git z init`.
 #[derive(Debug, Error)]
 pub enum UpdateError {
-    /// The version of the current configuration is unknown.
-    #[error("Unknown configuration version {version}")]
-    UnknownVersion {
-        /// The unknown version.
+    /// The version of the current configuration is not supported.
+    #[error("Unsupported configuration version {version}")]
+    UnsupportedVersion {
+        /// The unsupported version.
         version: String,
     },
     /// The version of the configuration is an old development one.
@@ -69,7 +69,7 @@ impl super::Command for Update {
                     gitz_version: String::from("0.2.0"),
                 })
             }
-            version => bail!(UpdateError::UnknownVersion {
+            version => bail!(UpdateError::UnsupportedVersion {
                 version: version.to_owned()
             }),
         }

@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -142,7 +142,7 @@ fn handle_not_in_git_worktree(error: &NotInGitWorktree) -> ErrorHandling {
 /// Prints proper error messages for configuration loading errors.
 fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     match error {
-        FromTomlError::UnsupportedVersion(_) => {
+        FromTomlError::UnsupportedVersion { .. } => {
             error!("{error}.");
             hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
         }
@@ -202,7 +202,7 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
 /// Prints proper error messages for `git z update` usage errors.
 fn handle_update_error(error: &UpdateError) -> ErrorHandling {
     match error {
-        UpdateError::UnknownVersion { .. } => {
+        UpdateError::UnsupportedVersion { .. } => {
             error!("{error}.");
             hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
         }

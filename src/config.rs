@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,10 +58,13 @@ pub enum LoadError {
 #[derive(Debug, Error)]
 pub enum FromTomlError {
     /// The version of the configuration is not supported.
-    #[error("Configuration version {0} is not supported")]
-    UnsupportedVersion(String),
+    #[error("Unsupported configuration version {version}")]
+    UnsupportedVersion {
+        /// The unsupported version.
+        version: String,
+    },
     /// The version of the configuration is an old development one.
-    #[error("Configuration version {version} is not supported")]
+    #[error("Unsupported development configuration version {version}")]
     UnsupportedDevelopmentVersion {
         /// The unsupported development version.
         version: String,
@@ -182,9 +185,9 @@ impl Config {
                     gitz_version: String::from("0.2.0"),
                 })
             }
-            version => {
-                Err(FromTomlError::UnsupportedVersion(version.to_owned()))
-            }
+            version => Err(FromTomlError::UnsupportedVersion {
+                version: version.to_owned(),
+            }),
         }
     }
 }
