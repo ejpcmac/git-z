@@ -8,6 +8,17 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+* [`git z commit`] Use fuzzy-finding when selecting types and scopes.
+* [Cargo] Update the dependencies.
+* [Rust] Update from 1.74.1 to 1.78.0.
+
+### Removed
+
+* [`git z update`] Remove support for updating from `0.2-dev.*` versions.
+* [Config] Remove support for `0.2-dev.*` versions.
+
 ## [0.2.0] - 2023-12-28
 
 ### Highlights
