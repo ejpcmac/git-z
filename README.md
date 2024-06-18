@@ -39,6 +39,9 @@ You can add `git-z` to your user profile by running:
 Alternatively, you can add `git-z` to your development environment by setting
 up a `flake.nix` like this:
 
+<details>
+<summary>Click to expand the example</summary>
+
 ```nix
 {
   inputs = {
@@ -70,9 +73,16 @@ up a `flake.nix` like this:
 }
 ```
 
+</details>
+
 ### Installation with Cargo
 
     cargo install git-z
+
+### Installation from a pre-built binary
+
+A Debian package and a Windows MSI installer are available at the bottom of [the
+release page](https://github.com/ejpcmac/git-z/releases/latest).
 
 ## Usage
 
