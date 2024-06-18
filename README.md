@@ -54,10 +54,10 @@ up a `flake.nix` like this:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
 
-      perSystem = { system, ... }:
+      perSystem = { inputs', ... }:
         let
-          pkgs = inputs.nixpkgs.legacyPackages.${system};
-          git-z = inputs.git-z.packages.${system}.git-z;
+          pkgs = inputs'.nixpkgs.legacyPackages;
+          git-z = inputs'.git-z.packages.git-z;
         in
         {
           devShells.default = pkgs.mkShell {
