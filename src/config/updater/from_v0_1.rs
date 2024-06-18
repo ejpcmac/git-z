@@ -21,6 +21,7 @@
 // hence should lead to a panic.
 #![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
+use regex::Regex;
 use toml_edit::{Document, Item, Table};
 
 use super::{super::split_type_and_doc, common, AskForTicket};
@@ -36,6 +37,15 @@ const OLD_TYPES_DOC: &str = "
 /// The old configuration for `scopes`.
 const OLD_SCOPES_DOC: &str = "
 #The list of valid scopes.
+";
+
+/// The old documentation for `ticket.prefixes`.
+pub const OLD_TICKET_PREFIXES_DOC: &str = "# The list of valid ticket prefixes.
+";
+
+/// The old documentation for `templates.commit`.
+pub const OLD_TEMPLATES_COMMIT_DOC: &str = "# The commit message template, written with the Tera [1] templating engine.
+# [1] https://tera.netlify.app/
 ";
 
 /// Updates the configuration from version 0.1.
@@ -86,7 +96,7 @@ fn update_types(toml_config: &mut Document) {
     // Update the documentation.
     types
         .decor_mut()
-        .set_prefix(doc.replace(OLD_TYPES_DOC, common::NEW_TYPES_DOC));
+        .set_prefix(doc.replace(OLD_TYPES_DOC, common::TYPES_DOC));
 
     // Replace the old configuration with the new one.
     toml_config.insert("types", Item::Table(types));
@@ -118,7 +128,7 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
     // Update the documentation.
     scopes
         .decor_mut()
-        .set_prefix(doc.replace(OLD_SCOPES_DOC, common::NEW_SCOPES_DOC));
+        .set_prefix(doc.replace(OLD_SCOPES_DOC, common::SCOPES_DOC));
     scopes
         .key_decor_mut("accept")
         .expect("No `scopes.accept` key")
@@ -148,7 +158,7 @@ fn update_ticket(
     // Update the value itself.
     let mut prefixes = value.clone();
     if empty_prefix_to_hash {
-        common::empty_prefix_to_hash(&mut prefixes);
+        replace_empty_prefix_with_hash(&mut prefixes);
     }
 
     // Update the configuration format.
@@ -165,14 +175,31 @@ fn update_ticket(
     ticket
         .key_decor_mut("prefixes")
         .expect("No `ticket.prefixes` key")
-        .set_prefix(doc.trim_start().replace(
-            common::OLD_TICKET_PREFIXES_DOC,
-            common::NEW_TICKET_PREFIXES_DOC,
-        ));
+        .set_prefix(
+            doc.trim_start()
+                .replace(OLD_TICKET_PREFIXES_DOC, common::TICKET_PREFIXES_DOC),
+        );
 
     // Replace the old configuration with the new one.
     toml_config.remove("ticket_prefixes");
     toml_config.insert("ticket", Item::Table(ticket));
+}
+
+/// Replaces an empty ticket prefix by `#`.
+fn replace_empty_prefix_with_hash(prefixes: &mut Item) {
+    let empty_prefix = prefixes
+        .as_array_mut()
+        .expect("The `ticket.prefixes` key is not an array")
+        .iter_mut()
+        .find(|item| {
+            item.as_str()
+                .expect("Items in `ticket.prefixes are not strings")
+                .is_empty()
+        });
+
+    if let Some(value) = empty_prefix {
+        *value = "#".into();
+    }
 }
 
 /// Removes the configuration for ticket references.
@@ -197,9 +224,9 @@ fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
 
     // Update the template itself.
     let template = value.as_str().expect("The `template` key is not a string");
-    let template = common::add_ticket_condition_to_commit_template(template);
+    let template = add_ticket_condition_to_commit_template(template);
     let template = if remove_hash_prefix {
-        common::remove_hash_ticket_prefix_from_commit_template(&template)
+        remove_hash_ticket_prefix_from_commit_template(&template)
     } else {
         template
     };
@@ -213,12 +240,28 @@ fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
     templates
         .key_decor_mut("commit")
         .expect("No `commit` key")
-        .set_prefix(doc.trim_start().replace(
-            common::OLD_TEMPLATES_COMMIT_DOC,
-            common::NEW_TEMPLATES_COMMIT_DOC,
-        ));
+        .set_prefix(
+            doc.trim_start().replace(
+                OLD_TEMPLATES_COMMIT_DOC,
+                common::TEMPLATES_COMMIT_DOC,
+            ),
+        );
 
     // Replace the old configuration with the new one.
     toml_config.remove("template");
     toml_config.insert("templates", Item::Table(templates));
+}
+
+/// Adds a condition around the usage of the `ticket` variable.
+fn add_ticket_condition_to_commit_template(template: &str) -> String {
+    // NOTE(unwrap): This regex is known to be valid.
+    #[allow(clippy::unwrap_used)]
+    let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").unwrap();
+    re.replace(template, "{% if ticket %}$1{% endif %}")
+        .to_string()
+}
+
+/// Removes the `#` prefix before the `ticket` variable.
+fn remove_hash_ticket_prefix_from_commit_template(template: &str) -> String {
+    template.replace("#{{ ticket }}", "{{ ticket }}")
 }

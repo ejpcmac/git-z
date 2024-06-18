@@ -146,6 +146,20 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
             error!("{error}.");
             hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
         }
+        FromTomlError::UnsupportedDevelopmentVersion {
+            gitz_version, ..
+        } => {
+            error!("{error}.");
+            hint!(
+                "\n{}\n{}\n{}\n{}\n{}\n{}",
+                format_args!("Your {CONFIG_FILE_NAME} has been created by a development version of git-z."),
+                "However, configurations produced by a development version are only",
+                "supported by the immediately following release.\n",
+                format_args!("To update from this version, you can install git-z {gitz_version},"),
+                "run `git z update`, then update to the latest version and run",
+                "`git z update` again."
+            );
+        }
         FromTomlError::ParseError(parse_error) => {
             error!("Invalid configuration in {CONFIG_FILE_NAME}.");
             hint!("\n{parse_error}");
@@ -191,6 +205,18 @@ fn handle_update_error(error: &UpdateError) -> ErrorHandling {
         UpdateError::UnknownVersion { .. } => {
             error!("{error}.");
             hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
+        }
+        UpdateError::UnsupportedDevelopmentVersion { gitz_version, .. } => {
+            error!("{error}.");
+            hint!(
+                "\n{}\n{}\n{}\n{}\n{}\n{}",
+                "`git z update` can update a configuration from any previous release.",
+                "However, configurations produced by a development version can only be",
+                "updated by the immediately following release.\n",
+                format_args!("To update from this version, you can install git-z {gitz_version},"),
+                "run `git z update`, then update to the latest version and run",
+                "`git z update` again."
+            );
         }
     }
 

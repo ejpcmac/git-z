@@ -19,10 +19,6 @@ pub mod updater;
 
 mod v0_1;
 mod v0_2;
-mod v0_2_dev_0;
-mod v0_2_dev_1;
-mod v0_2_dev_2;
-mod v0_2_dev_3;
 
 // NOTE: When you switch to a new version:
 //
@@ -64,6 +60,14 @@ pub enum FromTomlError {
     /// The version of the configuration is not supported.
     #[error("Configuration version {0} is not supported")]
     UnsupportedVersion(String),
+    /// The version of the configuration is an old development one.
+    #[error("Configuration version {version} is not supported")]
+    UnsupportedDevelopmentVersion {
+        /// The unsupported development version.
+        version: String,
+        /// The release of `git-z` supporting updates from this version.
+        gitz_version: String,
+    },
     /// The configuration file cannot be parsed.
     #[error("Failed to parse into a valid configuration")]
     ParseError(#[from] toml::de::Error),
@@ -167,25 +171,16 @@ impl Config {
 
         match minimal_config.version.as_str() {
             VERSION => Ok(toml::from_str(toml)?),
-            "0.2-dev.3" => {
-                let config: v0_2_dev_3::Config = toml::from_str(toml)?;
-                Ok(config.into())
-            }
-            "0.2-dev.2" => {
-                let config: v0_2_dev_2::Config = toml::from_str(toml)?;
-                Ok(config.into())
-            }
-            "0.2-dev.1" => {
-                let config: v0_2_dev_1::Config = toml::from_str(toml)?;
-                Ok(config.into())
-            }
-            "0.2-dev.0" => {
-                let config: v0_2_dev_0::Config = toml::from_str(toml)?;
-                Ok(config.into())
-            }
             "0.1" => {
                 let config: v0_1::Config = toml::from_str(toml)?;
                 Ok(config.into())
+            }
+            version @ ("0.2-dev.0" | "0.2-dev.1" | "0.2-dev.2"
+            | "0.2-dev.3") => {
+                Err(FromTomlError::UnsupportedDevelopmentVersion {
+                    version: version.to_owned(),
+                    gitz_version: String::from("0.2.0"),
+                })
             }
             version => {
                 Err(FromTomlError::UnsupportedVersion(version.to_owned()))
@@ -211,137 +206,6 @@ fn repo_root() -> Result<PathBuf, RepoRootError> {
     } else {
         let git_error = String::from_utf8(git_rev_parse.stderr)?;
         Err(RepoRootError::GitError(git_error.trim().to_owned()))
-    }
-}
-
-impl From<v0_2_dev_3::Config> for Config {
-    fn from(old: v0_2_dev_3::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: old.ticket.map(Into::into),
-            templates: old.templates.into(),
-        }
-    }
-}
-
-impl From<v0_2_dev_3::Scopes> for Scopes {
-    fn from(old: v0_2_dev_3::Scopes) -> Self {
-        match old {
-            v0_2_dev_3::Scopes::Any => Self::Any,
-            v0_2_dev_3::Scopes::List { list } => Self::List { list },
-        }
-    }
-}
-
-impl From<v0_2_dev_3::Ticket> for Ticket {
-    fn from(old: v0_2_dev_3::Ticket) -> Self {
-        Self {
-            required: old.required,
-            prefixes: old.prefixes,
-        }
-    }
-}
-
-impl From<v0_2_dev_3::Templates> for Templates {
-    fn from(old: v0_2_dev_3::Templates) -> Self {
-        Self { commit: old.commit }
-    }
-}
-
-impl From<v0_2_dev_2::Config> for Config {
-    fn from(old: v0_2_dev_2::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: old.ticket.map(Into::into),
-            templates: old.templates.into(),
-        }
-    }
-}
-
-impl From<v0_2_dev_2::Scopes> for Scopes {
-    fn from(old: v0_2_dev_2::Scopes) -> Self {
-        match old {
-            v0_2_dev_2::Scopes::List { list } => Self::List { list },
-        }
-    }
-}
-
-impl From<v0_2_dev_2::Ticket> for Ticket {
-    fn from(old: v0_2_dev_2::Ticket) -> Self {
-        Self {
-            required: old.required,
-            prefixes: old.prefixes,
-        }
-    }
-}
-
-impl From<v0_2_dev_2::Templates> for Templates {
-    fn from(old: v0_2_dev_2::Templates) -> Self {
-        Self { commit: old.commit }
-    }
-}
-
-impl From<v0_2_dev_1::Config> for Config {
-    fn from(old: v0_2_dev_1::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: old.ticket.map(Into::into),
-            templates: old.templates.into(),
-        }
-    }
-}
-
-impl From<v0_2_dev_1::Scopes> for Scopes {
-    fn from(old: v0_2_dev_1::Scopes) -> Self {
-        match old {
-            v0_2_dev_1::Scopes::List { list } => Self::List { list },
-        }
-    }
-}
-
-impl From<v0_2_dev_1::Ticket> for Ticket {
-    fn from(old: v0_2_dev_1::Ticket) -> Self {
-        Self {
-            required: old.required,
-            prefixes: old.prefixes,
-        }
-    }
-}
-
-impl From<v0_2_dev_1::Templates> for Templates {
-    fn from(old: v0_2_dev_1::Templates) -> Self {
-        Self { commit: old.commit }
-    }
-}
-
-impl From<v0_2_dev_0::Config> for Config {
-    fn from(old: v0_2_dev_0::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: Some(Ticket {
-                required: true,
-                prefixes: old.ticket.prefixes,
-            }),
-            templates: Templates {
-                commit: old.templates.commit,
-            },
-        }
-    }
-}
-
-impl From<v0_2_dev_0::Scopes> for Scopes {
-    fn from(old: v0_2_dev_0::Scopes) -> Self {
-        match old {
-            v0_2_dev_0::Scopes::List { list } => Self::List { list },
-        }
     }
 }
 

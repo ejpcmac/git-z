@@ -43,6 +43,14 @@ pub enum UpdateError {
         /// The unknown version.
         version: String,
     },
+    /// The version of the configuration is an old development one.
+    #[error("Unsupported development configuration version {version}")]
+    UnsupportedDevelopmentVersion {
+        /// The unsupported development version.
+        version: String,
+        /// The release of `git-z` supporting updates from this version.
+        gitz_version: String,
+    },
 }
 
 impl super::Command for Update {
@@ -53,11 +61,14 @@ impl super::Command for Update {
 
         match updater.config_version() {
             VERSION => success!("The configuration is already up to date."),
-            "0.2-dev.3" => update_from_v0_2_dev_3(updater)?,
-            "0.2-dev.2" => update_from_v0_2_dev_2(updater)?,
-            "0.2-dev.1" => update_from_v0_2_dev_1(updater)?,
-            "0.2-dev.0" => update_from_v0_2_dev_0(updater)?,
             "0.1" => update_from_v0_1(updater)?,
+            version @ ("0.2-dev.0" | "0.2-dev.1" | "0.2-dev.2"
+            | "0.2-dev.3") => {
+                bail!(UpdateError::UnsupportedDevelopmentVersion {
+                    version: version.to_owned(),
+                    gitz_version: String::from("0.2.0"),
+                })
+            }
             version => bail!(UpdateError::UnknownVersion {
                 version: version.to_owned()
             }),
@@ -65,60 +76,6 @@ impl super::Command for Update {
 
         Ok(())
     }
-}
-
-/// Updates the configuration from version 0.2-dev.3.
-fn update_from_v0_2_dev_3(updater: ConfigUpdater<Init>) -> Result<()> {
-    updater.update_from_v0_2_dev_3()?.save()?;
-    success!("The configuration has been updated.");
-    Ok(())
-}
-
-/// Updates the configuration from version 0.2-dev.2.
-fn update_from_v0_2_dev_2(updater: ConfigUpdater<Init>) -> Result<()> {
-    let switch_scopes_to_any = ask_scopes_any(&updater)?;
-
-    updater
-        .update_from_v0_2_dev_2(switch_scopes_to_any)?
-        .save()?;
-
-    success!("The configuration has been updated.");
-    Ok(())
-}
-
-/// Updates the configuration from version 0.2-dev.1.
-fn update_from_v0_2_dev_1(updater: ConfigUpdater<Init>) -> Result<()> {
-    let switch_scopes_to_any = ask_scopes_any(&updater)?;
-    let empty_prefix_to_hash = ask_empty_prefix_to_hash(&updater)?;
-
-    updater
-        .update_from_v0_2_dev_1(switch_scopes_to_any, empty_prefix_to_hash)?
-        .save()?;
-
-    success!("The configuration has been updated.");
-    Ok(())
-}
-
-/// Updates the configuration from version 0.2-dev.0.
-fn update_from_v0_2_dev_0(updater: ConfigUpdater<Init>) -> Result<()> {
-    let switch_scopes_to_any = ask_scopes_any(&updater)?;
-    let ask_for_ticket = ask_ticket_management()?;
-
-    let empty_prefix_to_hash = match ask_for_ticket {
-        AskForTicket::Ask { .. } => ask_empty_prefix_to_hash(&updater)?,
-        AskForTicket::DontAsk => false,
-    };
-
-    updater
-        .update_from_v0_2_dev_0(
-            switch_scopes_to_any,
-            ask_for_ticket,
-            empty_prefix_to_hash,
-        )?
-        .save()?;
-
-    success!("The configuration has been updated.");
-    Ok(())
 }
 
 /// Updates the configuration from version 0.1.
