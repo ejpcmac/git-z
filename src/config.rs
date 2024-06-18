@@ -135,7 +135,7 @@ impl Default for Config {
             "ide" => "updates the IDE configuration",
             "ci" => "updates the CI configuration",
             "revert" => "reverts a previous commit",
-            "chore" => "updates something that is not covered by any other type",
+            "chore" => "updates or removes something that is not covered by any other type",
             "wip" => "work in progress / to be rebased and squashed later",
             "debug" => "commit used for debugging purposes, not to be integrated",
         };
