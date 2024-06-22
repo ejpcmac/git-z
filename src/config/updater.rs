@@ -28,6 +28,7 @@ use super::{
 };
 
 /// A configuration updater.
+#[must_use]
 pub struct ConfigUpdater<State> {
     /// The parsed configuration.
     parsed_config: Config,
