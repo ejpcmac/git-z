@@ -1,6 +1,5 @@
 allowed-duplicate-crates = [
     "bitflags",
-    "toml_edit",
     "windows-sys",
     "windows-targets",
     "windows_aarch64_gnullvm",
@@ -10,7 +9,6 @@ allowed-duplicate-crates = [
     "windows_x86_64_gnu",
     "windows_x86_64_gnullvm",
     "windows_x86_64_msvc",
-    "winnow",
 ]
 
 allowed-idents-below-min-chars = ["c", "i", "j", "n", "s", "w", "x", "y", "z"]

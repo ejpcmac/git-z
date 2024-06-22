@@ -21,7 +21,7 @@ mod from_v0_1;
 use std::{fs, io, marker::PhantomData};
 
 use thiserror::Error;
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 
 use super::{
     config_file, Config, ConfigFileError, FromTomlError, CONFIG_FILE_NAME,
@@ -33,7 +33,7 @@ pub struct ConfigUpdater<State> {
     /// The parsed configuration.
     parsed_config: Config,
     /// The editable TOML document.
-    toml_config: Document,
+    toml_config: DocumentMut,
     /// The state of the updater.
     _state: PhantomData<State>,
 }

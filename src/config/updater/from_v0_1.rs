@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
 use regex::Regex;
-use toml_edit::{Document, Item, Table};
+use toml_edit::{DocumentMut, Item, Table};
 
 use super::{super::split_type_and_doc, common, AskForTicket};
 
@@ -50,7 +50,7 @@ pub const OLD_TEMPLATES_COMMIT_DOC: &str = "# The commit message template, writt
 
 /// Updates the configuration from version 0.1.
 pub fn update(
-    toml_config: &mut Document,
+    toml_config: &mut DocumentMut,
     switch_scopes_to_any: bool,
     ask_for_ticket: AskForTicket,
     empty_prefix_to_hash: bool,
@@ -70,12 +70,12 @@ pub fn update(
 }
 
 /// Updates the configuration for the types.
-fn update_types(toml_config: &mut Document) {
+fn update_types(toml_config: &mut DocumentMut) {
     let (key, value) =
         toml_config.get_key_value("types").expect("No `types` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `types`")
         .as_str()
@@ -103,13 +103,13 @@ fn update_types(toml_config: &mut Document) {
 }
 
 /// Updates the configuration for scopes.
-fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
+fn update_scopes(toml_config: &mut DocumentMut, switch_scopes_to_any: bool) {
     let (key, value) = toml_config
         .get_key_value("scopes")
         .expect("No `scopes` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `scopes`")
         .as_str()
@@ -130,8 +130,9 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
         .decor_mut()
         .set_prefix(doc.replace(OLD_SCOPES_DOC, common::SCOPES_DOC));
     scopes
-        .key_decor_mut("accept")
+        .key_mut("accept")
         .expect("No `scopes.accept` key")
+        .leaf_decor_mut()
         .set_prefix(common::SCOPES_ACCEPT_DOC);
 
     // Replace the old configuration with the new one.
@@ -140,7 +141,7 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
 
 /// Updates the configuration for ticket references.
 fn update_ticket(
-    toml_config: &mut Document,
+    toml_config: &mut DocumentMut,
     required: bool,
     empty_prefix_to_hash: bool,
 ) {
@@ -149,7 +150,7 @@ fn update_ticket(
         .expect("No `ticket_prefixes` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `ticket_prefixes`")
         .as_str()
@@ -169,12 +170,14 @@ fn update_ticket(
     // Update the documentation.
     ticket.decor_mut().set_prefix(common::TICKET_DOC);
     ticket
-        .key_decor_mut("required")
+        .key_mut("required")
         .expect("No `ticket.required` key")
+        .leaf_decor_mut()
         .set_prefix(common::TICKET_REQUIRED_DOC);
     ticket
-        .key_decor_mut("prefixes")
+        .key_mut("prefixes")
         .expect("No `ticket.prefixes` key")
+        .leaf_decor_mut()
         .set_prefix(
             doc.trim_start()
                 .replace(OLD_TICKET_PREFIXES_DOC, common::TICKET_PREFIXES_DOC),
@@ -203,18 +206,18 @@ fn replace_empty_prefix_with_hash(prefixes: &mut Item) {
 }
 
 /// Removes the configuration for ticket references.
-fn remove_ticket(toml_config: &mut Document) {
+fn remove_ticket(toml_config: &mut DocumentMut) {
     toml_config.remove("ticket_prefixes");
 }
 
 /// Updates the configuration for templates.
-fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
+fn update_templates(toml_config: &mut DocumentMut, remove_hash_prefix: bool) {
     let (key, value) = toml_config
         .get_key_value("template")
         .expect("No `template` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `template`")
         .as_str()
@@ -238,8 +241,9 @@ fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
     // Update the documentation.
     templates.decor_mut().set_prefix(common::TEMPLATES_DOC);
     templates
-        .key_decor_mut("commit")
+        .key_mut("commit")
         .expect("No `commit` key")
+        .leaf_decor_mut()
         .set_prefix(
             doc.trim_start().replace(
                 OLD_TEMPLATES_COMMIT_DOC,

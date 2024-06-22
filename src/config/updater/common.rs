@@ -21,7 +21,7 @@
 // hence should lead to a panic.
 #![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
-use toml_edit::{Document, Item};
+use toml_edit::{DocumentMut, Item};
 
 use crate::config::VERSION;
 
@@ -89,7 +89,7 @@ pub const TEMPLATES_COMMIT_DOC: &str = "# The commit template.
 ";
 
 /// Updates the version.
-pub fn update_version(toml_config: &mut Document) {
+pub fn update_version(toml_config: &mut DocumentMut) {
     let version = toml_config.get_mut("version").expect("No `version` key");
     *version = Item::Value(VERSION.into());
 }
