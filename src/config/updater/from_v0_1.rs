@@ -265,3 +265,180 @@ fn add_ticket_condition_to_commit_template(template: &str) -> String {
 fn remove_hash_ticket_prefix_from_commit_template(template: &str) -> String {
     template.replace("#{{ ticket }}", "{{ ticket }}")
 }
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::pedantic, clippy::restriction)]
+
+    use super::*;
+
+    const V0_1_STANDARD: &str =
+        include_str!("../../../tests/res/config/v0_1_standard.toml");
+
+    const V0_1_USER_COMMENTS: &str =
+        include_str!("../../../tests/res/config/v0_1_user-comments.toml");
+
+    const V0_1_DOC_AND_USER_COMMENTS: &str = include_str!(
+        "../../../tests/res/config/v0_1_doc-and-user-comments.toml"
+    );
+
+    const V0_2_STANDARD: &str =
+        include_str!("../../../tests/res/config/v0_2_standard.toml");
+
+    const V0_2_SCOPES_ANY: &str =
+        include_str!("../../../tests/res/config/v0_2_scopes-any.toml");
+
+    const V0_2_TICKET_NOT_REQUIRED: &str =
+        include_str!("../../../tests/res/config/v0_2_ticket-not-required.toml");
+
+    const V0_2_TICKET_NOT_ASKED_FOR: &str = include_str!(
+        "../../../tests/res/config/v0_2_ticket-not-asked-for.toml"
+    );
+
+    const V0_2_KEEP_EMPTY_PREFIX: &str =
+        include_str!("../../../tests/res/config/v0_2_keep-empty-prefix.toml");
+
+    const V0_2_USER_COMMENTS: &str =
+        include_str!("../../../tests/res/config/v0_2_user-comments.toml");
+
+    const V0_2_DOC_AND_USER_COMMENTS: &str = include_str!(
+        "../../../tests/res/config/v0_2_doc-and-user-comments.toml"
+    );
+
+    #[test]
+    fn test_update_works_with_standard_config() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_STANDARD;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_switch_scopes_to_any() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_SCOPES_ANY;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            true,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_ask_for_ticket_without_requiring_it() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_TICKET_NOT_REQUIRED;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: false },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_omit_to_ask_for_a_ticket() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_TICKET_NOT_ASKED_FOR;
+
+        let mut document = source.parse().unwrap();
+        update(&mut document, false, AskForTicket::DontAsk, true);
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_skip_updating_an_empty_ticket_prefix_to_hash() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_KEEP_EMPTY_PREFIX;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            false,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_preserves_user_comments() {
+        let source = V0_1_USER_COMMENTS;
+        let expected = V0_2_USER_COMMENTS;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_updates_default_doc_when_mixed_with_user_comments() {
+        let source = V0_1_DOC_AND_USER_COMMENTS;
+        let expected = V0_2_DOC_AND_USER_COMMENTS;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_add_ticket_condition_makes_reference_conditional_on_refs_footer() {
+        let source = "{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}\n\
+            \n\
+            # Feel free to enter a longer description here.\n\
+            \n\
+            Refs: {{ ticket }}\n\
+            \n\
+            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}";
+
+        let expected = "{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}\n\
+            \n\
+            # Feel free to enter a longer description here.\n\
+            \n\
+            {% if ticket %}Refs: {{ ticket }}{% endif %}\n\
+            \n\
+            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}";
+
+        let actual = add_ticket_condition_to_commit_template(source);
+
+        assert_eq!(actual, expected);
+    }
+}

@@ -1,0 +1,42 @@
+version = "0.1"
+
+# This is some custom comment.
+# The available types of commits.
+#
+# This is a list of types (1 word) and their description, separated by one or
+# more spaces.
+#
+# Some more custom description.
+types = [
+    "type         a first description",
+    "second_type  another description",
+]
+
+# The list of valid scopes. Some custom details.
+scopes = [
+    # First two scopes
+    "a",
+    "b",
+
+    # Third scope
+    "c",
+]
+
+# The list of valid ticket prefixes.
+#
+# Both are for GitHub.
+ticket_prefixes = ["", "GH-"]
+
+# The commit message template, written with the Tera [1] templating engine.
+# [1] https://tera.netlify.app/
+#
+# Always ask before changing that.
+template = """
+{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+
+# Feel free to enter a longer description here.
+
+Refs: {{ ticket }}
+
+{% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+"""
