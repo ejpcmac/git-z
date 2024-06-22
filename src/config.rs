@@ -156,7 +156,7 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Loads the configuration the repo or fallbacks to the default.
+    /// Loads the configuration of the repo or fallbacks to the default.
     pub fn load() -> Result<Self, LoadError> {
         match fs::read_to_string(config_file()?) {
             Ok(config) => Ok(Self::from_toml(&config)?),
