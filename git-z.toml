@@ -60,6 +60,7 @@ list = [
     "config",
     "helpers",
     "lib",
+    "updater",
 
     # Commands
     "c:commit",

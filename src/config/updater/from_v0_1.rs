@@ -36,7 +36,7 @@ const OLD_TYPES_DOC: &str = "
 
 /// The old configuration for `scopes`.
 const OLD_SCOPES_DOC: &str = "
-#The list of valid scopes.
+# The list of valid scopes.
 ";
 
 /// The old documentation for `ticket.prefixes`.

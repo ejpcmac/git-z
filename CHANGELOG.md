@@ -22,6 +22,12 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [`git z update`] Remove support for updating from `0.2-dev.*` versions.
 * [Config] Remove support for `0.2-dev.*` versions.
 
+### Fixed
+
+* [Updater] Properly update the documentation for scopes. Previously, it was not
+    updating the documentation above the `scopes` table, keeping the one form
+    version 0.1.
+
 ## [0.2.0] - 2023-12-28
 
 ### Highlights
