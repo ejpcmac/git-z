@@ -1,0 +1,19 @@
+version = "0.2"
+
+[types]
+type = "description"
+
+[scopes]
+accept = "list"
+list = ["scope1", "scope2"]
+
+[templates]
+commit = """
+{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+
+# Feel free to enter a longer description here.
+
+{% if ticket %}Refs: {{ ticket }}{% endif %}
+
+{% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+"""
