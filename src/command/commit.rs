@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -171,7 +171,7 @@ fn ask_scope(config: &Config) -> Result<Option<String>> {
                 "{}, {}, {}",
                 "↑↓ to move, enter to select, type to filter",
                 "ESC to leave empty",
-                "update `commits.toml` to add new scopes"
+                "update `git-z.toml` to add new scopes"
             );
 
             Ok(Select::new("Scope", list.clone())

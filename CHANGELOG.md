@@ -24,6 +24,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+* [`git z commit`] Use the proper configuration name in hints.
 * [Updater] Properly update the documentation for scopes. Previously, it was not
     updating the documentation above the `scopes` table, keeping the one form
     version 0.1.
