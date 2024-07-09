@@ -14,6 +14,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [Config] Update the default description for the `chore` type so that it states
     this is used to remove code as well.
 * [Config] Align error messages between the config and the updater.
+* [`git z commit`] Pass the extra arguments to `git commit` before `-em
+    <message>`.
 * [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.1 to 1.78.0.
 

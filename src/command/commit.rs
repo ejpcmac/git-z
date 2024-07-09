@@ -91,8 +91,9 @@ impl super::Command for Commit {
             println!("{message}");
         } else {
             let status = Command::new("git")
-                .args(["commit", "-em", &message])
+                .arg("commit")
                 .args(&self.extra_args)
+                .args(["-em", &message])
                 .status()?;
 
             if !status.success() {
