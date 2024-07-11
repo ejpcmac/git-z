@@ -1,0 +1,31 @@
+version = "0.1"
+
+# Custom description for types.
+types = [
+    "type         a first description",
+    "second_type  another description",
+]
+
+# Custom description for scopes.
+scopes = [
+    # First two scopes
+    "a",
+    "b",
+
+    # Third scope
+    "c",
+]
+
+# Custom description for prefixes.
+ticket_prefixes = ["", "GH-"]
+
+# Custom description for the commit template.
+template = """
+{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+
+# Feel free to enter a longer description here.
+
+Refs: {{ ticket }}
+
+{% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+"""

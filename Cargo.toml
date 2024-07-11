@@ -43,7 +43,14 @@ serde = { version = "1", features = ["derive"] }
 tera = "1"
 thiserror = "1"
 toml = "0.8"
-toml_edit = "0.21"
+toml_edit = "0.22"
+
+[dev-dependencies]
+assert_cmd = "2"
+assert_fs = "1"
+
+[target.'cfg(not(windows))'.dev-dependencies]
+rexpect = "0.5"
 
 [lints.rust]
 # Forbidden

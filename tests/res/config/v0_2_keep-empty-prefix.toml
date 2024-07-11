@@ -4,23 +4,8 @@ version = "0.2"
 #
 # Types are shown in the dialog in the order they appear in this configuration.
 [types]
-feat = "adds a new feature in the code"
-sec = "patches a security issue"
-fix = "patches a code bug"
-perf = "enhances the performance, without adding a new feature"
-refactor = "refactors the code"
-test = "adds, updates or removes tests only"
-docs = "updates the documentation only"
-style = "updates the style, like running clang-format or changing headers"
-deps = "adds, updates or removes external dependencies"
-build = "updates the build system or build scripts"
-env = "updates the development environment"
-ide = "updates the IDE configuration"
-ci = "updates the CI configuration"
-revert = "reverts a previous commit"
-chore = "updates or removes something that is not covered by any other type"
-wip = "work in progress / to be rebased and squashed later"
-debug = "commit used for debugging purposes, not to be integrated"
+type = "a first description"
+second_type = "another description"
 
 # The accepted scopes.
 #
@@ -32,40 +17,12 @@ debug = "commit used for debugging purposes, not to be integrated"
 # of valid scopes is required.
 accept = "list"
 list = [
-    # General scopes
-    "cargo",
-    "changelog",
-    "clippy",
-    "contributing",
-    "deb",
-    "devshell",
-    "direnv",
-    "editorconfig",
-    "flake",
-    "git",
-    "git-z",
-    "readme",
-    "rustfmt",
-    "toolchain",
-    "version",
-    "vscode",
-    "wix",
+    # First two scopes
+    "a",
+    "b",
 
-    # Binary
-    "main",
-
-    # Lib
-    "cli",
-    "command",
-    "config",
-    "helpers",
-    "lib",
-    "updater",
-
-    # Commands
-    "c:commit",
-    "c:init",
-    "c:update",
+    # Third scope
+    "c",
 ]
 
 # The ticket / issue reference configuration.
@@ -74,11 +31,11 @@ list = [
 [ticket]
 # Set to true to require a ticket number.
 # Set to false to ask for a ticket without requiring it.
-required = false
+required = true
 # The list of valid ticket prefixes.
 #
 # Can be a `#` for GitHub / GitLab issues, or a Jira key for instance.
-prefixes = ["#"]
+prefixes = ["", "GH-"]
 
 # Templates written with the Tera [1] templating engine.
 #

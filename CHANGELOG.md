@@ -11,6 +11,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 * [`git z commit`] Use fuzzy-finding when selecting types and scopes.
+* [Config] Update the default description for the `chore` type so that it states
+    this is used to remove code as well.
+* [Config] Align error messages between the config and the updater.
+* [`git z commit`] Pass the extra arguments to `git commit` before `-em
+    <message>`.
 * [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.1 to 1.78.0.
 
@@ -18,6 +23,13 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 * [`git z update`] Remove support for updating from `0.2-dev.*` versions.
 * [Config] Remove support for `0.2-dev.*` versions.
+
+### Fixed
+
+* [`git z commit`] Use the proper configuration name in hints.
+* [Updater] Properly update the documentation for scopes. Previously, it was not
+    updating the documentation above the `scopes` table, keeping the one form
+    version 0.1.
 
 ## [0.2.0] - 2023-12-28
 

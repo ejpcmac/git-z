@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
 use regex::Regex;
-use toml_edit::{Document, Item, Table};
+use toml_edit::{DocumentMut, Item, Table};
 
 use super::{super::split_type_and_doc, common, AskForTicket};
 
@@ -36,7 +36,7 @@ const OLD_TYPES_DOC: &str = "
 
 /// The old configuration for `scopes`.
 const OLD_SCOPES_DOC: &str = "
-#The list of valid scopes.
+# The list of valid scopes.
 ";
 
 /// The old documentation for `ticket.prefixes`.
@@ -50,7 +50,7 @@ pub const OLD_TEMPLATES_COMMIT_DOC: &str = "# The commit message template, writt
 
 /// Updates the configuration from version 0.1.
 pub fn update(
-    toml_config: &mut Document,
+    toml_config: &mut DocumentMut,
     switch_scopes_to_any: bool,
     ask_for_ticket: AskForTicket,
     empty_prefix_to_hash: bool,
@@ -70,12 +70,12 @@ pub fn update(
 }
 
 /// Updates the configuration for the types.
-fn update_types(toml_config: &mut Document) {
+fn update_types(toml_config: &mut DocumentMut) {
     let (key, value) =
         toml_config.get_key_value("types").expect("No `types` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `types`")
         .as_str()
@@ -103,13 +103,13 @@ fn update_types(toml_config: &mut Document) {
 }
 
 /// Updates the configuration for scopes.
-fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
+fn update_scopes(toml_config: &mut DocumentMut, switch_scopes_to_any: bool) {
     let (key, value) = toml_config
         .get_key_value("scopes")
         .expect("No `scopes` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `scopes`")
         .as_str()
@@ -130,8 +130,9 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
         .decor_mut()
         .set_prefix(doc.replace(OLD_SCOPES_DOC, common::SCOPES_DOC));
     scopes
-        .key_decor_mut("accept")
+        .key_mut("accept")
         .expect("No `scopes.accept` key")
+        .leaf_decor_mut()
         .set_prefix(common::SCOPES_ACCEPT_DOC);
 
     // Replace the old configuration with the new one.
@@ -140,7 +141,7 @@ fn update_scopes(toml_config: &mut Document, switch_scopes_to_any: bool) {
 
 /// Updates the configuration for ticket references.
 fn update_ticket(
-    toml_config: &mut Document,
+    toml_config: &mut DocumentMut,
     required: bool,
     empty_prefix_to_hash: bool,
 ) {
@@ -149,7 +150,7 @@ fn update_ticket(
         .expect("No `ticket_prefixes` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `ticket_prefixes`")
         .as_str()
@@ -169,12 +170,14 @@ fn update_ticket(
     // Update the documentation.
     ticket.decor_mut().set_prefix(common::TICKET_DOC);
     ticket
-        .key_decor_mut("required")
+        .key_mut("required")
         .expect("No `ticket.required` key")
+        .leaf_decor_mut()
         .set_prefix(common::TICKET_REQUIRED_DOC);
     ticket
-        .key_decor_mut("prefixes")
+        .key_mut("prefixes")
         .expect("No `ticket.prefixes` key")
+        .leaf_decor_mut()
         .set_prefix(
             doc.trim_start()
                 .replace(OLD_TICKET_PREFIXES_DOC, common::TICKET_PREFIXES_DOC),
@@ -203,18 +206,18 @@ fn replace_empty_prefix_with_hash(prefixes: &mut Item) {
 }
 
 /// Removes the configuration for ticket references.
-fn remove_ticket(toml_config: &mut Document) {
+fn remove_ticket(toml_config: &mut DocumentMut) {
     toml_config.remove("ticket_prefixes");
 }
 
 /// Updates the configuration for templates.
-fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
+fn update_templates(toml_config: &mut DocumentMut, remove_hash_prefix: bool) {
     let (key, value) = toml_config
         .get_key_value("template")
         .expect("No `template` key");
 
     let doc = key
-        .decor()
+        .leaf_decor()
         .prefix()
         .expect("No prefix decorator for key `template`")
         .as_str()
@@ -238,8 +241,9 @@ fn update_templates(toml_config: &mut Document, remove_hash_prefix: bool) {
     // Update the documentation.
     templates.decor_mut().set_prefix(common::TEMPLATES_DOC);
     templates
-        .key_decor_mut("commit")
+        .key_mut("commit")
         .expect("No `commit` key")
+        .leaf_decor_mut()
         .set_prefix(
             doc.trim_start().replace(
                 OLD_TEMPLATES_COMMIT_DOC,
@@ -264,4 +268,181 @@ fn add_ticket_condition_to_commit_template(template: &str) -> String {
 /// Removes the `#` prefix before the `ticket` variable.
 fn remove_hash_ticket_prefix_from_commit_template(template: &str) -> String {
     template.replace("#{{ ticket }}", "{{ ticket }}")
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::pedantic, clippy::restriction)]
+
+    use super::*;
+
+    const V0_1_STANDARD: &str =
+        include_str!("../../../tests/res/config/v0_1_standard.toml");
+
+    const V0_1_USER_COMMENTS: &str =
+        include_str!("../../../tests/res/config/v0_1_user-comments.toml");
+
+    const V0_1_DOC_AND_USER_COMMENTS: &str = include_str!(
+        "../../../tests/res/config/v0_1_doc-and-user-comments.toml"
+    );
+
+    const V0_2_STANDARD: &str =
+        include_str!("../../../tests/res/config/v0_2_standard.toml");
+
+    const V0_2_SCOPES_ANY: &str =
+        include_str!("../../../tests/res/config/v0_2_scopes-any.toml");
+
+    const V0_2_TICKET_NOT_REQUIRED: &str =
+        include_str!("../../../tests/res/config/v0_2_ticket-not-required.toml");
+
+    const V0_2_TICKET_NOT_ASKED_FOR: &str = include_str!(
+        "../../../tests/res/config/v0_2_ticket-not-asked-for.toml"
+    );
+
+    const V0_2_KEEP_EMPTY_PREFIX: &str =
+        include_str!("../../../tests/res/config/v0_2_keep-empty-prefix.toml");
+
+    const V0_2_USER_COMMENTS: &str =
+        include_str!("../../../tests/res/config/v0_2_user-comments.toml");
+
+    const V0_2_DOC_AND_USER_COMMENTS: &str = include_str!(
+        "../../../tests/res/config/v0_2_doc-and-user-comments.toml"
+    );
+
+    #[test]
+    fn test_update_works_with_standard_config() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_STANDARD;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_switch_scopes_to_any() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_SCOPES_ANY;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            true,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_ask_for_ticket_without_requiring_it() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_TICKET_NOT_REQUIRED;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: false },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_omit_to_ask_for_a_ticket() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_TICKET_NOT_ASKED_FOR;
+
+        let mut document = source.parse().unwrap();
+        update(&mut document, false, AskForTicket::DontAsk, true);
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_can_skip_updating_an_empty_ticket_prefix_to_hash() {
+        let source = V0_1_STANDARD;
+        let expected = V0_2_KEEP_EMPTY_PREFIX;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            false,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_preserves_user_comments() {
+        let source = V0_1_USER_COMMENTS;
+        let expected = V0_2_USER_COMMENTS;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_update_updates_default_doc_when_mixed_with_user_comments() {
+        let source = V0_1_DOC_AND_USER_COMMENTS;
+        let expected = V0_2_DOC_AND_USER_COMMENTS;
+
+        let mut document = source.parse().unwrap();
+        update(
+            &mut document,
+            false,
+            AskForTicket::Ask { require: true },
+            true,
+        );
+
+        let actual = document.to_string();
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_add_ticket_condition_makes_reference_conditional_on_refs_footer() {
+        let source = "{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}\n\
+            \n\
+            # Feel free to enter a longer description here.\n\
+            \n\
+            Refs: {{ ticket }}\n\
+            \n\
+            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}";
+
+        let expected = "{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}\n\
+            \n\
+            # Feel free to enter a longer description here.\n\
+            \n\
+            {% if ticket %}Refs: {{ ticket }}{% endif %}\n\
+            \n\
+            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}";
+
+        let actual = add_ticket_condition_to_commit_template(source);
+
+        assert_eq!(actual, expected);
+    }
 }
