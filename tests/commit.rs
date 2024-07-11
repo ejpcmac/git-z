@@ -18,12 +18,15 @@
 #![cfg(not(target_os = "windows"))]
 #![allow(clippy::pedantic, clippy::restriction)]
 
-use std::{path::Path, process::Command};
+use std::{fs, path::Path, process::Command};
 
 use assert_cmd::cargo::cargo_bin;
 use assert_fs::{prelude::*, TempDir};
 use eyre::Result;
-use rexpect::session::{spawn_command, PtySession};
+use rexpect::{
+    process::wait::WaitStatus,
+    session::{spawn_command, PtySession},
+};
 
 const TIMEOUT: Option<u64> = Some(1_000);
 
@@ -872,6 +875,268 @@ fn test_commit_does_not_call_git_when_print_only() -> Result<()> {
     fill_breaking_change(&mut process)?;
 
     assert!(process.exp_string("fake commit").is_err());
+
+    Ok(())
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                Usage errors                                //
+////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////// Git //////////////////////////////////////
+
+#[test]
+fn test_commit_prints_an_error_if_git_is_not_available() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+
+    let mut cmd = gitz_commit(&temp_dir)?;
+    cmd.env("PATH", "");
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Error: failed to run the git command.")?;
+    process.exp_string("The OS reports:")?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_not_run_in_git_repo() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    fs::remove_dir(temp_dir.child(".git"))?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Error: not in a Git repository.")?;
+    process.exp_string(
+        "You can initialise a Git repository by running `git init`.",
+    )?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_not_run_in_git_worktree() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    temp_dir.child(".git").child("bare").touch()?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Error: not inside a Git worktree.")?;
+    process.exp_string(
+        "You seem to be inside a Git repository, but not in a worktree.",
+    )?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+//////////////////////////////////// Config ////////////////////////////////////
+
+#[test]
+fn test_commit_prints_an_error_if_the_config_version_is_unsupported(
+) -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    install_config(&temp_dir, "invalid_version.toml")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Error: unsupported configuration version 49.3")?;
+    process.exp_string(
+        "Your git-z.toml may have been created by a newer version of git-z.",
+    )?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_the_config_is_an_old_development_one(
+) -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    install_config(&temp_dir, "invalid_development.toml")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string(
+        "Error: unsupported development configuration version 0.2-dev.0",
+    )?;
+    process.exp_string(
+        "To update from this version, you can install git-z 0.2.0",
+    )?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_the_config_has_no_version() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    install_config(&temp_dir, "invalid_no-version.toml")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Error: invalid configuration in git-z.toml")?;
+    process.exp_string("missing field `version`")?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_the_config_is_invalid() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    install_config(&temp_dir, "invalid_value.toml")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Error: invalid configuration in git-z.toml")?;
+    process.exp_string("missing field `types`")?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_the_config_is_not_toml() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    install_config(&temp_dir, "invalid_config.not_toml")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Error: invalid configuration in git-z.toml")?;
+    process.exp_string("TOML parse error")?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+//////////////////////////////////// Commit ////////////////////////////////////
+
+#[test]
+fn test_commit_does_not_print_an_error_if_git_commit_fails() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    temp_dir.child(".git").child("error").touch()?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    fill_type(&mut process)?;
+    fill_scope(&mut process)?;
+    fill_description(&mut process)?;
+    fill_breaking_change(&mut process)?;
+
+    assert!(process.exp_string("Git has returned an error").is_err());
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_propagates_the_status_code_if_git_commit_fails() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    temp_dir.child(".git").child("error").write_str("21")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    fill_type(&mut process)?;
+    fill_scope(&mut process)?;
+    fill_description(&mut process)?;
+    fill_breaking_change(&mut process)?;
+
+    assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 21)));
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_the_template_is_invalid() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    install_config(&temp_dir, "latest_template-invalid.toml")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string(
+        "Error: failed to parse 'templates.commit' from the configuration.",
+    )?;
+    process.exp_string("expected a template")?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_prints_an_error_if_the_template_contains_an_unknown_variable(
+) -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    install_config(&temp_dir, "latest_template-unknown-variable.toml")?;
+
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string(
+        "Error: failed to render 'templates.commit' from the configuration.",
+    )?;
+    process.exp_string("Variable `unknown` not found in context while rendering 'templates.commit'")?;
+    process.exp_eof()?;
+
+    Ok(())
+}
+
+//////////////////////////////////// Abort /////////////////////////////////////
+
+#[test]
+fn test_commit_does_not_print_an_error_when_aborting_with_esc() -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Commit type")?;
+    process.send_control('[')?;
+
+    assert!(process
+        .exp_string("Operation was canceled by the user")
+        .is_err());
+
+    Ok(())
+}
+
+#[test]
+fn test_commit_does_not_print_an_error_when_aborting_with_control_c(
+) -> Result<()> {
+    let temp_dir = setup_temp_dir()?;
+    let cmd = gitz_commit(&temp_dir)?;
+
+    let mut process = spawn_command(cmd, TIMEOUT)?;
+
+    process.exp_string("Commit type")?;
+    process.send_control('c')?;
+
+    assert!(process
+        .exp_string("Operation was interrupted by the user")
+        .is_err());
 
     Ok(())
 }

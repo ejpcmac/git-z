@@ -20,6 +20,11 @@
 ##
 
 commit() {
+    if [ -f .git/error ]; then
+        echo "fake error"
+        exit $(< .git/error)
+    fi
+
     echo "fake commit"
     echo -e "$@" > .git/commit
 }
@@ -42,7 +47,13 @@ rev_parse() {
             pwd
             ;;
         "rev-parse --is-inside-work-tree")
-            echo "true"
+            if [ ! -d .git ]; then
+                return 1
+            elif [ -f .git/bare ]; then
+                echo "false"
+            else
+                echo "true"
+            fi
             ;;
     esac
 }
