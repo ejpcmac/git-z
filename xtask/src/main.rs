@@ -221,10 +221,33 @@ macro_rules! action {
 #[macro_export]
 macro_rules! step {
     ($ctx:ident, $name:literal, $command:literal $(,)?) => {{
-        let message = format!("==> {}...", $name).bold();
-        println!("{message}");
+        let _step = Step::new($name);
         cmd!($ctx.sh, $command).run()
     }};
+}
+
+struct Step;
+
+impl Step {
+    pub fn new(name: &'static str) -> Self {
+        let message = if env::var_os("GITHUB_ACTIONS").is_some() {
+            format!("::group::{name}")
+        } else {
+            format!("==> {name}...").bold().to_string()
+        };
+
+        println!("{message}");
+
+        Self
+    }
+}
+
+impl Drop for Step {
+    fn drop(&mut self) {
+        if env::var_os("GITHUB_ACTIONS").is_some() {
+            println!("::endgroup::");
+        }
+    }
 }
 
 fn check_result(ctx: &Context) {
