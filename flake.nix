@@ -75,8 +75,14 @@
 
               # IDE toolchain
               nil
-              nixpkgs-fmt
               rust-analyzer
+
+              # Linters and formatters
+              committed
+              eclint
+              nixpkgs-fmt
+              taplo
+              typos
 
               # Tools
               cargo-bloat
@@ -85,6 +91,13 @@
               git
               git-z
               gitAndTools.gitflow
+            ];
+
+            env = [
+              {
+                name = "TYPOS_LSP_PATH";
+                value = "${pkgs.typos-lsp}/bin/typos-lsp";
+              }
             ];
           };
         };
