@@ -129,7 +129,7 @@ fn ask_ticket_management() -> Result<AskForTicket> {
     hint!("");
 
     let ask_for_ticket = Confirm::new(
-        "Should the commiter be proposed to enter a ticket number?",
+        "Should the committer be proposed to enter a ticket number?",
     )
     .with_default(true)
     .prompt()?;

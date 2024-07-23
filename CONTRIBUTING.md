@@ -106,7 +106,7 @@ To make a change, please use this workflow:
         git flow feature start <my_feature>
 
     *Note: always open an issue and ask before starting a big feature, to avoid
-    it not beeing merged and your time lost.*
+    it not being merged and your time lost.*
 
 3. Work on your feature (don’t forget to write tests):
 

@@ -46,7 +46,7 @@ pub enum LoadError {
     /// The path of the configuration cannot be resolved.
     #[error("Failed to get the configuration file path")]
     ConfigFileError(#[from] ConfigFileError),
-    /// An error has occured while reading the configuration file.
+    /// An error has occurred while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
     ReadError(#[from] io::Error),
     /// The configuration is invalid.
@@ -79,7 +79,7 @@ pub enum FromTomlError {
 /// Errors that can occur when building the config file path.
 #[derive(Debug, Error)]
 pub enum ConfigFileError {
-    /// An error has occured while getting the root of the Git repository.
+    /// An error has occurred while getting the root of the Git repository.
     #[error("Failed to get the Git repo root")]
     RepoRootError(#[from] RepoRootError),
 }

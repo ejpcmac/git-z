@@ -109,7 +109,7 @@ in the current repository.
 ### Added
 
 * Initial version, featuring:
-    * `git z commit`, a wizard that helps to buid a commit message by asking:
+    * `git z commit`, a wizard that helps to build a commit message by asking:
         * a type,
         * a optional scope,
         * a commit message (5-50 characters),
