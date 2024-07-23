@@ -35,7 +35,9 @@
           overlays = [ (import inputs.rust-overlay) ];
           pkgs = import inputs.nixpkgs { inherit system overlays; };
 
-          rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+          rust-toolchain =
+            pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+
           naersk = pkgs.callPackage inputs.naersk {
             cargo = rust-toolchain;
             rustc = rust-toolchain;

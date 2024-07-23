@@ -16,3 +16,8 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+[README.md]
+# NOTE: The README.md contains a Nix example, which is indented by two spaces.
+# We need to reduce the indent size here to avoid any linting issue.
+indent_size = 2

@@ -35,7 +35,8 @@ branches. **Please never commit to `main`.**
 
 2. Enable Nix flakes:
 
-        echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+        echo 'experimental-features = nix-command flakes' \
+            >> ~/.config/nix/nix.conf
 
 3. Optionally install [direnv](https://github.com/direnv/direnv) to
     automatically setup the environment when you enter the project directory:
@@ -51,7 +52,7 @@ branches. **Please never commit to `main`.**
     *Make sure to replace `<shell>` by your shell, namely `bash`, `zsh`, …*
 
 4. In the project directory, if you **did not** install direnv, start a Nix
-   shell:
+    shell:
 
         nix develop
 
