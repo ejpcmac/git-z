@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "cab404.vscode-direnv",
+        "editorconfig.editorconfig",
+        "jnoortheen.nix-ide",
+        "rust-lang.rust-analyzer",
+        "serayuzgur.crates",
+        "stkb.rewrap",
+        "tamasfe.even-better-toml",
+        "tekumara.typos-vscode"
+    ]
+}
