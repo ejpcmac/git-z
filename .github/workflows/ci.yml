@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - release/*
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+  pull_request:
+    branches:
+      - develop
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - ready_for_review
+
+jobs:
+  commits:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build --print-build-logs --no-link .#devShells.x86_64-linux.ci
+      - name: Run the commit linter
+        run: nix develop .#ci --command cargo xtask check commits
+
+  format:
+    name: Code formatting and typos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build --print-build-logs --no-link .#devShells.x86_64-linux.ci
+      - name: Check the code is formatted and free of typos
+        run: nix develop .#ci --command cargo xtask check format
+
+  build:
+    name: Compilation and static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build --print-build-logs --no-link .#devShells.x86_64-linux.ci
+      - name: Compile and run static analysis
+        run: nix develop .#ci --command cargo xtask check build
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build --print-build-logs --no-link .#devShells.x86_64-linux.ci
+      - name: Build and run the tests
+        run: nix develop .#ci --command cargo xtask check test

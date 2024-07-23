@@ -45,6 +45,7 @@ list = [
     "flake",
     "git",
     "git-z",
+    "github",
     "readme",
     "rustfmt",
     "taplo",
@@ -69,7 +70,7 @@ list = [
     "c:init",
     "c:update",
 
-    # Cargo xtasks,
+    # Cargo xtasks
     "xt:check",
 ]
 
