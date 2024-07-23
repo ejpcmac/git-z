@@ -21,6 +21,7 @@ branches. **Please never commit to `main`.**
 3. Add the main repository as a remote:
 
         git remote add upstream https://github.com/ejpcmac/git-z.git
+        git fetch --all
 
 4. Checkout `develop`:
 
@@ -64,20 +65,24 @@ branches. **Please never commit to `main`.**
 
 ### Development environment (without Nix)
 
-Install a Rust toolchain, and optionally install `git-flow`.
+Install:
 
-### Building the project
+* a Rust toolchain,
+* the following linters:
+    * `committed`,
+    * `eclint`,
+    * `nixpkgs-fmt`,
+    * `taplo`,
+    * `typos`,
+* optionally `git-flow`.
 
-1. Build the project:
+### Checking that everything works
 
-        cd git-z
-        cargo build
+You can build the project and run all CI checks with:
 
-2. Run the tests:
+    cargo xtask check all
 
-        cargo test
-
-All the tests should pass.
+All the checks should pass.
 
 ## Workflow
 
@@ -130,16 +135,21 @@ To make a change, please use this workflow:
     feature. If it is the case, we should have discussed this before as stated
     above.*
 
-6. Run the tests to ensure there is no regression and all works as expected:
+6. Run the checks to ensure there is no regression and everything works as
+    expected:
 
-        cargo test
+        cargo xtask check all
 
 7. If it’s all good, open a pull request to merge your branch into the `develop`
     branch on the main repository.
 
 ## Coding style
 
-Please format your code with `rustfmt`.
+Please format your code with the following tools:
+
+* Rust with `rustfmt`,
+* Nix with `nixpkgs-fmt`,
+* TOML with `taplo`.
 
 All contributed code must be documented. In general, take your inspiration from
 the existing code.

@@ -68,6 +68,9 @@ list = [
     "c:commit",
     "c:init",
     "c:update",
+
+    # Cargo xtasks,
+    "xt:check",
 ]
 
 # The ticket / issue reference configuration.
