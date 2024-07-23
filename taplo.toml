@@ -1,0 +1,17 @@
+include = [
+    "*.toml",
+    ".cargo/*/*.toml",
+    "templates/**/*.toml",
+    "tests/**/*.toml",
+    "xtask/**/*.toml",
+]
+
+exclude = [
+    "tests/res/config/v0_1_doc-and-user-comments.toml",
+    "tests/res/config/v0_1_standard.toml",
+    "tests/res/config/v0_1_user-comments.toml",
+]
+
+[formatting]
+indent_string = "    "
+reorder_arrays = true

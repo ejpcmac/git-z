@@ -47,6 +47,7 @@ list = [
     "git-z",
     "readme",
     "rustfmt",
+    "taplo",
     "toolchain",
     "version",
     "vscode",
