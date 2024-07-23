@@ -29,21 +29,18 @@ branches. **Please never commit to `main`.**
 
 ### Development environment (with Nix)
 
-1. Install Nix by running the script and following the instructions:
+1. Install [Nix](https://zero-to-nix.com/start/install):
 
-        sh <(curl -L https://nixos.org/nix/install) --no-daemon
+        curl --proto '=https' --tlsv1.2 -sSf -L \
+            https://install.determinate.systems/nix | sh -s -- install
 
-2. Enable Nix flakes:
-
-        echo 'experimental-features = nix-command flakes' \
-            >> ~/.config/nix/nix.conf
-
-3. Optionally install [direnv](https://github.com/direnv/direnv) to
+2. Optionally install [direnv](https://github.com/direnv/direnv) to
     automatically setup the environment when you enter the project directory:
 
-        nix profile install "nixpkgs#direnv"
+        nix profile install "nixpkgs#direnv" "nixpkgs#nix-direnv"
 
-    In this case, you also need to add to your `~/.<shell>rc`:
+    In this case, you also need to [hook direnv into your
+    shell](https://direnv.net/docs/hook.html) by adding to your `~/.<shell>rc`:
 
     ```sh
     eval "$(direnv hook <shell>)"
@@ -51,18 +48,25 @@ branches. **Please never commit to `main`.**
 
     *Make sure to replace `<shell>` by your shell, namely `bash`, `zsh`, …*
 
-4. In the project directory, if you **did not** install direnv, start a Nix
-    shell:
+    For the caching mechanism to work, you also need to setup `nix-direnv`:
 
-        nix develop
+        mkdir -p $HOME/.config/direnv
+        echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" \
+            > $HOME/.config/direnv/direnvrc
 
-    If you opted to use direnv, please allow the `.envrc` instead of running a
-    Nix shell manually:
+3. In the project directory, if you opted to use direnv, please allow the
+    `.envrc` by running:
 
         direnv allow
 
-    In this case, direnv will automatically update your environment to behave
-    like a Nix shell whenever you enter the project directory.
+    direnv will then automatically update your environment to behave like a Nix
+    devshell whenever your enter the project directory, making all tools
+    available.
+
+    If you **did not** install direnv, you’ll need to manually start a devshell
+    each time you enter the project by running:
+
+        nix develop
 
 ### Development environment (without Nix)
 
