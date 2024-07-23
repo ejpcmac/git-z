@@ -32,6 +32,8 @@
 
       perSystem = { self', system, ... }:
         let
+          packageName = "git-z";
+
           overlays = [ (import inputs.rust-overlay) ];
           pkgs = import inputs.nixpkgs { inherit system overlays; };
 
@@ -43,7 +45,32 @@
             rustc = rust-toolchain;
           };
 
-          packageName = "git-z";
+          buildToolchain = with pkgs; [
+            rust-toolchain
+            clang
+          ];
+
+          ideToolchain = with pkgs; [
+            nil
+            rust-analyzer
+          ];
+
+          lintersAndFormatters = with pkgs; [
+            committed
+            eclint
+            nixpkgs-fmt
+            taplo
+            typos
+          ];
+
+          tools = with pkgs; with self'.packages; [
+            cargo-bloat
+            cargo-outdated
+            cargo-watch
+            git
+            git-z
+            gitAndTools.gitflow
+          ];
         in
         {
           packages = {
@@ -62,45 +89,41 @@
             };
           };
 
-          devshells.default = {
-            name = "git-z";
+          devshells = {
+            default = {
+              name = "git-z";
 
-            motd = ''
+              motd = ''
 
-              {202}🔨 Welcome to the git-z devshell!{reset}
-            '';
+                {202}🔨 Welcome to the git-z devshell!{reset}
+              '';
 
-            packages = with pkgs; with self'.packages; [
-              # Build toolchain
-              rust-toolchain
-              clang
+              packages =
+                buildToolchain
+                ++ ideToolchain
+                ++ lintersAndFormatters
+                ++ tools;
 
-              # IDE toolchain
-              nil
-              rust-analyzer
+              env = [
+                {
+                  name = "TYPOS_LSP_PATH";
+                  value = "${pkgs.typos-lsp}/bin/typos-lsp";
+                }
+              ];
+            };
 
-              # Linters and formatters
-              committed
-              eclint
-              nixpkgs-fmt
-              taplo
-              typos
+            ci = {
+              name = "git-z CI";
 
-              # Tools
-              cargo-bloat
-              cargo-outdated
-              cargo-watch
-              git
-              git-z
-              gitAndTools.gitflow
-            ];
+              motd = ''
 
-            env = [
-              {
-                name = "TYPOS_LSP_PATH";
-                value = "${pkgs.typos-lsp}/bin/typos-lsp";
-              }
-            ];
+                {202}🔨 Welcome to the git-z CI environment!{reset}
+              '';
+
+              packages =
+                buildToolchain
+                ++ lintersAndFormatters;
+            };
           };
         };
     };
