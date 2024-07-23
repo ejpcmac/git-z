@@ -36,6 +36,7 @@ list = [
     "cargo",
     "changelog",
     "clippy",
+    "committed",
     "contributing",
     "deb",
     "devshell",
