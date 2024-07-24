@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 ## git-z - A Git extension to go beyond.
 ## Copyright (C) 2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
