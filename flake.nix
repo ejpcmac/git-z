@@ -71,6 +71,20 @@
             git-z
             gitAndTools.gitflow
           ];
+
+          testEnv = [
+            {
+              name = "TEST_PATH";
+              eval = "$PRJ_ROOT/tests/fake_bin:${pkgs.bash}/bin";
+            }
+          ];
+
+          ideEnv = [
+            {
+              name = "TYPOS_LSP_PATH";
+              value = "${pkgs.typos-lsp}/bin/typos-lsp";
+            }
+          ];
         in
         {
           packages = {
@@ -104,12 +118,9 @@
                 ++ lintersAndFormatters
                 ++ tools;
 
-              env = [
-                {
-                  name = "TYPOS_LSP_PATH";
-                  value = "${pkgs.typos-lsp}/bin/typos-lsp";
-                }
-              ];
+              env =
+                testEnv
+                ++ ideEnv;
             };
 
             ci = {
@@ -123,6 +134,9 @@
               packages =
                 buildToolchain
                 ++ lintersAndFormatters;
+
+              env =
+                testEnv;
             };
           };
         };
