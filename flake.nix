@@ -28,7 +28,7 @@
   outputs = { flake-parts, ... }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ inputs.devshell.flakeModule ];
-      systems = [ "x86_64-linux" ];
+      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
 
       perSystem = { self', system, ... }:
         let
@@ -47,6 +47,7 @@
 
           buildToolchain = with pkgs; [
             rust-toolchain
+          ] ++ lib.optionals (!stdenv.isDarwin) [
             clang
           ];
 
