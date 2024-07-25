@@ -20,6 +20,8 @@ on:
       - ready_for_review
 
 env:
+  CARGO_TERM_COLOR: always
+  CLICOLOR_FORCE: 1
   IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
 
 jobs:
