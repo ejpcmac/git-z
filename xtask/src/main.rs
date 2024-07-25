@@ -216,7 +216,7 @@ macro_rules! action {
             "❌ FAILED".bold().red()
         };
 
-        println!("{message}\n");
+        println!("{message}");
     }};
 
     (
@@ -233,7 +233,7 @@ macro_rules! action {
             $ctx.checks += 1;
             $ctx.errors += 1;
             let message = "❌ FAILED".bold().red();
-            println!("{message}\n");
+            println!("{message}");
         }
     }};
 }
@@ -253,7 +253,7 @@ impl Step {
         let message = if env::var_os("GITHUB_ACTIONS").is_some() {
             format!("::group::{name}")
         } else {
-            format!("==> {name}...").bold().to_string()
+            format!("\n==> {name}...").bold().to_string()
         };
 
         println!("{message}");
@@ -281,13 +281,13 @@ fn check_result(ctx: &Context) {
         let message = format!("✅ {checks}/{checks} check{s} {be} passed!")
             .bold()
             .green();
-        println!("{message}");
+        println!("\n{message}");
     } else {
         let be = be(*errors);
         let message = format!("❌ {errors}/{checks} check{s} {be} failed!")
             .bold()
             .red();
-        eprintln!("{message}");
+        eprintln!("\n{message}");
         process::exit(1);
     }
 }
