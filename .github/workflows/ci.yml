@@ -19,6 +19,9 @@ on:
       - synchronize
       - ready_for_review
 
+env:
+  IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   commits:
     name: Conventional Commits
