@@ -96,13 +96,33 @@ fn check_usage() {
 //////////////////////////////////// Checks ////////////////////////////////////
 
 fn check_commits(ctx: &mut Context) {
-    let branch = get_current_branch();
+    let is_pull_request =
+        matches!(env::var_os("IS_PULL_REQUEST"), Some(val) if val == "true");
 
-    if !["main", "develop"].contains(&branch.as_str()) {
+    let commits = if is_pull_request {
+        Some(String::from("HEAD~..HEAD^2"))
+    } else {
+        let branch = get_current_branch();
+
+        if ["main", "develop"].contains(&branch.as_str()) {
+            None
+        } else {
+            let merge_base = get_merge_base("origin/develop");
+            Some(format!("{merge_base}..HEAD"))
+        }
+    };
+
+    if let Some(commits) = commits {
         action!(
             ctx,
-            "Checking that commits are conventional",
-            "committed origin/develop..HEAD",
+            step!(
+                "Listing commits to check",
+                "git --no-pager log --pretty=format:'%C(yellow)%h%Creset %s' {commits}",
+            ),
+            step!(
+                "Checking that commits are conventional",
+                "committed {commits}",
+            ),
         );
     }
 }
@@ -284,6 +304,23 @@ fn get_current_branch() -> String {
     );
 
     String::from_utf8(git_branch.stdout)
+        .unwrap()
+        .trim()
+        .to_owned()
+}
+
+fn get_merge_base(into: &str) -> String {
+    let git_merge_base = Command::new("git")
+        .args(["merge-base", into, "HEAD"])
+        .output()
+        .unwrap();
+
+    assert!(
+        git_merge_base.status.success(),
+        "Failed to run `git merge-base origin/develop HEAD`"
+    );
+
+    String::from_utf8(git_merge_base.stdout)
         .unwrap()
         .trim()
         .to_owned()
