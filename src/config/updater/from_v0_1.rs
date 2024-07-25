@@ -17,7 +17,7 @@
 
 // NOTE: Updaters make a heavy usage of `expect` instead of proper error
 // handling. This is because `ConfigUpdater::load` already validates the
-// configuration by parsing it to a `Config`. Any error occuring here is a bug,
+// configuration by parsing it to a `Config`. Any error occurring here is a bug,
 // hence should lead to a panic.
 #![allow(clippy::expect_used, clippy::missing_panics_doc)]
 

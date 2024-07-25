@@ -28,20 +28,64 @@
   outputs = { flake-parts, ... }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ inputs.devshell.flakeModule ];
-      systems = [ "x86_64-linux" ];
+      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
 
       perSystem = { self', system, ... }:
         let
+          packageName = "git-z";
+
           overlays = [ (import inputs.rust-overlay) ];
           pkgs = import inputs.nixpkgs { inherit system overlays; };
 
-          rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+          rust-toolchain =
+            pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+
           naersk = pkgs.callPackage inputs.naersk {
             cargo = rust-toolchain;
             rustc = rust-toolchain;
           };
 
-          packageName = "git-z";
+          buildToolchain = with pkgs; [
+            rust-toolchain
+          ] ++ lib.optionals (!stdenv.isDarwin) [
+            clang
+          ];
+
+          ideToolchain = with pkgs; [
+            nil
+            rust-analyzer
+          ];
+
+          lintersAndFormatters = with pkgs; [
+            committed
+            eclint
+            nixpkgs-fmt
+            taplo
+            typos
+          ];
+
+          tools = with pkgs; with self'.packages; [
+            cargo-bloat
+            cargo-outdated
+            cargo-watch
+            git
+            git-z
+            gitAndTools.gitflow
+          ];
+
+          testEnv = [
+            {
+              name = "TEST_PATH";
+              eval = "$PRJ_ROOT/tests/fake_bin:${pkgs.bash}/bin";
+            }
+          ];
+
+          ideEnv = [
+            {
+              name = "TYPOS_LSP_PATH";
+              value = "${pkgs.typos-lsp}/bin/typos-lsp";
+            }
+          ];
         in
         {
           packages = {
@@ -60,32 +104,41 @@
             };
           };
 
-          devshells.default = {
-            name = "git-z";
+          devshells = {
+            default = {
+              name = "git-z";
 
-            motd = ''
+              motd = ''
 
-              {202}🔨 Welcome to the git-z devshell!{reset}
-            '';
+                {202}🔨 Welcome to the git-z devshell!{reset}
+              '';
 
-            packages = with pkgs; with self'.packages; [
-              # Build toolchain
-              rust-toolchain
-              clang
+              packages =
+                buildToolchain
+                ++ ideToolchain
+                ++ lintersAndFormatters
+                ++ tools;
 
-              # IDE toolchain
-              nil
-              nixpkgs-fmt
-              rust-analyzer
+              env =
+                testEnv
+                ++ ideEnv;
+            };
 
-              # Tools
-              cargo-bloat
-              cargo-outdated
-              cargo-watch
-              git
-              git-z
-              gitAndTools.gitflow
-            ];
+            ci = {
+              name = "git-z CI";
+
+              motd = ''
+
+                {202}🔨 Welcome to the git-z CI environment!{reset}
+              '';
+
+              packages =
+                buildToolchain
+                ++ lintersAndFormatters;
+
+              env =
+                testEnv;
+            };
           };
         };
     };

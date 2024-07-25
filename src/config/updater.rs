@@ -65,7 +65,7 @@ pub enum LoadError {
     /// There is no configuration file.
     #[error("No configuration file")]
     NoConfigFile,
-    /// An error has occured while reading the configuration file.
+    /// An error has occurred while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
     ReadError(#[from] io::Error),
     /// The configuration is invalid.

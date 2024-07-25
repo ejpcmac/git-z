@@ -52,6 +52,9 @@ assert_fs = "1"
 [target.'cfg(not(windows))'.dev-dependencies]
 rexpect = "0.5"
 
+[workspace]
+members = ["xtask"]
+
 [lints.rust]
 # Forbidden
 unsafe_code = "forbid"

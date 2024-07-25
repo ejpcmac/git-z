@@ -57,14 +57,11 @@ fn set_git_branch(temp_dir: &TempDir, name: &str) -> Result<()> {
 }
 
 fn gitz_commit(temp_dir: impl AsRef<Path>) -> Result<Command> {
-    let fake_path = std::env::current_dir()?
-        .join("tests")
-        .join("fake_bin")
-        .into_os_string();
+    let test_path = std::env::var("TEST_PATH")?;
 
     let mut cmd = Command::new(cargo_bin("git-z"));
     cmd.current_dir(&temp_dir)
-        .env("PATH", fake_path)
+        .env("PATH", test_path)
         .arg("commit");
 
     Ok(cmd)

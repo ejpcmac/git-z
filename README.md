@@ -1,6 +1,8 @@
 # git-z
 
-[![Crates.io](https://img.shields.io/crates/v/git-z)](https://crates.io/crates/git-z)
+[
+  ![Crates.io](https://img.shields.io/crates/v/git-z)
+](https://crates.io/crates/git-z)
 [![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
 
 A Git extension to go beyond.

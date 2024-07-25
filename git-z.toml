@@ -36,6 +36,7 @@ list = [
     "cargo",
     "changelog",
     "clippy",
+    "committed",
     "contributing",
     "deb",
     "devshell",
@@ -44,8 +45,10 @@ list = [
     "flake",
     "git",
     "git-z",
+    "github",
     "readme",
     "rustfmt",
+    "taplo",
     "toolchain",
     "version",
     "vscode",
@@ -66,6 +69,9 @@ list = [
     "c:commit",
     "c:init",
     "c:update",
+
+    # Cargo xtasks
+    "xt:check",
 ]
 
 # The ticket / issue reference configuration.
