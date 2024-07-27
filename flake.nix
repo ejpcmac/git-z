@@ -51,12 +51,7 @@
             clang
           ];
 
-          ideToolchain = with pkgs; [
-            nil
-            rust-analyzer
-          ];
-
-          lintersAndFormatters = with pkgs; [
+          checkToolchain = with pkgs; [
             committed
             eclint
             nixpkgs-fmt
@@ -64,7 +59,12 @@
             typos
           ];
 
-          tools = with pkgs; with self'.packages; [
+          ideToolchain = with pkgs; [
+            nil
+            rust-analyzer
+          ];
+
+          developmentTools = with pkgs; with self'.packages; [
             cargo-bloat
             cargo-outdated
             cargo-watch
@@ -115,9 +115,9 @@
 
               packages =
                 buildToolchain
+                ++ checkToolchain
                 ++ ideToolchain
-                ++ lintersAndFormatters
-                ++ tools;
+                ++ developmentTools;
 
               env =
                 testEnv
@@ -134,7 +134,7 @@
 
               packages =
                 buildToolchain
-                ++ lintersAndFormatters;
+                ++ checkToolchain;
 
               env =
                 testEnv;
