@@ -80,7 +80,7 @@ jobs:
       - name: Setup the Nix cache
         if: matrix.systems.system != 'x86_64-windows'
         uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Setup the environment
+      - name: Setup the environment (with Nix)
         if: matrix.systems.system != 'x86_64-windows'
         run: |
           nix build -L --no-link .#devShells.${{ matrix.systems.system }}.ci
@@ -114,10 +114,15 @@ jobs:
       - name: Setup the Nix cache
         if: matrix.systems.system != 'x86_64-windows'
         uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Setup the environment
+      - name: Setup the environment (with Nix)
         if: matrix.systems.system != 'x86_64-windows'
         run: |
           nix build -L --no-link .#devShells.${{ matrix.systems.system }}.ci
+      - name: Setup the environment (without Nix)
+        if: matrix.systems.system == 'x86_64-windows'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
       - name: Build and run the tests (with Nix)
         if: matrix.systems.system != 'x86_64-windows'
         run: nix develop .#ci -c cargo xtask check test
