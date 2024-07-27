@@ -52,6 +52,7 @@
           ];
 
           checkToolchain = with pkgs; [
+            cargo-nextest
             committed
             eclint
             nixpkgs-fmt
