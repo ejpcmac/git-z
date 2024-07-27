@@ -46,6 +46,7 @@ list = [
     "git",
     "git-z",
     "github",
+    "nextest",
     "readme",
     "rustfmt",
     "taplo",

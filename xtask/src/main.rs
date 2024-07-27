@@ -187,11 +187,11 @@ fn test(ctx: &mut Context) {
         ctx,
         step!(
             "Building the tests for all packages",
-            "cargo test --workspace --all-features --no-run",
+            "cargo nextest run --workspace --all-features --no-run",
         ),
         step!(
             "Running the tests for all packages",
-            "cargo test --workspace --all-features",
+            "cargo nextest run --workspace --all-features",
         ),
     );
 }
