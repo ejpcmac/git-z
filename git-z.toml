@@ -61,6 +61,7 @@ list = [
     # Lib
     "cli",
     "command",
+    "commit_cache",
     "config",
     "helpers",
     "lib",
