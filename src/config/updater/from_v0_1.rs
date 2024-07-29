@@ -315,7 +315,7 @@ mod tests {
     );
 
     #[test]
-    fn test_update_works_with_standard_config() {
+    fn update_works_with_standard_config() {
         let source = V0_1_STANDARD;
         let expected = V0_2_STANDARD;
 
@@ -332,7 +332,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_can_switch_scopes_to_any() {
+    fn update_can_switch_scopes_to_any() {
         let source = V0_1_STANDARD;
         let expected = V0_2_SCOPES_ANY;
 
@@ -349,7 +349,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_can_ask_for_ticket_without_requiring_it() {
+    fn update_can_ask_for_ticket_without_requiring_it() {
         let source = V0_1_STANDARD;
         let expected = V0_2_TICKET_NOT_REQUIRED;
 
@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_can_omit_to_ask_for_a_ticket() {
+    fn update_can_omit_to_ask_for_a_ticket() {
         let source = V0_1_STANDARD;
         let expected = V0_2_TICKET_NOT_ASKED_FOR;
 
@@ -378,7 +378,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_can_skip_updating_an_empty_ticket_prefix_to_hash() {
+    fn update_can_skip_updating_an_empty_ticket_prefix_to_hash() {
         let source = V0_1_STANDARD;
         let expected = V0_2_KEEP_EMPTY_PREFIX;
 
@@ -395,7 +395,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_preserves_user_comments() {
+    fn update_preserves_user_comments() {
         let source = V0_1_USER_COMMENTS;
         let expected = V0_2_USER_COMMENTS;
 
@@ -412,7 +412,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_updates_default_doc_when_mixed_with_user_comments() {
+    fn update_updates_default_doc_when_mixed_with_user_comments() {
         let source = V0_1_DOC_AND_USER_COMMENTS;
         let expected = V0_2_DOC_AND_USER_COMMENTS;
 
@@ -429,7 +429,7 @@ mod tests {
     }
 
     #[test]
-    fn test_add_ticket_condition_makes_reference_conditional_on_refs_footer() {
+    fn add_ticket_condition_makes_reference_conditional_on_refs_footer() {
         let source = indoc! {"
             {{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
 
