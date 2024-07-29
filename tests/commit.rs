@@ -96,1032 +96,1046 @@ fn fill_breaking_change(process: &mut PtySession) -> Result<()> {
 //                                   Wizard                                   //
 ////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////// Default config ////////////////////////////////
+mod wizard {
+    use super::*;
 
-#[test]
-fn wizard_uses_default_config() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+    ////////////////////////////// Default config //////////////////////////////
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn uses_default_config() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    // Asks for commit type with default list.
-    process.exp_string("Commit type")?;
-    process.exp_string("feat")?;
-    process.exp_string("chore")?;
-    process.exp_string("enter to select, type to filter")?;
-    process.send_line("chore")?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    // Asks for an optional arbitrary scope (any).
-    process.exp_string("Scope")?;
-    process.exp_string("Press ESC or leave empty to omit the scope.")?;
-    process.send_line("")?;
+        // Asks for commit type with default list.
+        process.exp_string("Commit type")?;
+        process.exp_string("feat")?;
+        process.exp_string("chore")?;
+        process.exp_string("enter to select, type to filter")?;
+        process.send_line("chore")?;
 
-    // Asks for a short description within the 5-50 characters limit.
-    process.exp_string("Short description")?;
-    process.exp_string(
-        "describe your change with a short description (5-50 characters)",
-    )?;
-    process.send_line("test description")?;
+        // Asks for an optional arbitrary scope (any).
+        process.exp_string("Scope")?;
+        process.exp_string("Press ESC or leave empty to omit the scope.")?;
+        process.send_line("")?;
 
-    // Asks for a optional breaking change.
-    process.exp_string("BREAKING CHANGE")?;
-    process.send_line("")?;
+        // Asks for a short description within the 5-50 characters limit.
+        process.exp_string("Short description")?;
+        process.exp_string(
+            "describe your change with a short description (5-50 characters)",
+        )?;
+        process.send_line("test description")?;
 
-    // Does not ask for a ticket.
-    process.exp_eof()?;
+        // Asks for a optional breaking change.
+        process.exp_string("BREAKING CHANGE")?;
+        process.send_line("")?;
 
-    Ok(())
-}
+        // Does not ask for a ticket.
+        process.exp_eof()?;
 
-///////////////////////////////////// Type /////////////////////////////////////
+        Ok(())
+    }
 
-#[test]
-fn wizard_asks_for_a_type() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+    /////////////////////////////////// Type ///////////////////////////////////
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn asks_for_a_type() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Commit type")?;
-    process.exp_string("to move, enter to select, type to filter")?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Commit type")?;
+        process.exp_string("to move, enter to select, type to filter")?;
 
-#[test]
-fn wizard_uses_types_from_config_file() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_types-custom.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn uses_types_from_config_file() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_types-custom.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Commit type")?;
-    process.exp_string("type")?;
-    process.exp_string("a first description")?;
-    process.exp_string("second_type")?;
-    process.exp_string("another description")?;
-    process.exp_string("to move, enter to select, type to filter")?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Commit type")?;
+        process.exp_string("type")?;
+        process.exp_string("a first description")?;
+        process.exp_string("second_type")?;
+        process.exp_string("another description")?;
+        process.exp_string("to move, enter to select, type to filter")?;
 
-#[test]
-fn wizard_accepts_a_type_from_the_list() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn accepts_a_type_from_the_list() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Commit type")?;
-    process.send_line("type")?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
+        process.exp_string("Commit type")?;
+        process.send_line("type")?;
 
-    Ok(())
-}
+        process.exp_string("Scope")?;
 
-#[test]
-fn wizard_enforces_types_from_the_list() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn enforces_types_from_the_list() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Commit type")?;
-    process.send_line("unknown")?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    assert!(process.exp_string("Scope").is_err());
+        process.exp_string("Commit type")?;
+        process.send_line("unknown")?;
 
-    Ok(())
-}
+        assert!(process.exp_string("Scope").is_err());
 
-#[test]
-fn wizard_aborts_if_type_is_skipped_with_esc() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn aborts_if_type_is_skipped_with_esc() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Commit type")?;
-    process.send_control('[')?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Commit type")?;
+        process.send_control('[')?;
+        process.exp_eof()?;
 
-//////////////////////////////////// Scope /////////////////////////////////////
+        Ok(())
+    }
 
-#[test]
-fn wizard_asks_for_a_scope() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+    ////////////////////////////////// Scope ///////////////////////////////////
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn asks_for_a_scope() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.exp_string("Press ESC or leave empty to omit the scope.")?;
+        fill_type(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("Scope")?;
+        process.exp_string("Press ESC or leave empty to omit the scope.")?;
 
-#[test]
-fn wizard_uses_list_of_scopes_from_config_file() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_scopes-list.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn uses_list_of_scopes_from_config_file() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.exp_string("scope1")?;
-    process.exp_string("scope2")?;
-    process.exp_string(
-        "to move, enter to select, type to filter, ESC to leave empty, \
-            update `git-z.toml` to add new scopes",
-    )?;
+        fill_type(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("Scope")?;
+        process.exp_string("scope1")?;
+        process.exp_string("scope2")?;
+        process.exp_string(
+            "to move, enter to select, type to filter, ESC to leave empty, \
+                update `git-z.toml` to add new scopes",
+        )?;
 
-#[test]
-fn wizard_allows_scope_to_be_empty_when_using_any() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_minimal.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn allows_scope_to_be_empty_when_using_any() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_minimal.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.send_line("")?;
+        fill_type(&mut process)?;
 
-    process.exp_string("Short description")?;
+        process.exp_string("Scope")?;
+        process.send_line("")?;
 
-    Ok(())
-}
+        process.exp_string("Short description")?;
 
-#[test]
-fn wizard_allows_scope_to_be_skipped_with_esc_when_using_any() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_minimal.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn allows_scope_to_be_skipped_with_esc_when_using_any() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_minimal.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.send_control('[')?;
-    process.exp_string("<canceled>")?;
+        fill_type(&mut process)?;
 
-    process.exp_string("Short description")?;
+        process.exp_string("Scope")?;
+        process.send_control('[')?;
+        process.exp_string("<canceled>")?;
 
-    Ok(())
-}
+        process.exp_string("Short description")?;
 
-#[test]
-fn wizard_accepts_a_scope_from_the_list_when_using_list() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_scopes-list.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn accepts_a_scope_from_the_list_when_using_list() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.send_line("scope2")?;
+        fill_type(&mut process)?;
 
-    process.exp_string("Short description")?;
+        process.exp_string("Scope")?;
+        process.send_line("scope2")?;
 
-    Ok(())
-}
+        process.exp_string("Short description")?;
 
-#[test]
-fn wizard_enforces_scopes_from_the_list_when_using_list() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_scopes-list.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn enforces_scopes_from_the_list_when_using_list() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.send_line("unknown")?;
+        fill_type(&mut process)?;
 
-    assert!(process.exp_string("Short description").is_err());
+        process.exp_string("Scope")?;
+        process.send_line("unknown")?;
 
-    Ok(())
-}
+        assert!(process.exp_string("Short description").is_err());
 
-#[test]
-fn wizard_allows_scope_to_be_skipped_with_esc_when_using_list() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_scopes-list.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn allows_scope_to_be_skipped_with_esc_when_using_list() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.send_control('[')?;
-    process.exp_string("<canceled>")?;
+        fill_type(&mut process)?;
 
-    process.exp_string("Short description")?;
+        process.exp_string("Scope")?;
+        process.send_control('[')?;
+        process.exp_string("<canceled>")?;
 
-    Ok(())
-}
+        process.exp_string("Short description")?;
 
-///////////////////////////////// Description //////////////////////////////////
+        Ok(())
+    }
 
-#[test]
-fn wizard_asks_for_a_description() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+    /////////////////////////////// Description ////////////////////////////////
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn asks_for_a_description() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Short description")?;
-    process.exp_string(
-        "describe your change with a short description (5-50 characters)",
-    )?;
-    process.exp_string(
-        "You will be able to add a long description to your commit in an \
-            editor later.",
-    )?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("Short description")?;
+        process.exp_string(
+            "describe your change with a short description (5-50 characters)",
+        )?;
+        process.exp_string(
+            "You will be able to add a long description to your commit in an \
+                editor later.",
+        )?;
 
-#[test]
-fn wizard_accepts_a_description_between_5_and_50_characters() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn accepts_a_description_between_5_and_50_characters() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Short description")?;
-    process.send_line("test description")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
 
-    process.exp_string("BREAKING CHANGE")?;
+        process.exp_string("Short description")?;
+        process.send_line("test description")?;
 
-    Ok(())
-}
+        process.exp_string("BREAKING CHANGE")?;
 
-#[test]
-fn wizard_refuses_a_description_shorter_than_5_characters() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn refuses_a_description_shorter_than_5_characters() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Short description")?;
-    process.send_line("****")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
 
-    process.exp_string("The description must be longer than 5 characters")?;
-    assert!(process.exp_string("BREAKING CHANGE").is_err());
+        process.exp_string("Short description")?;
+        process.send_line("****")?;
 
-    Ok(())
-}
+        process
+            .exp_string("The description must be longer than 5 characters")?;
+        assert!(process.exp_string("BREAKING CHANGE").is_err());
 
-#[test]
-fn wizard_refuses_a_description_longer_than_50_characters() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn refuses_a_description_longer_than_50_characters() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Short description")?;
-    process.send_line("***************************************************")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
 
-    process
-        .exp_string("The description must not be longer than 50 characters")?;
-    assert!(process.exp_string("BREAKING CHANGE").is_err());
+        process.exp_string("Short description")?;
+        process
+            .send_line("***************************************************")?;
 
-    Ok(())
-}
+        process.exp_string(
+            "The description must not be longer than 50 characters",
+        )?;
+        assert!(process.exp_string("BREAKING CHANGE").is_err());
 
-#[test]
-fn wizard_refuses_a_description_starting_in_lowercase() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn refuses_a_description_starting_in_lowercase() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Short description")?;
-    process.send_line("Test description")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
 
-    process.exp_string("The description must start in lowercase")?;
-    assert!(process.exp_string("BREAKING CHANGE").is_err());
+        process.exp_string("Short description")?;
+        process.send_line("Test description")?;
 
-    Ok(())
-}
+        process.exp_string("The description must start in lowercase")?;
+        assert!(process.exp_string("BREAKING CHANGE").is_err());
 
-#[test]
-fn wizard_aborts_if_description_is_skipped_with_esc() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn aborts_if_description_is_skipped_with_esc() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Short description")?;
-    process.send_control('[')?;
-    process.exp_eof()?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("Short description")?;
+        process.send_control('[')?;
+        process.exp_eof()?;
 
-/////////////////////////////// Breaking change ////////////////////////////////
+        Ok(())
+    }
 
-#[test]
-fn wizard_asks_for_a_breaking_change() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+    ///////////////////////////// Breaking change //////////////////////////////
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn asks_for_a_breaking_change() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("BREAKING CHANGE")?;
-    process.exp_string(
-        "Press ESC or leave empty if there are no breaking changes.",
-    )?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("BREAKING CHANGE")?;
+        process.exp_string(
+            "Press ESC or leave empty if there are no breaking changes.",
+        )?;
 
-#[test]
-fn wizard_allows_breaking_change_to_be_empty_when_using_any() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn allows_breaking_change_to_be_empty_when_using_any() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("BREAKING CHANGE")?;
-    process.send_line("")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
 
-    process.exp_string("fake commit")?;
+        process.exp_string("BREAKING CHANGE")?;
+        process.send_line("")?;
 
-    Ok(())
-}
+        process.exp_string("fake commit")?;
 
-#[test]
-fn wizard_allows_breaking_change_to_be_skipped_with_esc() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+        Ok(())
+    }
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+    #[test]
+    fn allows_breaking_change_to_be_skipped_with_esc() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("BREAKING CHANGE")?;
-    process.send_control('[')?;
-    process.exp_string("<canceled>")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
 
-    process.exp_string("fake commit")?;
+        process.exp_string("BREAKING CHANGE")?;
+        process.send_control('[')?;
+        process.exp_string("<canceled>")?;
 
-    Ok(())
-}
+        process.exp_string("fake commit")?;
 
-//////////////////////////////////// Ticket ////////////////////////////////////
+        Ok(())
+    }
 
-#[test]
-fn wizard_does_not_ask_for_a_ticket_when_not_specified_in_config() -> Result<()>
-{
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_minimal.toml")?;
+    ////////////////////////////////// Ticket //////////////////////////////////
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn does_not_ask_for_a_ticket_when_not_specified_in_config() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_minimal.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("fake commit")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("fake commit")?;
 
-#[test]
-fn wizard_asks_for_a_ticket_when_specified_in_config() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn asks_for_a_ticket_when_specified_in_config() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.exp_string("#XXX or GH-XXX")?;
-    process.exp_string("Press ESC to omit the ticket reference.")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#XXX or GH-XXX")?;
+        process.exp_string("Press ESC to omit the ticket reference.")?;
 
-#[test]
-fn wizard_accepts_a_ticket_with_proper_format() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn accepts_a_ticket_with_proper_format() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.send_line("#42")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    process.exp_string("fake commit")?;
+        process.exp_string("Issue / ticket number")?;
+        process.send_line("#42")?;
 
-    Ok(())
-}
+        process.exp_string("fake commit")?;
 
-#[test]
-fn wizard_accepts_a_ticket_with_proper_format2() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn accepts_a_ticket_with_proper_format2() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.send_line("GH-42")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    process.exp_string("fake commit")?;
+        process.exp_string("Issue / ticket number")?;
+        process.send_line("GH-42")?;
 
-    Ok(())
-}
+        process.exp_string("fake commit")?;
 
-#[test]
-fn wizard_refuses_a_ticket_with_improper_format() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn refuses_a_ticket_with_improper_format() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.send_line("TEST-99")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    process.exp_string(
-        "The issue / ticket number must be in the form #XXX or GH-XXX",
-    )?;
-    assert!(process.exp_string("fake commit").is_err());
+        process.exp_string("Issue / ticket number")?;
+        process.send_line("TEST-99")?;
 
-    Ok(())
-}
+        process.exp_string(
+            "The issue / ticket number must be in the form #XXX or GH-XXX",
+        )?;
+        assert!(process.exp_string("fake commit").is_err());
 
-#[test]
-fn wizard_allows_ticket_to_be_skipped_with_esc_when_not_required() -> Result<()>
-{
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn allows_ticket_to_be_skipped_with_esc_when_not_required() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.send_control('[')?;
-    process.exp_string("<canceled>")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    process.exp_string("fake commit")?;
+        process.exp_string("Issue / ticket number")?;
+        process.send_control('[')?;
+        process.exp_string("<canceled>")?;
 
-    Ok(())
-}
+        process.exp_string("fake commit")?;
 
-#[test]
-fn wizard_aborts_if_ticket_is_skipped_with_esc_when_required() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-required.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn aborts_if_ticket_is_skipped_with_esc_when_required() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-required.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.send_control('[')?;
-    process.exp_string("<canceled>")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    assert!(process.exp_string("fake commit").is_err());
-    process.exp_eof()?;
+        process.exp_string("Issue / ticket number")?;
+        process.send_control('[')?;
+        process.exp_string("<canceled>")?;
 
-    Ok(())
-}
+        assert!(process.exp_string("fake commit").is_err());
+        process.exp_eof()?;
 
-#[test]
-fn wizard_gets_the_ticket_number_from_branch() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
-    set_git_branch(&temp_dir, "feature/GH-42-test-branch")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn gets_the_ticket_number_from_branch() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        set_git_branch(&temp_dir, "feature/GH-42-test-branch")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.exp_string("GH-42")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("GH-42")?;
 
-#[test]
-fn wizard_gets_the_ticket_number_from_branch_when_hash() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
-    set_git_branch(&temp_dir, "feature/42-test-branch")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn gets_the_ticket_number_from_branch_when_hash() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        set_git_branch(&temp_dir, "feature/42-test-branch")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.exp_string("#42")?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#42")?;
+
+        Ok(())
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                 git commit                                 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#[test]
-fn calls_git_commit_with_message_from_template() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_template-dummy.toml")?;
+mod commit {
+    use super::*;
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn calls_git_commit_with_message_from_template() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("fake commit")?;
-    process.exp_eof()?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    temp_dir
-        .child(".git")
-        .child("commit")
-        .assert("commit -em dummy template message\n\n");
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
-    Ok(())
-}
+        temp_dir
+            .child(".git")
+            .child("commit")
+            .assert("commit -em dummy template message\n\n");
 
-#[test]
-fn replaces_variables_from_the_template_with_entered_values() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn replaces_variables_from_the_template_with_entered_values() -> Result<()>
+    {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Commit type")?;
-    process.send_line("type")?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Scope")?;
-    process.send_line("scope")?;
+        process.exp_string("Commit type")?;
+        process.send_line("type")?;
 
-    process.exp_string("Short description")?;
-    process.send_line("test description")?;
+        process.exp_string("Scope")?;
+        process.send_line("scope")?;
 
-    process.exp_string("BREAKING CHANGE")?;
-    process.send_line("Nothing is like before.")?;
+        process.exp_string("Short description")?;
+        process.send_line("test description")?;
 
-    process.exp_string("Issue / ticket number")?;
-    process.send_line("#21")?;
+        process.exp_string("BREAKING CHANGE")?;
+        process.send_line("Nothing is like before.")?;
 
-    process.exp_string("fake commit")?;
-    process.exp_eof()?;
+        process.exp_string("Issue / ticket number")?;
+        process.send_line("#21")?;
 
-    temp_dir.child(".git").child("commit").assert(indoc! {"
-        commit -em type(scope)!: test description
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
-        # Feel free to enter a longer description here.
+        temp_dir.child(".git").child("commit").assert(indoc! {"
+            commit -em type(scope)!: test description
 
-        Refs: #21
+            # Feel free to enter a longer description here.
 
-        BREAKING CHANGE: Nothing is like before.
+            Refs: #21
 
-    "});
+            BREAKING CHANGE: Nothing is like before.
 
-    Ok(())
-}
+        "});
 
-#[test]
-fn calls_git_commit_with_extra_args() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_template-dummy.toml")?;
+        Ok(())
+    }
 
-    let mut cmd = gitz_commit(&temp_dir)?;
-    cmd.args(["--", "--extra", "--args"]);
+    #[test]
+    fn calls_git_commit_with_extra_args() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut cmd = gitz_commit(&temp_dir)?;
+        cmd.args(["--", "--extra", "--args"]);
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("fake commit")?;
-    process.exp_eof()?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    temp_dir
-        .child(".git")
-        .child("commit")
-        .assert("commit --extra --args -em dummy template message\n\n");
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
-    Ok(())
-}
+        temp_dir
+            .child(".git")
+            .child("commit")
+            .assert("commit --extra --args -em dummy template message\n\n");
 
-#[test]
-fn prints_commit_message_when_print_only() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_template-dummy.toml")?;
+        Ok(())
+    }
 
-    let mut cmd = gitz_commit(&temp_dir)?;
-    cmd.arg("--print-only");
+    #[test]
+    fn prints_commit_message_when_print_only() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut cmd = gitz_commit(&temp_dir)?;
+        cmd.arg("--print-only");
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("dummy template message")?;
-    process.exp_eof()?;
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
-}
+        process.exp_string("dummy template message")?;
+        process.exp_eof()?;
 
-#[test]
-fn does_not_call_git_when_print_only() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_template-dummy.toml")?;
+        Ok(())
+    }
 
-    let mut cmd = gitz_commit(&temp_dir)?;
-    cmd.arg("--print-only");
+    #[test]
+    fn does_not_call_git_when_print_only() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut cmd = gitz_commit(&temp_dir)?;
+        cmd.arg("--print-only");
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    assert!(process.exp_string("fake commit").is_err());
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
+        assert!(process.exp_string("fake commit").is_err());
+
+        Ok(())
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                Usage errors                                //
 ////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////// Git //////////////////////////////////////
+mod usage_errors {
+    use super::*;
 
-#[test]
-fn prints_an_error_if_git_is_not_available() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
+    /////////////////////////////////// Git ////////////////////////////////////
 
-    let mut cmd = gitz_commit(&temp_dir)?;
-    cmd.env("PATH", "");
+    #[test]
+    fn prints_an_error_if_git_is_not_available() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut cmd = gitz_commit(&temp_dir)?;
+        cmd.env("PATH", "");
 
-    process.exp_string("Error: failed to run the git command.")?;
-    process.exp_string("The OS reports:")?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Error: failed to run the git command.")?;
+        process.exp_string("The OS reports:")?;
+        process.exp_eof()?;
 
-#[test]
-fn prints_an_error_if_not_run_in_git_repo() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    fs::remove_dir(temp_dir.child(".git"))?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_not_run_in_git_repo() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        fs::remove_dir(temp_dir.child(".git"))?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Error: not in a Git repository.")?;
-    process.exp_string(
-        "You can initialise a Git repository by running `git init`.",
-    )?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Error: not in a Git repository.")?;
+        process.exp_string(
+            "You can initialise a Git repository by running `git init`.",
+        )?;
+        process.exp_eof()?;
 
-#[test]
-fn prints_an_error_if_not_run_in_git_worktree() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    temp_dir.child(".git").child("bare").touch()?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_not_run_in_git_worktree() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        temp_dir.child(".git").child("bare").touch()?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Error: not inside a Git worktree.")?;
-    process.exp_string(
-        "You seem to be inside a Git repository, but not in a worktree.",
-    )?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Error: not inside a Git worktree.")?;
+        process.exp_string(
+            "You seem to be inside a Git repository, but not in a worktree.",
+        )?;
+        process.exp_eof()?;
 
-//////////////////////////////////// Config ////////////////////////////////////
+        Ok(())
+    }
 
-#[test]
-fn prints_an_error_if_the_config_version_is_unsupported() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "invalid_version.toml")?;
+    ////////////////////////////////// Config //////////////////////////////////
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_the_config_version_is_unsupported() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "invalid_version.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Error: unsupported configuration version 49.3")?;
-    process.exp_string(
-        "Your git-z.toml may have been created by a newer version of git-z.",
-    )?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Error: unsupported configuration version 49.3")?;
+        process.exp_string(
+            "Your git-z.toml may have been created by a newer version of git-z."
+        )?;
+        process.exp_eof()?;
 
-#[test]
-fn prints_an_error_if_the_config_is_an_old_development_one() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "invalid_development.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_the_config_is_an_old_development_one() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "invalid_development.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string(
-        "Error: unsupported development configuration version 0.2-dev.0",
-    )?;
-    process.exp_string(
-        "To update from this version, you can install git-z 0.2.0",
-    )?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string(
+            "Error: unsupported development configuration version 0.2-dev.0",
+        )?;
+        process.exp_string(
+            "To update from this version, you can install git-z 0.2.0",
+        )?;
+        process.exp_eof()?;
 
-#[test]
-fn prints_an_error_if_the_config_has_no_version() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "invalid_no-version.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_the_config_has_no_version() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "invalid_no-version.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Error: invalid configuration in git-z.toml")?;
-    process.exp_string("missing field `version`")?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Error: invalid configuration in git-z.toml")?;
+        process.exp_string("missing field `version`")?;
+        process.exp_eof()?;
 
-#[test]
-fn prints_an_error_if_the_config_is_invalid() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "invalid_value.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_the_config_is_invalid() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "invalid_value.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Error: invalid configuration in git-z.toml")?;
-    process.exp_string("missing field `types`")?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Error: invalid configuration in git-z.toml")?;
+        process.exp_string("missing field `types`")?;
+        process.exp_eof()?;
 
-#[test]
-fn prints_an_error_if_the_config_is_not_toml() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "invalid_config.not_toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_the_config_is_not_toml() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "invalid_config.not_toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string("Error: invalid configuration in git-z.toml")?;
-    process.exp_string("TOML parse error")?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string("Error: invalid configuration in git-z.toml")?;
+        process.exp_string("TOML parse error")?;
+        process.exp_eof()?;
 
-//////////////////////////////////// Commit ////////////////////////////////////
+        Ok(())
+    }
 
-#[test]
-fn does_not_print_an_error_if_git_commit_fails() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    temp_dir.child(".git").child("error").touch()?;
+    ////////////////////////////////// Commit //////////////////////////////////
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn does_not_print_an_error_if_git_commit_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        temp_dir.child(".git").child("error").touch()?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    assert!(process.exp_string("Git has returned an error").is_err());
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
-}
+        assert!(process.exp_string("Git has returned an error").is_err());
 
-#[test]
-fn propagates_the_status_code_if_git_commit_fails() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    temp_dir.child(".git").child("error").write_str("21")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn propagates_the_status_code_if_git_commit_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        temp_dir.child(".git").child("error").write_str("21")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    fill_type(&mut process)?;
-    fill_scope(&mut process)?;
-    fill_description(&mut process)?;
-    fill_breaking_change(&mut process)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 21)));
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
 
-    Ok(())
-}
+        assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 21)));
 
-#[test]
-fn prints_an_error_if_the_template_is_invalid() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_template-invalid.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_the_template_is_invalid() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_template-invalid.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string(
-        "Error: failed to parse 'templates.commit' from the configuration.",
-    )?;
-    process.exp_string("expected a template")?;
-    process.exp_eof()?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    Ok(())
-}
+        process.exp_string(
+            "Error: failed to parse 'templates.commit' from the configuration.",
+        )?;
+        process.exp_string("expected a template")?;
+        process.exp_eof()?;
 
-#[test]
-fn prints_an_error_if_the_template_contains_an_unknown_variable() -> Result<()>
-{
-    let temp_dir = setup_temp_dir()?;
-    install_config(&temp_dir, "latest_template-unknown-variable.toml")?;
+        Ok(())
+    }
 
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn prints_an_error_if_the_template_contains_an_unknown_variable(
+    ) -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_template-unknown-variable.toml")?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    process.exp_string(
-        "Error: failed to render 'templates.commit' from the configuration.",
-    )?;
-    process.exp_string(
-        "Variable `unknown` not found in context while rendering \
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string(
+            "Error: failed to render 'templates.commit' from the configuration."
+        )?;
+        process.exp_string(
+            "Variable `unknown` not found in context while rendering \
                 'templates.commit'",
-    )?;
-    process.exp_eof()?;
+        )?;
+        process.exp_eof()?;
 
-    Ok(())
-}
+        Ok(())
+    }
 
-//////////////////////////////////// Abort /////////////////////////////////////
+    //////////////////////////////////// Abort /////////////////////////////////////
 
-#[test]
-fn does_not_print_an_error_when_aborting_with_esc() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn does_not_print_an_error_when_aborting_with_esc() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Commit type")?;
-    process.send_control('[')?;
+        process.exp_string("Commit type")?;
+        process.send_control('[')?;
 
-    assert!(process
-        .exp_string("Operation was canceled by the user")
-        .is_err());
+        assert!(process
+            .exp_string("Operation was canceled by the user")
+            .is_err());
 
-    Ok(())
-}
+        Ok(())
+    }
 
-#[test]
-fn does_not_print_an_error_when_aborting_with_control_c() -> Result<()> {
-    let temp_dir = setup_temp_dir()?;
-    let cmd = gitz_commit(&temp_dir)?;
+    #[test]
+    fn does_not_print_an_error_when_aborting_with_control_c() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
 
-    let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
-    process.exp_string("Commit type")?;
-    process.send_control('c')?;
+        process.exp_string("Commit type")?;
+        process.send_control('c')?;
 
-    assert!(process
-        .exp_string("Operation was interrupted by the user")
-        .is_err());
+        assert!(process
+            .exp_string("Operation was interrupted by the user")
+            .is_err());
 
-    Ok(())
+        Ok(())
+    }
 }
