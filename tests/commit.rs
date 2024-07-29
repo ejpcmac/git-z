@@ -99,7 +99,7 @@ fn fill_breaking_change(process: &mut PtySession) -> Result<()> {
 //////////////////////////////// Default config ////////////////////////////////
 
 #[test]
-fn test_commit_wizard_uses_default_config() -> Result<()> {
+fn wizard_uses_default_config() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -137,7 +137,7 @@ fn test_commit_wizard_uses_default_config() -> Result<()> {
 ///////////////////////////////////// Type /////////////////////////////////////
 
 #[test]
-fn test_commit_wizard_asks_for_a_type() -> Result<()> {
+fn wizard_asks_for_a_type() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -150,7 +150,7 @@ fn test_commit_wizard_asks_for_a_type() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_uses_types_from_config_file() -> Result<()> {
+fn wizard_uses_types_from_config_file() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_types-custom.toml")?;
 
@@ -169,7 +169,7 @@ fn test_commit_wizard_uses_types_from_config_file() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_accepts_a_type_from_the_list() -> Result<()> {
+fn wizard_accepts_a_type_from_the_list() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -184,7 +184,7 @@ fn test_commit_wizard_accepts_a_type_from_the_list() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_enforces_types_from_the_list() -> Result<()> {
+fn wizard_enforces_types_from_the_list() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -199,7 +199,7 @@ fn test_commit_wizard_enforces_types_from_the_list() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_aborts_if_type_is_skipped_with_esc() -> Result<()> {
+fn wizard_aborts_if_type_is_skipped_with_esc() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -215,7 +215,7 @@ fn test_commit_wizard_aborts_if_type_is_skipped_with_esc() -> Result<()> {
 //////////////////////////////////// Scope /////////////////////////////////////
 
 #[test]
-fn test_commit_wizard_asks_for_a_scope() -> Result<()> {
+fn wizard_asks_for_a_scope() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -230,7 +230,7 @@ fn test_commit_wizard_asks_for_a_scope() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_uses_list_of_scopes_from_config_file() -> Result<()> {
+fn wizard_uses_list_of_scopes_from_config_file() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_scopes-list.toml")?;
 
@@ -252,7 +252,7 @@ fn test_commit_wizard_uses_list_of_scopes_from_config_file() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_allows_scope_to_be_empty_when_using_any() -> Result<()> {
+fn wizard_allows_scope_to_be_empty_when_using_any() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_minimal.toml")?;
 
@@ -271,8 +271,7 @@ fn test_commit_wizard_allows_scope_to_be_empty_when_using_any() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_allows_scope_to_be_skipped_with_esc_when_using_any(
-) -> Result<()> {
+fn wizard_allows_scope_to_be_skipped_with_esc_when_using_any() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_minimal.toml")?;
 
@@ -292,8 +291,7 @@ fn test_commit_wizard_allows_scope_to_be_skipped_with_esc_when_using_any(
 }
 
 #[test]
-fn test_commit_wizard_accepts_a_scope_from_the_list_when_using_list(
-) -> Result<()> {
+fn wizard_accepts_a_scope_from_the_list_when_using_list() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_scopes-list.toml")?;
 
@@ -312,8 +310,7 @@ fn test_commit_wizard_accepts_a_scope_from_the_list_when_using_list(
 }
 
 #[test]
-fn test_commit_wizard_enforces_scopes_from_the_list_when_using_list(
-) -> Result<()> {
+fn wizard_enforces_scopes_from_the_list_when_using_list() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_scopes-list.toml")?;
 
@@ -332,8 +329,7 @@ fn test_commit_wizard_enforces_scopes_from_the_list_when_using_list(
 }
 
 #[test]
-fn test_commit_wizard_allows_scope_to_be_skipped_with_esc_when_using_list(
-) -> Result<()> {
+fn wizard_allows_scope_to_be_skipped_with_esc_when_using_list() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_scopes-list.toml")?;
 
@@ -355,7 +351,7 @@ fn test_commit_wizard_allows_scope_to_be_skipped_with_esc_when_using_list(
 ///////////////////////////////// Description //////////////////////////////////
 
 #[test]
-fn test_commit_wizard_asks_for_a_description() -> Result<()> {
+fn wizard_asks_for_a_description() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -377,8 +373,7 @@ fn test_commit_wizard_asks_for_a_description() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_accepts_a_description_between_5_and_50_characters(
-) -> Result<()> {
+fn wizard_accepts_a_description_between_5_and_50_characters() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -396,8 +391,7 @@ fn test_commit_wizard_accepts_a_description_between_5_and_50_characters(
 }
 
 #[test]
-fn test_commit_wizard_refuses_a_description_shorter_than_5_characters(
-) -> Result<()> {
+fn wizard_refuses_a_description_shorter_than_5_characters() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -416,8 +410,7 @@ fn test_commit_wizard_refuses_a_description_shorter_than_5_characters(
 }
 
 #[test]
-fn test_commit_wizard_refuses_a_description_longer_than_50_characters(
-) -> Result<()> {
+fn wizard_refuses_a_description_longer_than_50_characters() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -437,8 +430,7 @@ fn test_commit_wizard_refuses_a_description_longer_than_50_characters(
 }
 
 #[test]
-fn test_commit_wizard_refuses_a_description_starting_in_lowercase() -> Result<()>
-{
+fn wizard_refuses_a_description_starting_in_lowercase() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -457,8 +449,7 @@ fn test_commit_wizard_refuses_a_description_starting_in_lowercase() -> Result<()
 }
 
 #[test]
-fn test_commit_wizard_aborts_if_description_is_skipped_with_esc() -> Result<()>
-{
+fn wizard_aborts_if_description_is_skipped_with_esc() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -477,7 +468,7 @@ fn test_commit_wizard_aborts_if_description_is_skipped_with_esc() -> Result<()>
 /////////////////////////////// Breaking change ////////////////////////////////
 
 #[test]
-fn test_commit_wizard_asks_for_a_breaking_change() -> Result<()> {
+fn wizard_asks_for_a_breaking_change() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -496,8 +487,7 @@ fn test_commit_wizard_asks_for_a_breaking_change() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_allows_breaking_change_to_be_empty_when_using_any(
-) -> Result<()> {
+fn wizard_allows_breaking_change_to_be_empty_when_using_any() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -516,8 +506,7 @@ fn test_commit_wizard_allows_breaking_change_to_be_empty_when_using_any(
 }
 
 #[test]
-fn test_commit_wizard_allows_breaking_change_to_be_skipped_with_esc(
-) -> Result<()> {
+fn wizard_allows_breaking_change_to_be_skipped_with_esc() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -539,8 +528,8 @@ fn test_commit_wizard_allows_breaking_change_to_be_skipped_with_esc(
 //////////////////////////////////// Ticket ////////////////////////////////////
 
 #[test]
-fn test_commit_wizard_does_not_ask_for_a_ticket_when_not_specified_in_config(
-) -> Result<()> {
+fn wizard_does_not_ask_for_a_ticket_when_not_specified_in_config() -> Result<()>
+{
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_minimal.toml")?;
 
@@ -559,8 +548,7 @@ fn test_commit_wizard_does_not_ask_for_a_ticket_when_not_specified_in_config(
 }
 
 #[test]
-fn test_commit_wizard_asks_for_a_ticket_when_specified_in_config() -> Result<()>
-{
+fn wizard_asks_for_a_ticket_when_specified_in_config() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
@@ -581,7 +569,7 @@ fn test_commit_wizard_asks_for_a_ticket_when_specified_in_config() -> Result<()>
 }
 
 #[test]
-fn test_commit_wizard_accepts_a_ticket_with_proper_format() -> Result<()> {
+fn wizard_accepts_a_ticket_with_proper_format() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
@@ -603,7 +591,7 @@ fn test_commit_wizard_accepts_a_ticket_with_proper_format() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_accepts_a_ticket_with_proper_format2() -> Result<()> {
+fn wizard_accepts_a_ticket_with_proper_format2() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
@@ -625,7 +613,7 @@ fn test_commit_wizard_accepts_a_ticket_with_proper_format2() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_refuses_a_ticket_with_improper_format() -> Result<()> {
+fn wizard_refuses_a_ticket_with_improper_format() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
@@ -650,8 +638,8 @@ fn test_commit_wizard_refuses_a_ticket_with_improper_format() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_allows_ticket_to_be_skipped_with_esc_when_not_required(
-) -> Result<()> {
+fn wizard_allows_ticket_to_be_skipped_with_esc_when_not_required() -> Result<()>
+{
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
@@ -674,8 +662,7 @@ fn test_commit_wizard_allows_ticket_to_be_skipped_with_esc_when_not_required(
 }
 
 #[test]
-fn test_commit_wizard_aborts_if_ticket_is_skipped_with_esc_when_required(
-) -> Result<()> {
+fn wizard_aborts_if_ticket_is_skipped_with_esc_when_required() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-required.toml")?;
 
@@ -699,7 +686,7 @@ fn test_commit_wizard_aborts_if_ticket_is_skipped_with_esc_when_required(
 }
 
 #[test]
-fn test_commit_wizard_gets_the_ticket_number_from_branch() -> Result<()> {
+fn wizard_gets_the_ticket_number_from_branch() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
     set_git_branch(&temp_dir, "feature/GH-42-test-branch")?;
@@ -720,8 +707,7 @@ fn test_commit_wizard_gets_the_ticket_number_from_branch() -> Result<()> {
 }
 
 #[test]
-fn test_commit_wizard_gets_the_ticket_number_from_branch_when_hash(
-) -> Result<()> {
+fn wizard_gets_the_ticket_number_from_branch_when_hash() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
     set_git_branch(&temp_dir, "feature/42-test-branch")?;
@@ -746,7 +732,7 @@ fn test_commit_wizard_gets_the_ticket_number_from_branch_when_hash(
 ////////////////////////////////////////////////////////////////////////////////
 
 #[test]
-fn test_commit_calls_git_commit_with_message_from_template() -> Result<()> {
+fn calls_git_commit_with_message_from_template() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_template-dummy.toml")?;
 
@@ -771,8 +757,7 @@ fn test_commit_calls_git_commit_with_message_from_template() -> Result<()> {
 }
 
 #[test]
-fn test_commit_replaces_variables_from_the_template_with_entered_values(
-) -> Result<()> {
+fn replaces_variables_from_the_template_with_entered_values() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
@@ -813,7 +798,7 @@ fn test_commit_replaces_variables_from_the_template_with_entered_values(
 }
 
 #[test]
-fn test_commit_calls_git_commit_with_extra_args() -> Result<()> {
+fn calls_git_commit_with_extra_args() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_template-dummy.toml")?;
 
@@ -839,7 +824,7 @@ fn test_commit_calls_git_commit_with_extra_args() -> Result<()> {
 }
 
 #[test]
-fn test_commit_prints_commit_message_when_print_only() -> Result<()> {
+fn prints_commit_message_when_print_only() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_template-dummy.toml")?;
 
@@ -860,7 +845,7 @@ fn test_commit_prints_commit_message_when_print_only() -> Result<()> {
 }
 
 #[test]
-fn test_commit_does_not_call_git_when_print_only() -> Result<()> {
+fn does_not_call_git_when_print_only() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_template-dummy.toml")?;
 
@@ -886,7 +871,7 @@ fn test_commit_does_not_call_git_when_print_only() -> Result<()> {
 ///////////////////////////////////// Git //////////////////////////////////////
 
 #[test]
-fn test_commit_prints_an_error_if_git_is_not_available() -> Result<()> {
+fn prints_an_error_if_git_is_not_available() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
 
     let mut cmd = gitz_commit(&temp_dir)?;
@@ -902,7 +887,7 @@ fn test_commit_prints_an_error_if_git_is_not_available() -> Result<()> {
 }
 
 #[test]
-fn test_commit_prints_an_error_if_not_run_in_git_repo() -> Result<()> {
+fn prints_an_error_if_not_run_in_git_repo() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     fs::remove_dir(temp_dir.child(".git"))?;
 
@@ -920,7 +905,7 @@ fn test_commit_prints_an_error_if_not_run_in_git_repo() -> Result<()> {
 }
 
 #[test]
-fn test_commit_prints_an_error_if_not_run_in_git_worktree() -> Result<()> {
+fn prints_an_error_if_not_run_in_git_worktree() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     temp_dir.child(".git").child("bare").touch()?;
 
@@ -940,8 +925,7 @@ fn test_commit_prints_an_error_if_not_run_in_git_worktree() -> Result<()> {
 //////////////////////////////////// Config ////////////////////////////////////
 
 #[test]
-fn test_commit_prints_an_error_if_the_config_version_is_unsupported(
-) -> Result<()> {
+fn prints_an_error_if_the_config_version_is_unsupported() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "invalid_version.toml")?;
 
@@ -959,8 +943,7 @@ fn test_commit_prints_an_error_if_the_config_version_is_unsupported(
 }
 
 #[test]
-fn test_commit_prints_an_error_if_the_config_is_an_old_development_one(
-) -> Result<()> {
+fn prints_an_error_if_the_config_is_an_old_development_one() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "invalid_development.toml")?;
 
@@ -980,7 +963,7 @@ fn test_commit_prints_an_error_if_the_config_is_an_old_development_one(
 }
 
 #[test]
-fn test_commit_prints_an_error_if_the_config_has_no_version() -> Result<()> {
+fn prints_an_error_if_the_config_has_no_version() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "invalid_no-version.toml")?;
 
@@ -996,7 +979,7 @@ fn test_commit_prints_an_error_if_the_config_has_no_version() -> Result<()> {
 }
 
 #[test]
-fn test_commit_prints_an_error_if_the_config_is_invalid() -> Result<()> {
+fn prints_an_error_if_the_config_is_invalid() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "invalid_value.toml")?;
 
@@ -1012,7 +995,7 @@ fn test_commit_prints_an_error_if_the_config_is_invalid() -> Result<()> {
 }
 
 #[test]
-fn test_commit_prints_an_error_if_the_config_is_not_toml() -> Result<()> {
+fn prints_an_error_if_the_config_is_not_toml() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "invalid_config.not_toml")?;
 
@@ -1030,7 +1013,7 @@ fn test_commit_prints_an_error_if_the_config_is_not_toml() -> Result<()> {
 //////////////////////////////////// Commit ////////////////////////////////////
 
 #[test]
-fn test_commit_does_not_print_an_error_if_git_commit_fails() -> Result<()> {
+fn does_not_print_an_error_if_git_commit_fails() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     temp_dir.child(".git").child("error").touch()?;
 
@@ -1049,7 +1032,7 @@ fn test_commit_does_not_print_an_error_if_git_commit_fails() -> Result<()> {
 }
 
 #[test]
-fn test_commit_propagates_the_status_code_if_git_commit_fails() -> Result<()> {
+fn propagates_the_status_code_if_git_commit_fails() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     temp_dir.child(".git").child("error").write_str("21")?;
 
@@ -1068,7 +1051,7 @@ fn test_commit_propagates_the_status_code_if_git_commit_fails() -> Result<()> {
 }
 
 #[test]
-fn test_commit_prints_an_error_if_the_template_is_invalid() -> Result<()> {
+fn prints_an_error_if_the_template_is_invalid() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_template-invalid.toml")?;
 
@@ -1086,8 +1069,8 @@ fn test_commit_prints_an_error_if_the_template_is_invalid() -> Result<()> {
 }
 
 #[test]
-fn test_commit_prints_an_error_if_the_template_contains_an_unknown_variable(
-) -> Result<()> {
+fn prints_an_error_if_the_template_contains_an_unknown_variable() -> Result<()>
+{
     let temp_dir = setup_temp_dir()?;
     install_config(&temp_dir, "latest_template-unknown-variable.toml")?;
 
@@ -1110,7 +1093,7 @@ fn test_commit_prints_an_error_if_the_template_contains_an_unknown_variable(
 //////////////////////////////////// Abort /////////////////////////////////////
 
 #[test]
-fn test_commit_does_not_print_an_error_when_aborting_with_esc() -> Result<()> {
+fn does_not_print_an_error_when_aborting_with_esc() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
@@ -1127,8 +1110,7 @@ fn test_commit_does_not_print_an_error_when_aborting_with_esc() -> Result<()> {
 }
 
 #[test]
-fn test_commit_does_not_print_an_error_when_aborting_with_control_c(
-) -> Result<()> {
+fn does_not_print_an_error_when_aborting_with_control_c() -> Result<()> {
     let temp_dir = setup_temp_dir()?;
     let cmd = gitz_commit(&temp_dir)?;
 
