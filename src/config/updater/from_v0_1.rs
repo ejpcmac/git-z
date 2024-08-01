@@ -21,32 +21,37 @@
 // hence should lead to a panic.
 #![allow(clippy::expect_used, clippy::missing_panics_doc)]
 
+use indoc::indoc;
 use regex::Regex;
 use toml_edit::{DocumentMut, Item, Table};
 
 use super::{super::split_type_and_doc, common, AskForTicket};
 
 /// The old configuration for `types`.
-const OLD_TYPES_DOC: &str = "
-# The available types of commits.
-#
-# This is a list of types (1 word) and their description, separated by one or
-# more spaces.
-";
+const OLD_TYPES_DOC: &str = indoc! {"
+
+    # The available types of commits.
+    #
+    # This is a list of types (1 word) and their description, separated by one or
+    # more spaces.
+"};
 
 /// The old configuration for `scopes`.
-const OLD_SCOPES_DOC: &str = "
-# The list of valid scopes.
-";
+const OLD_SCOPES_DOC: &str = indoc! {"
+
+    # The list of valid scopes.
+"};
 
 /// The old documentation for `ticket.prefixes`.
-pub const OLD_TICKET_PREFIXES_DOC: &str = "# The list of valid ticket prefixes.
-";
+pub const OLD_TICKET_PREFIXES_DOC: &str = indoc! {"
+    # The list of valid ticket prefixes.
+"};
 
 /// The old documentation for `templates.commit`.
-pub const OLD_TEMPLATES_COMMIT_DOC: &str = "# The commit message template, written with the Tera [1] templating engine.
-# [1] https://tera.netlify.app/
-";
+pub const OLD_TEMPLATES_COMMIT_DOC: &str = indoc! {"
+    # The commit message template, written with the Tera [1] templating engine.
+    # [1] https://tera.netlify.app/
+"};
 
 /// Updates the configuration from version 0.1.
 pub fn update(
@@ -425,21 +430,25 @@ mod tests {
 
     #[test]
     fn test_add_ticket_condition_makes_reference_conditional_on_refs_footer() {
-        let source = "{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}\n\
-            \n\
-            # Feel free to enter a longer description here.\n\
-            \n\
-            Refs: {{ ticket }}\n\
-            \n\
-            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}";
+        let source = indoc! {"
+            {{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
 
-        let expected = "{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}\n\
-            \n\
-            # Feel free to enter a longer description here.\n\
-            \n\
-            {% if ticket %}Refs: {{ ticket }}{% endif %}\n\
-            \n\
-            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}";
+            # Feel free to enter a longer description here.
+
+            Refs: {{ ticket }}
+
+            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+        "};
+
+        let expected = indoc! {"
+            {{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+
+            # Feel free to enter a longer description here.
+
+            {% if ticket %}Refs: {{ ticket }}{% endif %}
+
+            {% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+        "};
 
         let actual = add_ticket_condition_to_commit_template(source);
 

@@ -23,6 +23,7 @@ use std::{fs, path::Path, process::Command};
 use assert_cmd::cargo::cargo_bin;
 use assert_fs::{prelude::*, TempDir};
 use eyre::Result;
+use indoc::indoc;
 use rexpect::{
     process::wait::WaitStatus,
     session::{spawn_command, PtySession},
@@ -796,15 +797,16 @@ fn test_commit_replaces_variables_from_the_template_with_entered_values(
     process.exp_string("fake commit")?;
     process.exp_eof()?;
 
-    temp_dir.child(".git").child("commit").assert(
-        "commit -em type(scope)!: test description\n\
-        \n\
-        # Feel free to enter a longer description here.\n\
-        \n\
-        Refs: #21\n\
-        \n\
-        BREAKING CHANGE: Nothing is like before.\n\n",
-    );
+    temp_dir.child(".git").child("commit").assert(indoc! {"
+        commit -em type(scope)!: test description
+
+        # Feel free to enter a longer description here.
+
+        Refs: #21
+
+        BREAKING CHANGE: Nothing is like before.
+
+    "});
 
     Ok(())
 }
