@@ -168,15 +168,12 @@ fn ask_scope(config: &Config) -> Result<Option<String>> {
             .filter(|s| !s.is_empty())),
 
         Some(Scopes::List { list }) => {
-            let help_message = format!(
-                "{}, {}, {}",
-                "↑↓ to move, enter to select, type to filter",
-                "ESC to leave empty",
-                "update `git-z.toml` to add new scopes"
-            );
+            let help_message = "↑↓ to move, enter to select, type to \
+                filter, ESC to leave empty, update `git-z.toml` to add new \
+                scopes";
 
             Ok(Select::new("Scope", list.clone())
-                .with_help_message(&help_message)
+                .with_help_message(help_message)
                 .with_page_size(PAGE_SIZE)
                 .prompt_skippable()?)
         }
@@ -187,7 +184,8 @@ fn ask_scope(config: &Config) -> Result<Option<String>> {
 fn ask_description() -> Result<String> {
     let placeholder =
         "describe your change with a short description (5-50 characters)";
-    let message = "You will be able to add a long description to your commit in an editor later.";
+    let message = "You will be able to add a long description to your \
+        commit in an editor later.";
 
     Ok(Text::new("Short description")
         .with_placeholder(placeholder)

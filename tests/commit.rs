@@ -243,12 +243,10 @@ fn test_commit_wizard_uses_list_of_scopes_from_config_file() -> Result<()> {
     process.exp_string("Scope")?;
     process.exp_string("scope1")?;
     process.exp_string("scope2")?;
-    process.exp_string(&format!(
-        "{}, {}, {}",
-        "to move, enter to select, type to filter",
-        "ESC to leave empty",
-        "update `git-z.toml` to add new scopes"
-    ))?;
+    process.exp_string(
+        "to move, enter to select, type to filter, ESC to leave empty, \
+            update `git-z.toml` to add new scopes",
+    )?;
 
     Ok(())
 }
@@ -370,7 +368,10 @@ fn test_commit_wizard_asks_for_a_description() -> Result<()> {
     process.exp_string(
         "describe your change with a short description (5-50 characters)",
     )?;
-    process.exp_string("You will be able to add a long description to your commit in an editor later.")?;
+    process.exp_string(
+        "You will be able to add a long description to your commit in an \
+            editor later.",
+    )?;
 
     Ok(())
 }
@@ -1097,7 +1098,10 @@ fn test_commit_prints_an_error_if_the_template_contains_an_unknown_variable(
     process.exp_string(
         "Error: failed to render 'templates.commit' from the configuration.",
     )?;
-    process.exp_string("Variable `unknown` not found in context while rendering 'templates.commit'")?;
+    process.exp_string(
+        "Variable `unknown` not found in context while rendering \
+                'templates.commit'",
+    )?;
     process.exp_eof()?;
 
     Ok(())
