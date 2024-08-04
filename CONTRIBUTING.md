@@ -85,7 +85,7 @@ Install:
 
 You can build the project and run all CI checks with:
 
-    cargo xtask check all
+    cargo xtask check
 
 All the checks should pass.
 
@@ -143,7 +143,7 @@ To make a change, please use this workflow:
 6. Run the checks to ensure there is no regression and everything works as
     expected:
 
-        cargo xtask check all
+        cargo xtask check
 
 7. If it’s all good, open a pull request to merge your branch into the `develop`
     branch on the main repository.

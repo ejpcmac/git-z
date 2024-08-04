@@ -72,16 +72,13 @@ fn check(subcommand: Option<&str>) {
             "format" => check_format(&mut ctx),
             "build" => build(&mut ctx),
             "test" => test(&mut ctx),
-            "all" => {
-                check_commits(&mut ctx);
-                check_format(&mut ctx);
-                build(&mut ctx);
-                test(&mut ctx);
-            }
             _ => check_usage(),
         }
     } else {
-        check_usage();
+        check_commits(&mut ctx);
+        check_format(&mut ctx);
+        build(&mut ctx);
+        test(&mut ctx);
     }
 
     check_result(&ctx);
@@ -89,7 +86,7 @@ fn check(subcommand: Option<&str>) {
 
 fn check_usage() {
     let name = env::args().next().unwrap();
-    eprintln!("usage: {name} check <commits|format|build|test|all>");
+    eprintln!("usage: {name} check [commits|format|build|test]");
     process::exit(1);
 }
 
