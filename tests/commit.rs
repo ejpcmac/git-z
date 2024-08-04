@@ -52,8 +52,21 @@ fn install_config(temp_dir: &TempDir, name: &str) -> Result<()> {
     Ok(())
 }
 
+fn make_git_bare_repo(temp_dir: &TempDir) -> Result<()> {
+    temp_dir.child(".git").child("bare").touch()?;
+    Ok(())
+}
+
 fn set_git_branch(temp_dir: &TempDir, name: &str) -> Result<()> {
     temp_dir.child(".git").child("branch").write_str(name)?;
+    Ok(())
+}
+
+fn set_git_return_code(temp_dir: &TempDir, error: i32) -> Result<()> {
+    temp_dir
+        .child(".git")
+        .child("error")
+        .write_str(&error.to_string())?;
     Ok(())
 }
 
@@ -90,6 +103,10 @@ fn fill_breaking_change(process: &mut PtySession) -> Result<()> {
     process.exp_string("BREAKING CHANGE")?;
     process.send_line("")?;
     Ok(())
+}
+
+fn assert_git_commit(temp_dir: &TempDir, content: &str) {
+    temp_dir.child(".git").child("commit").assert(content);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -756,10 +773,7 @@ mod commit {
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
-        temp_dir
-            .child(".git")
-            .child("commit")
-            .assert("commit -em dummy template message\n\n");
+        assert_git_commit(&temp_dir, "commit -em dummy template message\n\n");
 
         Ok(())
     }
@@ -792,16 +806,19 @@ mod commit {
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
-        temp_dir.child(".git").child("commit").assert(indoc! {"
-            commit -em type(scope)!: test description
+        assert_git_commit(
+            &temp_dir,
+            indoc! {"
+                commit -em type(scope)!: test description
 
-            # Feel free to enter a longer description here.
+                # Feel free to enter a longer description here.
 
-            Refs: #21
+                Refs: #21
 
-            BREAKING CHANGE: Nothing is like before.
+                BREAKING CHANGE: Nothing is like before.
 
-        "});
+            "},
+        );
 
         Ok(())
     }
@@ -824,10 +841,10 @@ mod commit {
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
-        temp_dir
-            .child(".git")
-            .child("commit")
-            .assert("commit --extra --args -em dummy template message\n\n");
+        assert_git_commit(
+            &temp_dir,
+            "commit --extra --args -em dummy template message\n\n",
+        );
 
         Ok(())
     }
@@ -920,7 +937,7 @@ mod usage_errors {
     #[test]
     fn prints_an_error_if_not_run_in_git_worktree() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        temp_dir.child(".git").child("bare").touch()?;
+        make_git_bare_repo(&temp_dir)?;
 
         let cmd = gitz_commit(&temp_dir)?;
 
@@ -1028,7 +1045,7 @@ mod usage_errors {
     #[test]
     fn does_not_print_an_error_if_git_commit_fails() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        temp_dir.child(".git").child("error").touch()?;
+        set_git_return_code(&temp_dir, 1)?;
 
         let cmd = gitz_commit(&temp_dir)?;
 
@@ -1047,7 +1064,7 @@ mod usage_errors {
     #[test]
     fn propagates_the_status_code_if_git_commit_fails() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        temp_dir.child(".git").child("error").write_str("21")?;
+        set_git_return_code(&temp_dir, 21)?;
 
         let cmd = gitz_commit(&temp_dir)?;
 
