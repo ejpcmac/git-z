@@ -81,19 +81,15 @@ impl super::Command for Commit {
         ensure_in_git_worktree()?;
 
         let config = load_config()?;
-        let tera = build_and_check_template(&config)?;
-
-        let commit_message = CommitMessage::run_wizard(&config)?;
-        let context = Context::from_serialize(commit_message)?;
-        let message = tera.render("templates.commit", &context)?;
+        let commit_message = make_commit_message(&config)?;
 
         if self.print_only {
-            println!("{message}");
+            println!("{commit_message}");
         } else {
             let status = Command::new("git")
                 .arg("commit")
                 .args(&self.extra_args)
-                .args(["-em", &message])
+                .args(["-em", &commit_message])
                 .status()?;
 
             if !status.success() {
@@ -146,6 +142,17 @@ fn build_and_check_template(config: &Config) -> Result<Tera> {
     .map_err(CommitError::Template)?;
 
     Ok(tera)
+}
+
+/// Makes a commit message.
+fn make_commit_message(config: &Config) -> Result<String> {
+    let tera = build_and_check_template(config)?;
+
+    let commit_message = CommitMessage::run_wizard(config)?;
+    let context = Context::from_serialize(commit_message)?;
+    let message = tera.render("templates.commit", &context)?;
+
+    Ok(message)
 }
 
 /// Asks the user which type of commit they wants.
