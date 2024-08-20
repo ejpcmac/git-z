@@ -218,9 +218,8 @@ mod wizard {
     #[test]
     fn uses_default_config() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         // Asks for commit type with default list.
         process.exp_string("Commit type")?;
@@ -256,9 +255,8 @@ mod wizard {
     #[test]
     fn asks_for_a_type() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.exp_string("to move, enter to select, type to filter")?;
@@ -271,9 +269,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_types-custom.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.exp_string("type")?;
@@ -288,9 +284,8 @@ mod wizard {
     #[test]
     fn accepts_a_type_from_the_list() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.send_line("type")?;
@@ -303,9 +298,8 @@ mod wizard {
     #[test]
     fn enforces_types_from_the_list() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.send_line("unknown")?;
@@ -318,9 +312,8 @@ mod wizard {
     #[test]
     fn aborts_if_type_is_skipped_with_esc() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.send_control('[')?;
@@ -334,9 +327,8 @@ mod wizard {
     #[test]
     fn asks_for_a_scope() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
 
@@ -351,9 +343,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
 
@@ -373,9 +363,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_minimal.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
 
@@ -392,9 +380,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_minimal.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
 
@@ -412,9 +398,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
 
@@ -431,9 +415,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
 
@@ -450,9 +432,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_scopes-list.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
 
@@ -470,9 +450,8 @@ mod wizard {
     #[test]
     fn asks_for_a_description() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -492,9 +471,8 @@ mod wizard {
     #[test]
     fn accepts_a_description_between_5_and_50_characters() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -510,9 +488,8 @@ mod wizard {
     #[test]
     fn refuses_a_description_shorter_than_5_characters() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -530,9 +507,8 @@ mod wizard {
     #[test]
     fn refuses_a_description_longer_than_50_characters() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -552,9 +528,8 @@ mod wizard {
     #[test]
     fn refuses_a_description_starting_in_lowercase() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -571,9 +546,8 @@ mod wizard {
     #[test]
     fn aborts_if_description_is_skipped_with_esc() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -590,9 +564,8 @@ mod wizard {
     #[test]
     fn asks_for_a_breaking_change() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -609,9 +582,8 @@ mod wizard {
     #[test]
     fn allows_breaking_change_to_be_empty_when_using_any() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -628,9 +600,8 @@ mod wizard {
     #[test]
     fn allows_breaking_change_to_be_skipped_with_esc() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -652,9 +623,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_minimal.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -671,9 +640,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -692,9 +659,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -714,9 +679,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -736,9 +699,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -761,9 +722,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -784,9 +743,7 @@ mod wizard {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_ticket-required.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -809,9 +766,7 @@ mod wizard {
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
         set_git_branch(&temp_dir, "feature/GH-42-test-branch")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -830,9 +785,7 @@ mod wizard {
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
         set_git_branch(&temp_dir, "feature/42-test-branch")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -863,9 +816,7 @@ mod commit_cache {
         // NOTE: Let’s make Git error so the commit cache is kept.
         set_git_return_code(&temp_dir, 1)?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         wait_type(&mut process)?;
         assert_commit_cache(&temp_dir, predicate::path::missing());
@@ -956,9 +907,7 @@ mod commit_cache {
         // NOTE: Let’s make Git error so the commit cache is kept.
         set_git_return_code(&temp_dir, 1)?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         assert_commit_cache(&temp_dir, predicate::path::missing());
 
@@ -986,9 +935,8 @@ mod commit_cache {
     #[test]
     fn deletes_the_commit_cache_on_commit_success() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -1016,9 +964,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string(
             "A previous run has been aborted. Do you want to reuse your \
@@ -1050,9 +996,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_answers(&mut process, "y")?;
 
@@ -1096,9 +1040,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         // Just press enter (default).
         fill_do_reuse_answers(&mut process, "")?;
@@ -1126,9 +1068,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_answers(&mut process, "y")?;
         fill_type(&mut process)?;
@@ -1155,9 +1095,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_answers(&mut process, "y")?;
         fill_type(&mut process)?;
@@ -1187,9 +1125,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_answers(&mut process, "n")?;
 
@@ -1232,9 +1168,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_answers(&mut process, "n")?;
         wait_type(&mut process)?;
@@ -1259,9 +1193,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string(
             "A previous run has been aborted. Do you want to reuse your \
@@ -1288,9 +1220,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string(
             "A previous run has been aborted. Do you want to reuse your \
@@ -1328,9 +1258,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string(
             "A previous run has been aborted. Do you want to reuse your \
@@ -1357,9 +1285,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_message(&mut process, "y")?;
 
@@ -1384,9 +1310,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         // Just press enter (default).
         fill_do_reuse_message(&mut process, "")?;
@@ -1422,9 +1346,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_message(&mut process, "y")?;
         process.exp_string("fake commit")?;
@@ -1459,9 +1381,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_message(&mut process, "n")?;
 
@@ -1485,9 +1405,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_do_reuse_message(&mut process, "n")?;
         wait_type(&mut process)?;
@@ -1500,9 +1418,8 @@ mod commit_cache {
     #[test]
     fn does_not_ask_anything_if_there_is_no_commit_cache() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         assert!(process
             .exp_string(
@@ -1536,9 +1453,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
 
@@ -1558,9 +1473,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         assert_commit_cache(&temp_dir, predicate::path::missing());
@@ -1578,9 +1491,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
 
@@ -1597,9 +1508,7 @@ mod commit_cache {
             "##},
         )?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         assert_commit_cache(&temp_dir, predicate::path::missing());
@@ -1620,9 +1529,7 @@ mod commit {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_template-dummy.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -1643,9 +1550,7 @@ mod commit {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.send_line("type")?;
@@ -1780,9 +1685,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         fs::remove_dir(temp_dir.child(".git"))?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Error: not in a Git repository.")?;
         process.exp_string(
@@ -1798,9 +1701,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         make_git_bare_repo(&temp_dir)?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Error: not inside a Git worktree.")?;
         process.exp_string(
@@ -1818,9 +1719,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "invalid_version.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Error: unsupported configuration version 49.3")?;
         process.exp_string(
@@ -1836,9 +1735,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "invalid_development.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string(
             "Error: unsupported development configuration version 0.2-dev.0",
@@ -1856,9 +1753,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "invalid_no-version.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Error: invalid configuration in git-z.toml")?;
         process.exp_string("missing field `version`")?;
@@ -1872,9 +1767,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "invalid_value.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Error: invalid configuration in git-z.toml")?;
         process.exp_string("missing field `types`")?;
@@ -1888,9 +1781,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "invalid_config.not_toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Error: invalid configuration in git-z.toml")?;
         process.exp_string("TOML parse error")?;
@@ -1906,9 +1797,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         set_git_return_code(&temp_dir, 1)?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -1925,9 +1814,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         set_git_return_code(&temp_dir, 21)?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
@@ -1944,9 +1831,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_template-invalid.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string(
             "Error: failed to parse 'templates.commit' from the configuration.",
@@ -1963,9 +1848,7 @@ mod usage_errors {
         let temp_dir = setup_temp_dir()?;
         install_config(&temp_dir, "latest_template-unknown-variable.toml")?;
 
-        let cmd = gitz_commit(&temp_dir)?;
-
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string(
             "Error: failed to render 'templates.commit' from the configuration."
@@ -1984,9 +1867,8 @@ mod usage_errors {
     #[test]
     fn does_not_print_an_error_when_aborting_with_esc() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.send_control('[')?;
@@ -2001,9 +1883,8 @@ mod usage_errors {
     #[test]
     fn does_not_print_an_error_when_aborting_with_control_c() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
-        let cmd = gitz_commit(&temp_dir)?;
 
-        let mut process = spawn_command(cmd, TIMEOUT)?;
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
 
         process.exp_string("Commit type")?;
         process.send_control('c')?;
