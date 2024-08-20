@@ -49,6 +49,7 @@ toml_edit = "0.22"
 [dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
+predicates = "3"
 
 [target.'cfg(not(windows))'.dev-dependencies]
 rexpect = "0.5"
