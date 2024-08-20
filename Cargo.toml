@@ -39,6 +39,7 @@ eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
 indoc = "2"
 inquire = "0.7"
+itertools = "0.13"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
