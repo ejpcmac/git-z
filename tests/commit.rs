@@ -21,9 +21,10 @@
 use std::{fs, path::Path, process::Command};
 
 use assert_cmd::cargo::cargo_bin;
-use assert_fs::{prelude::*, TempDir};
+use assert_fs::{assert::IntoPathPredicate, prelude::*, TempDir};
 use eyre::Result;
-use indoc::indoc;
+use indoc::{formatdoc, indoc};
+use predicates::prelude::*;
 use rexpect::{
     process::wait::WaitStatus,
     session::{spawn_command, PtySession},
@@ -52,6 +53,15 @@ fn install_config(temp_dir: &TempDir, name: &str) -> Result<()> {
     Ok(())
 }
 
+fn install_commit_cache(temp_dir: &TempDir, commit_cache: &str) -> Result<()> {
+    temp_dir
+        .child(".git")
+        .child("git-z")
+        .child("commit-cache.toml")
+        .write_str(commit_cache)?;
+    Ok(())
+}
+
 fn make_git_bare_repo(temp_dir: &TempDir) -> Result<()> {
     temp_dir.child(".git").child("bare").touch()?;
     Ok(())
@@ -67,6 +77,14 @@ fn set_git_return_code(temp_dir: &TempDir, error: i32) -> Result<()> {
         .child(".git")
         .child("error")
         .write_str(&error.to_string())?;
+    Ok(())
+}
+
+fn set_git_commit_message(temp_dir: &TempDir, message: &str) -> Result<()> {
+    temp_dir
+        .child(".git")
+        .child("COMMIT_EDITMSG")
+        .write_str(message)?;
     Ok(())
 }
 
@@ -103,6 +121,85 @@ fn fill_breaking_change(process: &mut PtySession) -> Result<()> {
     process.exp_string("BREAKING CHANGE")?;
     process.send_line("")?;
     Ok(())
+}
+
+fn fill_do_reuse_answers(process: &mut PtySession, yes_no: &str) -> Result<()> {
+    process.exp_string(
+        "A previous run has been aborted. Do you want to reuse your answers?",
+    )?;
+    process.send_line(yes_no)?;
+    Ok(())
+}
+
+fn fill_do_reuse_message(process: &mut PtySession, yes_no: &str) -> Result<()> {
+    process.exp_string(
+        "A previous run has been aborted. Do you want to reuse your commit \
+            message?",
+    )?;
+    process.send_line(yes_no)?;
+    Ok(())
+}
+
+fn wait_type(process: &mut PtySession) -> Result<()> {
+    process.exp_string("Commit type")?;
+    Ok(())
+}
+
+fn fill_type_and_wait_scope(
+    process: &mut PtySession,
+    r#type: &str,
+) -> Result<()> {
+    process.send_line(r#type)?;
+    process.exp_string("Scope")?;
+    Ok(())
+}
+
+fn fill_scope_and_wait_description(
+    process: &mut PtySession,
+    scope: &str,
+) -> Result<()> {
+    process.send_line(scope)?;
+    process.exp_string("Short description")?;
+    Ok(())
+}
+
+fn fill_description_and_wait_breaking_change(
+    process: &mut PtySession,
+    description: &str,
+) -> Result<()> {
+    process.send_line(description)?;
+    process.exp_string("BREAKING CHANGE")?;
+    Ok(())
+}
+
+fn fill_breaking_change_and_wait_ticket(
+    process: &mut PtySession,
+    breaking_change: &str,
+) -> Result<()> {
+    process.send_line(breaking_change)?;
+    process.exp_string("Issue / ticket number")?;
+    Ok(())
+}
+
+fn fill_ticket_and_wait_eof(
+    process: &mut PtySession,
+    ticket: &str,
+) -> Result<()> {
+    process.send_line(ticket)?;
+    process.exp_eof()?;
+    Ok(())
+}
+
+fn assert_commit_cache<I, P>(temp_dir: &TempDir, pred: I)
+where
+    I: IntoPathPredicate<P>,
+    P: Predicate<Path>,
+{
+    temp_dir
+        .child(".git")
+        .child("git-z")
+        .child("commit-cache.toml")
+        .assert(pred);
 }
 
 fn assert_git_commit(temp_dir: &TempDir, content: &str) {
@@ -744,6 +841,768 @@ mod wizard {
 
         process.exp_string("Issue / ticket number")?;
         process.exp_string("#42")?;
+
+        Ok(())
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                Commit cache                                //
+////////////////////////////////////////////////////////////////////////////////
+
+mod commit_cache {
+    use super::*;
+
+    const VERSION: &str = "0.1";
+
+    #[test]
+    fn saves_each_answer_along_the_way() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_full.toml")?;
+
+        // NOTE: Let’s make Git error so the commit cache is kept.
+        set_git_return_code(&temp_dir, 1)?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        wait_type(&mut process)?;
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+
+        fill_type_and_wait_scope(&mut process, "chore")?;
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+            "##},
+        );
+
+        fill_scope_and_wait_description(&mut process, "hell")?;
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+            "##},
+        );
+
+        fill_description_and_wait_breaking_change(
+            &mut process,
+            "flames everywhere",
+        )?;
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+                description = "flames everywhere"
+            "##},
+        );
+
+        fill_breaking_change_and_wait_ticket(
+            &mut process,
+            "It ain’t heaven anymore.",
+        )?;
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+                description = "flames everywhere"
+                breaking_change = "It ain’t heaven anymore."
+            "##},
+        );
+
+        fill_ticket_and_wait_eof(&mut process, "#666")?;
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+                description = "flames everywhere"
+                breaking_change = "It ain’t heaven anymore."
+                ticket = "#666"
+            "##},
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn saves_the_wizard_completion() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+
+        // NOTE: Let’s make Git error so the commit cache is kept.
+        set_git_return_code(&temp_dir, 1)?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+        process.exp_eof()?;
+
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+                type = "feat"
+                description = "description"
+            "##},
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn deletes_the_commit_cache_on_commit_success() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
+
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+
+        Ok(())
+    }
+
+    #[test]
+    fn asks_whether_to_prefill_answers_if_a_cache_exists() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "feat"
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string(
+            "A previous run has been aborted. Do you want to reuse your \
+                answers?",
+        )?;
+        process.exp_string(
+            "The wizard will be run as usual with your answers pre-selected.",
+        )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prefills_answers_with_commit_cache_if_the_user_accepts() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_full.toml")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+                description = "flames everywhere"
+                breaking_change = "It ain't heaven anymore."
+                ticket = "#666"
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_answers(&mut process, "y")?;
+
+        // Ensure all answers are pre-filled.
+
+        process.exp_string("Commit type")?;
+        process.exp_regex(">.*chore")?;
+        process.send_line("")?;
+
+        process.exp_string("Scope")?;
+        process.exp_string("hell")?;
+        process.send_line("")?;
+
+        process.exp_string("Short description")?;
+        process.exp_string("flames everywhere")?;
+        process.send_line("")?;
+
+        process.exp_string("BREAKING CHANGE")?;
+        process.exp_string("It ain't heaven anymore.")?;
+        process.send_line("")?;
+
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#666")?;
+        process.send_line("")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prefills_answers_with_commit_cache_by_default() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_full.toml")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        // Just press enter (default).
+        fill_do_reuse_answers(&mut process, "")?;
+
+        process.exp_string("Commit type")?;
+        // Ensure this is pre-selected.
+        process.exp_regex(">.*chore")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prefills_the_scope_with_commit_cache_when_any() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_minimal.toml")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "type"
+                scope = "everything"
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_answers(&mut process, "y")?;
+        fill_type(&mut process)?;
+
+        process.exp_string("Scope")?;
+        process.exp_string("everything")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prefills_the_scope_with_commit_cache_when_list() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_scopes-list.toml")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "type"
+                scope = "scope2"
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_answers(&mut process, "y")?;
+        fill_type(&mut process)?;
+
+        process.exp_string("Scope")?;
+        process.exp_regex(">.*scope2")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_prefill_answers_if_the_user_declines() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_config(&temp_dir, "latest_full.toml")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+                description = "flames everywhere"
+                breaking_change = "It ain’t heaven anymore."
+                ticket = "#666"
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_answers(&mut process, "n")?;
+
+        // Ensure all answers are not prefilled.
+
+        process.exp_string("Commit type")?;
+        assert!(process.exp_regex(">.*chore").is_err());
+        process.send_line("")?;
+
+        process.exp_string("Scope")?;
+        assert!(process.exp_string("hell").is_err());
+        process.send_line("")?;
+
+        process.exp_string("Short description")?;
+        assert!(process.exp_string("flames everywhere").is_err());
+        process.send_line("description")?;
+
+        process.exp_string("BREAKING CHANGE")?;
+        assert!(process.exp_string("It ain’t heaven anymore.").is_err());
+        process.send_line("")?;
+
+        process.exp_string("Issue / ticket number")?;
+        assert!(process.exp_string("#666").is_err());
+        process.send_line("")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn deletes_the_commit_cache_if_the_user_declines() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "feat"
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_answers(&mut process, "n")?;
+        wait_type(&mut process)?;
+
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+
+        Ok(())
+    }
+
+    #[test]
+    fn asks_whether_to_reuse_message_if_wizard_is_complete_and_message_exists(
+    ) -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        set_git_commit_message(&temp_dir, "previous message")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string(
+            "A previous run has been aborted. Do you want to reuse your \
+                commit message?",
+        )?;
+        process.exp_string(
+            "This will use your last commit message without running the wizard."
+        )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn asks_whether_to_prefill_answers_if_wizard_is_complete_but_message_missing(
+    ) -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string(
+            "A previous run has been aborted. Do you want to reuse your \
+                answers?",
+        )?;
+        process.exp_string(
+            "The wizard will be run as usual with your answers pre-selected.",
+        )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn asks_whether_to_prefill_answers_if_wizard_is_complete_but_message_empty(
+    ) -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        set_git_commit_message(
+            &temp_dir,
+            indoc! {"
+                # This is an empty message
+
+                # That contains several
+                # commented lines.
+
+                # And multiple empty lines.
+            "},
+        )?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string(
+            "A previous run has been aborted. Do you want to reuse your \
+                answers?",
+        )?;
+        process.exp_string(
+            "The wizard will be run as usual with your answers pre-selected.",
+        )?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_run_the_wizard_when_reusing_previous_message() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        set_git_commit_message(&temp_dir, "previous message")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_message(&mut process, "y")?;
+
+        // No interactive wizard: direct call to `git commit`.
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn reuses_the_previous_message_by_default() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        set_git_commit_message(&temp_dir, "previous message")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        // Just press enter (default).
+        fill_do_reuse_message(&mut process, "")?;
+
+        // No interactive wizard: direct call to `git commit`.
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn calls_git_commit_with_previous_message_when_reusing_it() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        set_git_commit_message(
+            &temp_dir,
+            indoc! {"
+                previous message
+
+                This is a long description
+                on multiple lines.
+
+                Footer: something.
+            "},
+        )?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_message(&mut process, "y")?;
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
+
+        assert_git_commit(
+            &temp_dir,
+            indoc! {"
+                commit -em previous message
+
+                This is a long description
+                on multiple lines.
+
+                Footer: something.
+            "},
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn runs_the_wizard_when_not_reusing_previous_message() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        set_git_commit_message(&temp_dir, "previous message")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_message(&mut process, "n")?;
+
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn deletes_the_commit_cache_if_the_user_declines_previous_message(
+    ) -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        set_git_commit_message(&temp_dir, "previous message")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_message(&mut process, "n")?;
+        wait_type(&mut process)?;
+
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_ask_anything_if_there_is_no_commit_cache() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        assert!(process
+            .exp_string(
+                "A previous run has been aborted. Do you want to reuse your \
+                answers?",
+            )
+            .is_err());
+
+        assert!(process
+            .exp_string(
+                "A previous run has been aborted. Do you want to reuse your \
+                commit message?",
+            )
+            .is_err());
+
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn ignores_the_commit_cache_if_its_version_mismatches() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "0.0"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn deletes_the_commit_cache_if_its_version_mismatches() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "0.0"
+                wizard_state = "completed"
+
+                [wizard_answers]
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string("Commit type")?;
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+
+        Ok(())
+    }
+
+    #[test]
+    fn ignores_the_commit_cache_if_it_is_invalid() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                invalid
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn deletes_the_commit_cache_if_it_is_invalid() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                invalid
+            "##},
+        )?;
+
+        let cmd = gitz_commit(&temp_dir)?;
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string("Commit type")?;
+        assert_commit_cache(&temp_dir, predicate::path::missing());
 
         Ok(())
     }

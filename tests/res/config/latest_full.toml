@@ -1,0 +1,24 @@
+version = "0.2"
+
+[types]
+feat = "adds a new feature in the code"
+fix = "patches a code bug"
+chore = "updates or removes something that is not covered by any other type"
+
+[scopes]
+accept = "any"
+
+[ticket]
+required = false
+prefixes = ["#", "GH-"]
+
+[templates]
+commit = """
+{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+
+# Feel free to enter a longer description here.
+
+{% if ticket %}Refs: {{ ticket }}{% endif %}
+
+{% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+"""
