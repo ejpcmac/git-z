@@ -8,6 +8,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+* [`git z commit`] Ask whether to reuse the previous answers or commit message
+    when the operation has been aborted or has failed.
+
 ### Changed
 
 * [`git z commit`] Use fuzzy-finding when selecting types and scopes.

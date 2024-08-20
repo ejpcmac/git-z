@@ -106,9 +106,10 @@ fn ask_scopes_any(updater: &ConfigUpdater<Init>) -> Result<bool> {
         return Ok(false);
     }
 
-    hint!("");
-    hint!("It is now possible to accept any arbitrary scope instead of a pre-defined list.");
-    hint!("");
+    hint! {"
+
+        It is now possible to accept any arbitrary scope instead of a pre-defined list.
+    "};
 
     Ok(Confirm::new(
         "Do you want to accept any scope instead of a pre-defined list?",
@@ -120,13 +121,14 @@ fn ask_scopes_any(updater: &ConfigUpdater<Init>) -> Result<bool> {
 
 /// Asks the user whether a ticket should be asked for / required.
 fn ask_ticket_management() -> Result<AskForTicket> {
-    hint!("");
-    hint!("The ticket / issue number management has been updated. It is now possible to:");
-    hint!("");
-    hint!("- ask for a required ticket number (as before),");
-    hint!("- ask for an optional ticket number,");
-    hint!("- do not ask for any ticket number.");
-    hint!("");
+    hint! {"
+
+        The ticket / issue number management has been updated. It is now possible to:
+
+        - ask for a required ticket number (as before),
+        - ask for an optional ticket number,
+        - do not ask for any ticket number.
+    "};
 
     let ask_for_ticket = Confirm::new(
         "Should the committer be proposed to enter a ticket number?",
@@ -153,11 +155,13 @@ fn ask_empty_prefix_to_hash(updater: &ConfigUpdater<Init>) -> Result<bool> {
         return Ok(false);
     }
 
-    hint!("");
-    hint!("\"#\" is now properly handled as a ticket prefix. This means that if \"#\" is ");
-    hint!("part of your prefix list, a ticket number `#23` would be properly extracted ");
-    hint!("from a branch named `feature/23-name`.");
-    hint!("");
+    hint! {r##"
+
+        "#" is now properly handled as a ticket prefix. This means that if \"#\" is
+        part of your prefix list, a ticket number `#23` would be properly extracted
+        from a branch named `feature/23-name`.
+    "##};
+
     Ok(
         Confirm::new("Should any existing empty value in `ticket.prefixes` be replaced by \"#\"?")
             .with_help_message("This will also remove any `#` prefix before `{{ ticket }}` in your commit template")

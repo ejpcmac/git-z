@@ -82,7 +82,7 @@ pub fn uncapitalise(s: &str) -> String {
 macro_rules! success {
     ($($arg:tt)*) => {{
         use colored::Colorize;
-        let message = format!($($arg)*).green().bold();
+        let message = indoc::formatdoc!($($arg)*).green().bold();
         println!("{message}");
     }};
 }
@@ -92,7 +92,7 @@ macro_rules! success {
 macro_rules! warning {
     ($($arg:tt)*) => {{
         use colored::Colorize;
-        let message = format!($($arg)*).yellow().bold();
+        let message = indoc::formatdoc!($($arg)*).yellow().bold();
         eprintln!("{message}");
     }};
 }
@@ -102,7 +102,7 @@ macro_rules! warning {
 macro_rules! error {
     ($($arg:tt)*) => {{
         use colored::Colorize;
-        let message = format!($($arg)*);
+        let message = indoc::formatdoc!($($arg)*);
         let message = $crate::command::helpers::uncapitalise(&message);
         let message = format!("Error: {message}").red().bold();
         eprintln!("{message}");
@@ -114,7 +114,7 @@ macro_rules! error {
 macro_rules! hint {
     ($($arg:tt)*) => {{
         use colored::Colorize;
-        let message = format!($($arg)*).blue();
+        let message = indoc::formatdoc!($($arg)*).blue();
         eprintln!("{message}");
     }};
 }

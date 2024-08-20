@@ -37,7 +37,9 @@ color-eyre = "0.6"
 colored = "2"
 eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
+indoc = "2"
 inquire = "0.7"
+itertools = "0.13"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
@@ -48,6 +50,7 @@ toml_edit = "0.22"
 [dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
+predicates = "3"
 
 [target.'cfg(not(windows))'.dev-dependencies]
 rexpect = "0.5"

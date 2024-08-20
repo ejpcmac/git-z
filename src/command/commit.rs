@@ -15,12 +15,13 @@
 
 //! The `commit` subcommand.
 
-use std::process::Command;
+use std::{fs, path::PathBuf, process::Command};
 
 use clap::Parser;
 use eyre::{bail, ensure, eyre, Context as _, Result};
 use indexmap::IndexMap;
-use inquire::{validator::Validation, CustomUserError, Select, Text};
+use inquire::{validator::Validation, Confirm, CustomUserError, Select, Text};
+use itertools::Itertools;
 use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
@@ -28,6 +29,7 @@ use thiserror::Error;
 
 use crate::{
     command::helpers::load_config,
+    commit_cache::{CommitCache, WizardState},
     config::{Config, Scopes, Ticket},
 };
 
@@ -81,19 +83,15 @@ impl super::Command for Commit {
         ensure_in_git_worktree()?;
 
         let config = load_config()?;
-        let tera = build_and_check_template(&config)?;
-
-        let commit_message = CommitMessage::run_wizard(&config)?;
-        let context = Context::from_serialize(commit_message)?;
-        let message = tera.render("templates.commit", &context)?;
+        let commit_message = make_commit_message(&config)?;
 
         if self.print_only {
-            println!("{message}");
+            println!("{commit_message}");
         } else {
             let status = Command::new("git")
                 .arg("commit")
                 .args(&self.extra_args)
-                .args(["-em", &message])
+                .args(["-em", &commit_message])
                 .status()?;
 
             if !status.success() {
@@ -103,20 +101,25 @@ impl super::Command for Commit {
             }
         }
 
+        CommitCache::discard()?;
         Ok(())
     }
 }
 
 impl CommitMessage {
     /// Runs the wizard to build a commit message from user input.
-    fn run_wizard(config: &Config) -> Result<Self> {
-        Ok(Self {
-            r#type: ask_type(config)?,
-            scope: ask_scope(config)?,
-            description: ask_description()?,
-            breaking_change: ask_breaking_change()?,
-            ticket: ask_ticket(config)?,
-        })
+    fn run_wizard(config: &Config, cache: &mut CommitCache) -> Result<Self> {
+        let commit_message = Self {
+            r#type: ask_type(config, cache)?,
+            scope: ask_scope(config, cache)?,
+            description: ask_description(cache)?,
+            breaking_change: ask_breaking_change(cache)?,
+            ticket: ask_ticket(config, cache)?,
+        };
+
+        cache.mark_wizard_as_completed()?;
+
+        Ok(commit_message)
     }
 
     /// Builds a dummy commit message.
@@ -129,6 +132,53 @@ impl CommitMessage {
             ticket: Some(String::from("#0")),
         }
     }
+}
+
+/// Makes a commit message.
+fn make_commit_message(config: &Config) -> Result<String> {
+    let mut cache = CommitCache::load()?;
+
+    match cache.wizard_state {
+        WizardState::NotStarted | WizardState::Ongoing => {
+            make_message_from_wizard(config, &mut cache)
+        }
+        WizardState::Completed => {
+            if let Some(message) = last_commit_message()? {
+                let do_reuse_message = ask_reuse_message()?;
+
+                if do_reuse_message {
+                    Ok(message)
+                } else {
+                    cache.reset()?;
+                    make_message_from_wizard(config, &mut cache)
+                }
+            } else {
+                cache.mark_wizard_as_ongoing()?;
+                make_message_from_wizard(config, &mut cache)
+            }
+        }
+    }
+}
+
+/// Makes a commit message by running the wizard.
+fn make_message_from_wizard(
+    config: &Config,
+    cache: &mut CommitCache,
+) -> Result<String> {
+    let tera = build_and_check_template(config)?;
+
+    if cache.wizard_state == WizardState::Ongoing {
+        let do_reuse_answers = ask_reuse_answers()?;
+        if !do_reuse_answers {
+            cache.reset()?;
+        }
+    }
+
+    let commit_message = CommitMessage::run_wizard(config, cache)?;
+    let context = Context::from_serialize(commit_message)?;
+    let message = tera.render("templates.commit", &context)?;
+
+    Ok(message)
 }
 
 /// Loads the commit template and checks for errors.
@@ -148,91 +198,155 @@ fn build_and_check_template(config: &Config) -> Result<Tera> {
     Ok(tera)
 }
 
+/// Asks the user whether to reuse the commit message from an aborted run.
+fn ask_reuse_message() -> Result<bool> {
+    Ok(Confirm::new(
+        "A previous run has been aborted. Do you want to reuse your commit \
+            message?",
+    )
+    .with_help_message(
+        "This will use your last commit message without running the wizard.",
+    )
+    .with_default(true)
+    .prompt()?)
+}
+
+/// Asks the user whether to reuse answers from an aborted run.
+fn ask_reuse_answers() -> Result<bool> {
+    Ok(Confirm::new(
+        "A previous run has been aborted. Do you want to reuse your answers?",
+    )
+    .with_help_message(
+        "The wizard will be run as usual with your answers pre-selected.",
+    )
+    .with_default(true)
+    .prompt()?)
+}
+
 /// Asks the user which type of commit they wants.
-fn ask_type(config: &Config) -> Result<String> {
+fn ask_type(config: &Config, cache: &mut CommitCache) -> Result<String> {
+    let cached = cache.r#type().unwrap_or_default();
+    let cursor = config.types.get_index_of(cached).unwrap_or_default();
+
     let choice = Select::new("Commit type", format_types(&config.types))
+        .with_starting_cursor(cursor)
         .with_page_size(PAGE_SIZE)
         .with_formatter(&|choice| remove_type_description(choice.value))
         .prompt()?;
-    Ok(remove_type_description(&choice))
+    let r#type = remove_type_description(&choice);
+
+    cache.set_type(&r#type)?;
+
+    Ok(r#type)
 }
 
 /// Asks the user to which scope the changes are applicable.
-fn ask_scope(config: &Config) -> Result<Option<String>> {
-    match &config.scopes {
-        None => Ok(None),
+fn ask_scope(
+    config: &Config,
+    cache: &mut CommitCache,
+) -> Result<Option<String>> {
+    let scope = match &config.scopes {
+        None => None,
 
-        Some(Scopes::Any) => Ok(Text::new("Scope")
+        Some(Scopes::Any) => Text::new("Scope")
+            .with_initial_value(cache.scope().unwrap_or_default())
             .with_help_message("Press ESC or leave empty to omit the scope.")
             .prompt_skippable()?
-            .filter(|s| !s.is_empty())),
+            .filter(|s| !s.is_empty()),
 
         Some(Scopes::List { list }) => {
-            let help_message = format!(
-                "{}, {}, {}",
-                "↑↓ to move, enter to select, type to filter",
-                "ESC to leave empty",
-                "update `git-z.toml` to add new scopes"
-            );
+            let cached = cache.scope().unwrap_or_default();
+            let cursor =
+                list.iter().position(|s| s == cached).unwrap_or_default();
 
-            Ok(Select::new("Scope", list.clone())
-                .with_help_message(&help_message)
+            let help_message = "↑↓ to move, enter to select, type to \
+                filter, ESC to leave empty, update `git-z.toml` to add new \
+                scopes";
+
+            Select::new("Scope", list.clone())
+                .with_starting_cursor(cursor)
+                .with_help_message(help_message)
                 .with_page_size(PAGE_SIZE)
-                .prompt_skippable()?)
+                .prompt_skippable()?
         }
-    }
+    };
+
+    cache.set_scope(scope.as_deref())?;
+
+    Ok(scope)
 }
 
 /// Asks the user for a commit description.
-fn ask_description() -> Result<String> {
+fn ask_description(cache: &mut CommitCache) -> Result<String> {
     let placeholder =
         "describe your change with a short description (5-50 characters)";
-    let message = "You will be able to add a long description to your commit in an editor later.";
+    let message = "You will be able to add a long description to your \
+        commit in an editor later.";
 
-    Ok(Text::new("Short description")
+    let description = Text::new("Short description")
         .with_placeholder(placeholder)
+        .with_initial_value(cache.description().unwrap_or_default())
         .with_help_message(message)
         .with_validator(validate_description)
-        .prompt()?)
+        .prompt()?;
+
+    cache.set_description(&description)?;
+
+    Ok(description)
 }
 
 /// Asks the user for an optional breaking change description.
-fn ask_breaking_change() -> Result<Option<String>> {
-    Ok(Text::new("BREAKING CHANGE")
+fn ask_breaking_change(cache: &mut CommitCache) -> Result<Option<String>> {
+    let breaking_change = Text::new("BREAKING CHANGE")
         .with_placeholder("Summary of the breaking change.")
+        .with_initial_value(cache.breaking_change().unwrap_or_default())
         .with_help_message(
             "Press ESC or leave empty if there are no breaking changes.",
         )
         .prompt_skippable()?
-        .filter(|s| !s.is_empty()))
+        .filter(|s| !s.is_empty());
+
+    cache.set_breaking_change(breaking_change.as_deref())?;
+
+    Ok(breaking_change)
 }
 
 /// Optionally asks the user for a ticket reference.
-fn ask_ticket(config: &Config) -> Result<Option<String>> {
-    match &config.ticket {
-        None => Ok(None),
+fn ask_ticket(
+    config: &Config,
+    cache: &mut CommitCache,
+) -> Result<Option<String>> {
+    let ticket = match &config.ticket {
+        None => None,
         Some(Ticket { required, prefixes }) => {
             let placeholder = ticket_placeholder(prefixes)?;
+            let cached_answer = cache.ticket();
             let ticket_from_branch = get_ticket_from_branch(prefixes)?;
 
-            let mut ticket = Text::new("Issue / ticket number")
-                .with_placeholder(&placeholder)
-                .with_validator(validate_ticket);
-            ticket.initial_value = ticket_from_branch.as_deref();
+            let initial_value = cached_answer.unwrap_or_else(|| {
+                ticket_from_branch.as_deref().unwrap_or_default()
+            });
 
-            let ticket = if *required {
-                Some(ticket.prompt()?)
+            let prompt = Text::new("Issue / ticket number")
+                .with_placeholder(&placeholder)
+                .with_initial_value(initial_value)
+                .with_validator(validate_ticket);
+
+            if *required {
+                Some(prompt.prompt()?)
             } else {
-                ticket
+                prompt
                     .with_help_message(
                         "Press ESC to omit the ticket reference.",
                     )
                     .prompt_skippable()?
-            };
-
-            Ok(ticket)
+            }
         }
-    }
+    };
+
+    cache.set_ticket(ticket.as_deref())?;
+
+    Ok(ticket)
 }
 
 /// Tries to extract a ticket number from the name of the current Git branch.
@@ -377,4 +491,42 @@ fn ticket_placeholder(prefixes: &[String]) -> Result<String> {
         .map(|prefix| format!("{prefix}XXX"))
         .reduce(|acc, prefix| format!("{acc} or {prefix}"))
         .ok_or(eyre!("empty ticket prefix list"))
+}
+
+/// Returns the last commit message if it exists.
+fn last_commit_message() -> Result<Option<String>> {
+    let commit_editmsg = commit_editmsg()?;
+
+    let remove_commented_lines =
+        |s: &str| s.lines().filter(|line| !line.starts_with('#')).join("\n");
+
+    let maybe_message = commit_editmsg
+        .exists()
+        .then(|| fs::read_to_string(commit_editmsg))
+        .transpose()?
+        .as_deref()
+        .map(remove_commented_lines)
+        .filter(|s| !s.trim().is_empty());
+
+    Ok(maybe_message)
+}
+
+/// Returns the path to the `COMMIT_EDITMSG` file.
+fn commit_editmsg() -> Result<PathBuf> {
+    Ok(git_dir()?.join("COMMIT_EDITMSG"))
+}
+
+/// Returns the path of the Git directory.
+fn git_dir() -> Result<PathBuf> {
+    let git_rev_parse = Command::new("git")
+        .args(["rev-parse", "--git-dir"])
+        .output()?;
+
+    ensure!(
+        git_rev_parse.status.success(),
+        "Failed to run `git rev-parse --git-dir`"
+    );
+
+    let git_dir = String::from_utf8(git_rev_parse.stdout)?;
+    Ok(PathBuf::from(git_dir.trim()))
 }
