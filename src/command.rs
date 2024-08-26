@@ -184,6 +184,11 @@ fn handle_init_error(error: &InitError) -> ErrorHandling {
 /// Prints proper error messages for `git z commit` usage errors.
 fn handle_commit_error(error: &CommitError) -> ErrorHandling {
     match error {
+        #[cfg(feature = "unstable-pre-commit")]
+        CommitError::PreCommitFailed => {
+            error!("{error}.");
+            ErrorHandling::Exit(1)
+        }
         CommitError::Git { status_code } => {
             ErrorHandling::Exit(status_code.unwrap_or(1_i32))
         }

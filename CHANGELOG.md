@@ -12,6 +12,9 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 * [`git z commit`] Ask whether to reuse the previous answers or commit message
     when the operation has been aborted or has failed.
+* *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
+    feature enabled, run the `pre-commit` hook before the wizard if it exists. A
+    new `-n|--no-verify` option is added to prevent the hook from running.
 
 ### Changed
 
@@ -23,6 +26,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
     <message>`.
 * [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.1 to 1.78.0.
+* *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
+    feature enabled, passes `--no-verify` to `git commit`. This is to avoid
+    running the `pre-commit` hook twice, but this also disables the `commit-msg`
+    hook as an unwanted side-effect.
 
 ### Removed
 

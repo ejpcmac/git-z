@@ -30,6 +30,9 @@ depends = "git"
 [package.metadata.wix]
 license = "wix/gpl-3.0.rtf"
 
+[features]
+unstable-pre-commit = ["dep:is_executable"]
+
 [dependencies]
 askama = "0.12"
 clap = { version = "4", features = ["derive", "wrap_help"] }

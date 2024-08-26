@@ -25,6 +25,22 @@ commit() {
         exit $(< .git/error)
     fi
 
+    if [[ "$@" != *"--no-verify"* ]]; then
+        if [ -x .git/hooks/pre-commit ]; then
+            .git/hooks/pre-commit
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
+        fi
+
+        if [ -x .git/hooks/commit-msg ]; then
+            .git/hooks/commit-msg
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
+        fi
+    fi
+
     echo "fake commit"
     echo -e "$@" > .git/commit
 }
