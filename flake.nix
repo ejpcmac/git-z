@@ -52,6 +52,7 @@
           ];
 
           checkToolchain = with pkgs; [
+            cargo-hack
             cargo-nextest
             committed
             eclint
