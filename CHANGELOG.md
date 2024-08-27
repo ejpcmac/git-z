@@ -97,7 +97,7 @@ in the current repository.
 * [CLI] Do not print an error on cancelled / interrupted operations.
 * [`git z commit`] Do not print an error on `git commit` failure.
 * [`git z commit`] Check the commit template early and pretty-print any error
-    mesasge.
+    message.
 * [`git z commit`] Consider `#` as a special ticket prefix: when matching in the
     branch name, `#` is omitted from the match so that branches like
     `feature/23-name` are valid, and `#` is then added to the matching ticket
