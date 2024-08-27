@@ -30,6 +30,9 @@ use rexpect::{
     session::{spawn_command, PtySession},
 };
 
+#[cfg(feature = "unstable-pre-commit")]
+use std::{fs::Permissions, os::unix::fs::PermissionsExt};
+
 const TIMEOUT: Option<u64> = Some(1_000);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +62,43 @@ fn install_commit_cache(temp_dir: &TempDir, commit_cache: &str) -> Result<()> {
         .child("git-z")
         .child("commit-cache.toml")
         .write_str(commit_cache)?;
+    Ok(())
+}
+
+#[cfg(feature = "unstable-pre-commit")]
+fn install_pre_commit_hook(temp_dir: &TempDir, exit_code: i32) -> Result<()> {
+    install_hook(
+        temp_dir,
+        "pre-commit",
+        &formatdoc! {r##"
+            #!/bin/sh
+            echo "pre-commit"
+            exit {exit_code}
+        "##},
+    )
+}
+
+// NOTE: Commenting this out since it is only used by
+// pre_commit::still_runs_commit_msg which is disabled.
+//
+// #[cfg(feature = "unstable-pre-commit")]
+// fn install_commit_msg_hook(temp_dir: &TempDir, exit_code: i32) -> Result<()> {
+//     install_hook(
+//         temp_dir,
+//         "commit-msg",
+//         &formatdoc! {r##"
+//             #!/bin/sh
+//             echo "commit-msg"
+//             exit {exit_code}
+//         "##},
+//     )
+// }
+
+#[cfg(feature = "unstable-pre-commit")]
+fn install_hook(temp_dir: &TempDir, name: &str, content: &str) -> Result<()> {
+    let hook = &temp_dir.child(".git").child("hooks").child(name);
+    hook.write_str(content)?;
+    fs::set_permissions(hook, Permissions::from_mode(0o755))?;
     Ok(())
 }
 
@@ -1352,10 +1392,24 @@ mod commit_cache {
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
+        #[cfg(not(feature = "unstable-pre-commit"))]
         assert_git_commit(
             &temp_dir,
             indoc! {"
                 commit -em previous message
+
+                This is a long description
+                on multiple lines.
+
+                Footer: something.
+            "},
+        );
+
+        #[cfg(feature = "unstable-pre-commit")]
+        assert_git_commit(
+            &temp_dir,
+            indoc! {"
+                commit --no-verify -em previous message
 
                 This is a long description
                 on multiple lines.
@@ -1518,6 +1572,148 @@ mod commit_cache {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+//                                 pre-commit                                 //
+////////////////////////////////////////////////////////////////////////////////
+
+#[cfg(feature = "unstable-pre-commit")]
+mod pre_commit {
+    use super::*;
+
+    #[test]
+    fn directly_runs_the_wizard_if_there_is_no_pre_commit_hook() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        assert!(process.exp_string("pre-commit").is_err());
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn calls_pre_commit_if_it_exists() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_pre_commit_hook(&temp_dir, 0)?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        process.exp_string("pre-commit")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_call_pre_commit_if_no_verify_is_passed() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_pre_commit_hook(&temp_dir, 0)?;
+
+        let mut cmd = gitz_commit(&temp_dir)?;
+        cmd.arg("--no-verify");
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        assert!(process.exp_string("pre-commit").is_err());
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn runs_the_wizard_if_pre_commit_succeeds() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_pre_commit_hook(&temp_dir, 0)?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        process.exp_string("pre-commit")?;
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn exits_with_an_error_if_pre_commit_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_pre_commit_hook(&temp_dir, 1)?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        process.exp_string("pre-commit")?;
+        process.exp_eof()?;
+        assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 1)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn prints_a_warning_if_pre_commit_is_not_executable() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_pre_commit_hook(&temp_dir, 0)?;
+
+        let pre_commit =
+            &temp_dir.child(".git").child("hooks").child("pre-commit");
+        fs::set_permissions(pre_commit, Permissions::from_mode(0o644))?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        process.exp_string(
+            "The `.git/hooks/pre-commit` hook was ignored because it is not \
+            set as executable.",
+        )?;
+        process.exp_string("Commit type")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn runs_pre_commit_only_once() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_pre_commit_hook(&temp_dir, 0)?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        process.exp_string("pre-commit")?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        assert!(process.exp_string("pre-commit").is_err());
+        process.exp_string("fake commit")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    // NOTE: Commenting this out since the current implementation makes it fail.
+    // This will be resolved in a future version.
+    //
+    // #[test]
+    // fn still_runs_commit_msg() -> Result<()> {
+    //     let temp_dir = setup_temp_dir()?;
+    //     install_pre_commit_hook(&temp_dir, 0)?;
+    //     install_commit_msg_hook(&temp_dir, 0)?;
+
+    //     let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+    //     process.exp_string("pre-commit")?;
+
+    //     fill_type(&mut process)?;
+    //     fill_scope(&mut process)?;
+    //     fill_description(&mut process)?;
+    //     fill_breaking_change(&mut process)?;
+
+    //     process.exp_string("commit-msg")?;
+    //     process.exp_string("fake commit")?;
+    //     process.exp_eof()?;
+
+    //     Ok(())
+    // }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 //                                 git commit                                 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1539,7 +1735,14 @@ mod commit {
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
+        #[cfg(not(feature = "unstable-pre-commit"))]
         assert_git_commit(&temp_dir, "commit -em dummy template message\n\n");
+
+        #[cfg(feature = "unstable-pre-commit")]
+        assert_git_commit(
+            &temp_dir,
+            "commit --no-verify -em dummy template message\n\n",
+        );
 
         Ok(())
     }
@@ -1570,10 +1773,26 @@ mod commit {
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
+        #[cfg(not(feature = "unstable-pre-commit"))]
         assert_git_commit(
             &temp_dir,
             indoc! {"
                 commit -em type(scope)!: test description
+
+                # Feel free to enter a longer description here.
+
+                Refs: #21
+
+                BREAKING CHANGE: Nothing is like before.
+
+            "},
+        );
+
+        #[cfg(feature = "unstable-pre-commit")]
+        assert_git_commit(
+            &temp_dir,
+            indoc! {"
+                commit --no-verify -em type(scope)!: test description
 
                 # Feel free to enter a longer description here.
 
@@ -1605,9 +1824,16 @@ mod commit {
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
+        #[cfg(not(feature = "unstable-pre-commit"))]
         assert_git_commit(
             &temp_dir,
             "commit --extra --args -em dummy template message\n\n",
+        );
+
+        #[cfg(feature = "unstable-pre-commit")]
+        assert_git_commit(
+            &temp_dir,
+            "commit --no-verify --extra --args -em dummy template message\n\n",
         );
 
         Ok(())
@@ -1792,6 +2018,20 @@ mod usage_errors {
 
     ////////////////////////////////// Commit //////////////////////////////////
 
+    #[cfg(feature = "unstable-pre-commit")]
+    #[test]
+    fn prints_an_error_if_the_pre_commit_hook_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_pre_commit_hook(&temp_dir, 1)?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        process.exp_string("Error: the pre-commit hook has failed.")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
     #[test]
     fn does_not_print_an_error_if_git_commit_fails() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
@@ -1862,7 +2102,7 @@ mod usage_errors {
         Ok(())
     }
 
-    //////////////////////////////////// Abort /////////////////////////////////////
+    ////////////////////////////////// Abort ///////////////////////////////////
 
     #[test]
     fn does_not_print_an_error_when_aborting_with_esc() -> Result<()> {

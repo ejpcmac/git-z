@@ -30,6 +30,9 @@ depends = "git"
 [package.metadata.wix]
 license = "wix/gpl-3.0.rtf"
 
+[features]
+unstable-pre-commit = ["dep:is_executable"]
+
 [dependencies]
 askama = "0.12"
 clap = { version = "4", features = ["derive", "wrap_help"] }
@@ -39,6 +42,7 @@ eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
 indoc = "2"
 inquire = "0.7"
+is_executable = { version = "1", optional = true }
 itertools = "0.13"
 regex = "1"
 serde = { version = "1", features = ["derive"] }

@@ -31,10 +31,10 @@ use super::helpers::ensure_in_git_worktree;
 #[derive(Debug, Parser)]
 pub struct Init {
     /// Use the default configuration.
-    #[arg(short, long)]
+    #[arg(long, short = 'd')]
     default: bool,
     /// Force the init process.
-    #[arg(short, long)]
+    #[arg(long, short = 'f')]
     force: bool,
 }
 

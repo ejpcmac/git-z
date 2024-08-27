@@ -168,14 +168,14 @@ fn check_format(ctx: &mut Context) {
 fn build(ctx: &mut Context) {
     action!(
         ctx,
-        "Building all packages",
-        "cargo build --workspace --all-targets --all-features",
+        "Building all packages with all feature combinations",
+        "cargo hack build --workspace --all-targets --feature-powerset --keep-going",
     );
 
     action!(
         ctx,
-        "Checking for clippy warnings in all packages",
-        "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+        "Checking for clippy warnings in all packages with all feature combinations",
+        "cargo hack clippy --workspace --all-targets --feature-powerset --keep-going -- -D warnings",
     );
 }
 
@@ -183,12 +183,12 @@ fn test(ctx: &mut Context) {
     action!(
         ctx,
         step!(
-            "Building the tests for all packages",
-            "cargo nextest run --workspace --all-features --no-run",
+            "Building the tests for all packages with all feature combinations",
+            "cargo hack nextest run --workspace --feature-powerset --keep-going --no-run",
         ),
         step!(
-            "Running the tests for all packages",
-            "cargo nextest run --workspace --all-features",
+            "Running the tests for all packages with all feature combinations",
+            "cargo hack nextest run --workspace --feature-powerset --keep-going",
         ),
     );
 }

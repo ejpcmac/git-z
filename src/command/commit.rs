@@ -35,6 +35,15 @@ use crate::{
 
 use super::helpers::ensure_in_git_worktree;
 
+#[cfg(feature = "unstable-pre-commit")]
+use std::env;
+
+#[cfg(feature = "unstable-pre-commit")]
+use is_executable::IsExecutable;
+
+#[cfg(feature = "unstable-pre-commit")]
+use crate::warning;
+
 /// The size of a page in the terminal.
 const PAGE_SIZE: usize = 15;
 
@@ -44,6 +53,10 @@ pub struct Commit {
     /// Print the commit message instead of calling `git commit`.
     #[arg(long)]
     print_only: bool,
+    /// Do not run the pre-commit hook.
+    #[cfg(feature = "unstable-pre-commit")]
+    #[arg(long, short = 'n')]
+    no_verify: bool,
     /// Extra arguments to be passed to `git commit`.
     #[arg(last = true)]
     extra_args: Vec<String>,
@@ -52,6 +65,10 @@ pub struct Commit {
 /// Usage errors of `git z commit`.
 #[derive(Debug, Error)]
 pub enum CommitError {
+    /// The pre-commit hook has failed.
+    #[cfg(feature = "unstable-pre-commit")]
+    #[error("The pre-commit hook has failed")]
+    PreCommitFailed,
     /// The commit template is invalid.
     #[error("Failed to parse the commit template")]
     Template(#[from] tera::Error),
@@ -83,16 +100,27 @@ impl super::Command for Commit {
         ensure_in_git_worktree()?;
 
         let config = load_config()?;
+
+        #[cfg(feature = "unstable-pre-commit")]
+        if !self.no_verify {
+            run_pre_commit_hook()?;
+        }
+
         let commit_message = make_commit_message(&config)?;
 
         if self.print_only {
             println!("{commit_message}");
         } else {
-            let status = Command::new("git")
-                .arg("commit")
+            let mut git_commit = Command::new("git");
+
+            git_commit.arg("commit");
+            #[cfg(feature = "unstable-pre-commit")]
+            git_commit.arg("--no-verify");
+            git_commit
                 .args(&self.extra_args)
-                .args(["-em", &commit_message])
-                .status()?;
+                .args(["-em", &commit_message]);
+
+            let status = git_commit.status()?;
 
             if !status.success() {
                 bail!(CommitError::Git {
@@ -132,6 +160,34 @@ impl CommitMessage {
             ticket: Some(String::from("#0")),
         }
     }
+}
+
+/// Runs the pre-commit hook if it exists.
+#[cfg(feature = "unstable-pre-commit")]
+fn run_pre_commit_hook() -> Result<()> {
+    let pre_commit = pre_commit()?;
+
+    if pre_commit.exists() {
+        if pre_commit.is_executable() {
+            let status = Command::new(pre_commit).status()?;
+
+            if !status.success() {
+                bail!(CommitError::PreCommitFailed);
+            }
+        } else {
+            let path = pre_commit
+                .strip_prefix(env::current_dir()?)
+                .unwrap_or(&pre_commit)
+                .display();
+
+            warning!(
+                "The `{path}` hook was ignored because it is not set as \
+                executable."
+            );
+        }
+    }
+
+    Ok(())
 }
 
 /// Makes a commit message.
@@ -514,6 +570,12 @@ fn last_commit_message() -> Result<Option<String>> {
 /// Returns the path to the `COMMIT_EDITMSG` file.
 fn commit_editmsg() -> Result<PathBuf> {
     Ok(git_dir()?.join("COMMIT_EDITMSG"))
+}
+
+/// Returns the path to the pre-commit hook.
+#[cfg(feature = "unstable-pre-commit")]
+fn pre_commit() -> Result<PathBuf> {
+    Ok(git_dir()?.join("hooks").join("pre-commit"))
 }
 
 /// Returns the path of the Git directory.

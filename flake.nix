@@ -45,6 +45,19 @@
             rustc = rust-toolchain;
           };
 
+          mkPackage = { extraCargoBuildOptions ? [ ] }: naersk.buildPackage {
+            src = ./.;
+            cargoBuildOptions = opts: opts ++ extraCargoBuildOptions;
+            RUSTFLAGS = "-Amissing_docs";
+
+            nativeBuildInputs = with pkgs; [ makeWrapper ];
+
+            postInstall = with pkgs; ''
+              wrapProgram $out/bin/${packageName} \
+                --prefix PATH : ${lib.makeBinPath [ git ]}
+            '';
+          };
+
           buildToolchain = with pkgs; [
             rust-toolchain
           ] ++ lib.optionals (!stdenv.isDarwin) [
@@ -52,6 +65,7 @@
           ];
 
           checkToolchain = with pkgs; [
+            cargo-hack
             cargo-nextest
             committed
             eclint
@@ -92,16 +106,10 @@
           packages = {
             default = self'.packages.${packageName};
 
-            ${packageName} = naersk.buildPackage {
-              src = ./.;
-              RUSTFLAGS = "-Amissing_docs";
+            ${packageName} = mkPackage { };
 
-              nativeBuildInputs = with pkgs; [ makeWrapper ];
-
-              postInstall = with pkgs; ''
-                wrapProgram $out/bin/${packageName} \
-                  --prefix PATH : ${lib.makeBinPath [ git ]}
-              '';
+            "${packageName}-unstable" = mkPackage {
+              extraCargoBuildOptions = [ "--features unstable-pre-commit" ];
             };
           };
 

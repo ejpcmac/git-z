@@ -84,6 +84,11 @@ jobs:
         if: matrix.systems.system != 'x86_64-windows'
         run: |
           nix build -L --no-link .#devShells.${{ matrix.systems.system }}.ci
+      - name: Setup the environment (without Nix)
+        if: matrix.systems.system == 'x86_64-windows'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
       - name: Compile and run static analysis (with Nix)
         if: matrix.systems.system != 'x86_64-windows'
         run: nix develop .#ci -c cargo xtask check build
@@ -122,7 +127,7 @@ jobs:
         if: matrix.systems.system == 'x86_64-windows'
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-nextest
+          tool: cargo-hack,cargo-nextest
       - name: Build and run the tests (with Nix)
         if: matrix.systems.system != 'x86_64-windows'
         run: nix develop .#ci -c cargo xtask check test
