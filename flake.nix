@@ -75,7 +75,7 @@
           ];
 
           ideToolchain = with pkgs; [
-            nil
+            nixd
             rust-analyzer
           ];
 
@@ -96,6 +96,10 @@
           ];
 
           ideEnv = [
+            {
+              name = "NIX_PATH";
+              value = "nixpkgs=${inputs.nixpkgs}";
+            }
             {
               name = "TYPOS_LSP_PATH";
               value = "${pkgs.typos-lsp}/bin/typos-lsp";
