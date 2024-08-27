@@ -22,6 +22,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [Config] Update the default description for the `chore` type so that it states
     this is used to remove code as well.
 * [Config] Align error messages between the config and the updater.
+* [CLI] Use standard exit codes as defined in `sysexits.h`.
 * [`git z commit`] Pass the extra arguments to `git commit` before `-em
     <message>`.
 * [Cargo] Update the dependencies.

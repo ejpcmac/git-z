@@ -101,11 +101,11 @@ fn handle_errors(error: Report) -> Result<()> {
     } else if let Some(InquireError::OperationCanceled) =
         error.downcast_ref::<InquireError>()
     {
-        ErrorHandling::Exit(1)
+        ErrorHandling::Exit(exitcode::TEMPFAIL)
     } else if let Some(InquireError::OperationInterrupted) =
         error.downcast_ref::<InquireError>()
     {
-        ErrorHandling::Exit(1)
+        ErrorHandling::Exit(exitcode::TEMPFAIL)
     } else {
         ErrorHandling::Return(error)
     };
@@ -125,18 +125,19 @@ fn handle_not_in_git_worktree(error: &NotInGitWorktree) -> ErrorHandling {
         NotInGitWorktree::CannotRunGit(os_error) => {
             error!("{error}.");
             hint!("The OS reports: {os_error}.");
+            ErrorHandling::Exit(exitcode::UNAVAILABLE)
         }
         NotInGitWorktree::NotInRepo => {
             error!("{error}.");
             hint!("You can initialise a Git repository by running `git init`.");
+            ErrorHandling::Exit(exitcode::USAGE)
         }
         NotInGitWorktree::NotInWorktree => {
             error!("{error}.");
             hint!("You seem to be inside a Git repository, but not in a worktree.");
+            ErrorHandling::Exit(exitcode::USAGE)
         }
     }
-
-    ErrorHandling::Exit(1)
 }
 
 /// Prints proper error messages for configuration loading errors.
@@ -166,7 +167,7 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
         }
     }
 
-    ErrorHandling::Exit(1)
+    ErrorHandling::Exit(exitcode::CONFIG)
 }
 
 /// Prints proper error messages for `git z init` usage errors.
@@ -178,7 +179,7 @@ fn handle_init_error(error: &InitError) -> ErrorHandling {
         }
     }
 
-    ErrorHandling::Exit(1)
+    ErrorHandling::Exit(exitcode::CANTCREAT)
 }
 
 /// Prints proper error messages for `git z commit` usage errors.
@@ -187,6 +188,7 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
         #[cfg(feature = "unstable-pre-commit")]
         CommitError::PreCommitFailed => {
             error!("{error}.");
+            // NOTE: Use 1 as exit code to maintain the same behaviour as Git.
             ErrorHandling::Exit(1)
         }
         CommitError::Git { status_code } => {
@@ -199,7 +201,7 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
                 hint!("\n{parse_error}\n");
             }
 
-            ErrorHandling::Exit(1)
+            ErrorHandling::Exit(exitcode::CONFIG)
         }
     }
 }
@@ -225,5 +227,5 @@ fn handle_update_error(error: &UpdateError) -> ErrorHandling {
         }
     }
 
-    ErrorHandling::Exit(1)
+    ErrorHandling::Exit(exitcode::CONFIG)
 }
