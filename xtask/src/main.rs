@@ -70,6 +70,7 @@ fn check(subcommand: Option<&str>) {
         match check {
             "commits" => check_commits(&mut ctx),
             "format" => check_format(&mut ctx),
+            "unused-deps" => check_unused_deps(&mut ctx),
             "build" => build(&mut ctx),
             "test" => test(&mut ctx),
             _ => check_usage(),
@@ -77,6 +78,7 @@ fn check(subcommand: Option<&str>) {
     } else {
         check_commits(&mut ctx);
         check_format(&mut ctx);
+        check_unused_deps(&mut ctx);
         build(&mut ctx);
         test(&mut ctx);
     }
@@ -86,7 +88,7 @@ fn check(subcommand: Option<&str>) {
 
 fn check_usage() {
     let name = env::args().next().unwrap();
-    eprintln!("usage: {name} check [commits|format|build|test]");
+    eprintln!("usage: {name} check [commits|format|unused-deps|build|test]");
     process::exit(1);
 }
 
@@ -163,6 +165,14 @@ fn check_format(ctx: &mut Context) {
     );
 
     action!(ctx, "Checking for typos", "typos");
+}
+
+fn check_unused_deps(ctx: &mut Context) {
+    action!(
+        ctx,
+        "Looking for unused dependencies",
+        "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
+    );
 }
 
 fn build(ctx: &mut Context) {

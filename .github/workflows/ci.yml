@@ -57,6 +57,21 @@ jobs:
       - name: Check the code is formatted and free of typos
         run: nix develop .#ci -c cargo xtask check format
 
+  unused-deps:
+    name: Unused dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build -L --no-link .#devShells.x86_64-linux.udeps
+      - name: Look for unused dependencies
+        run: nix develop .#udeps -c cargo xtask check unused-deps
+
   build:
     name: Compilation and static analysis
     runs-on: ${{ matrix.systems.runner }}
