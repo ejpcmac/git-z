@@ -1,6 +1,7 @@
 include = [
     "*.toml",
-    ".cargo/*/*.toml",
+    ".cargo/*.toml",
+    ".config/*.toml",
     "templates/**/*.toml",
     "tests/**/*.toml",
     "xtask/**/*.toml",
