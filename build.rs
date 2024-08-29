@@ -1,6 +1,6 @@
 //! The build script for git-z.
 
-use std::{io, process::Command};
+use std::{env, io, process::Command};
 
 fn main() {
     define_version_with_git();
@@ -17,6 +17,10 @@ fn main() {
 /// * the build is done from a cargo checkout (via `cargo install --git`) and
 ///   the version does not contain `-dev`.
 ///
+/// If Git is not available, but the `FLAKE_REVISION` environment variable is
+/// defined, it is used instead to provide the revision from the Nix flake, for
+/// development versions only.
+///
 /// For instance:
 ///
 /// * Cargo version 1.0.0 on tag v1.0.0, clean state => `1.0.0`
@@ -25,21 +29,44 @@ fn main() {
 /// * Cargo version 1.1.0-dev on any commit, clean state => `1.1.0-dev+abcd1234`
 fn define_version_with_git() {
     let cargo_version = env!("CARGO_PKG_VERSION");
-    let version = version_with_git(cargo_version)
-        .unwrap_or_else(|_| String::from(cargo_version));
-
+    let version = version_with_revision(cargo_version);
     println!("cargo:rustc-env=VERSION_WITH_GIT={version}");
 }
 
-/// Returns the version from cargo with a Git revision.
-fn version_with_git(cargo_version: &str) -> io::Result<String> {
+/// Returns the version from cargo with a revision.
+fn version_with_revision(cargo_version: &str) -> String {
+    if let Some(revision) = revision(cargo_version) {
+        format!("{cargo_version}+{revision}")
+    } else {
+        String::from(cargo_version)
+    }
+}
+
+/// Gets the revision from the Git or the flake.
+fn revision(cargo_version: &str) -> Option<String> {
+    revision_from_git(cargo_version)
+        .ok()
+        .flatten()
+        .or_else(|| revision_from_flake(cargo_version))
+}
+
+/// Gets the revision from the flake.
+fn revision_from_flake(cargo_version: &str) -> Option<String> {
+    if is_dev_version(cargo_version) {
+        env::var("FLAKE_REVISION").ok()
+    } else {
+        None
+    }
+}
+
+/// Gets the revision from Git.
+fn revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
     if git_describe()? == format!("v{cargo_version}")
         || is_cargo_checkout()? && !is_dev_version(cargo_version)
     {
-        Ok(String::from(cargo_version))
+        Ok(None)
     } else {
-        let revision = git_revision_and_state()?;
-        Ok(format!("{cargo_version}+{revision}"))
+        Ok(Some(git_revision_and_state()?))
     }
 }
 

@@ -49,6 +49,7 @@ list = [
     "nextest",
     "readme",
     "rustfmt",
+    "script",
     "taplo",
     "toolchain",
     "version",
