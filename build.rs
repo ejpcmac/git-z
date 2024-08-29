@@ -29,8 +29,18 @@ fn main() {
 /// * Cargo version 1.1.0-dev on any commit, clean state => `1.1.0-dev+abcd1234`
 fn define_version_with_git() {
     let cargo_version = env!("CARGO_PKG_VERSION");
-    let version = version_with_revision(cargo_version);
+    let version = version_with_features(cargo_version);
+    let version = version_with_revision(&version);
     println!("cargo:rustc-env=VERSION_WITH_GIT={version}");
+}
+
+/// Returns the version with feature flags.
+fn version_with_features(cargo_version: &str) -> String {
+    if env::var("CARGO_FEATURE_UNSTABLE_PRE_COMMIT").is_ok() {
+        format!("{cargo_version}+pre-commit")
+    } else {
+        String::from(cargo_version)
+    }
 }
 
 /// Returns the version from cargo with a revision.
