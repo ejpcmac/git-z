@@ -1,9 +1,14 @@
 //! The build script for git-z.
 
-use std::{io, process::Command};
+use std::{env, io, process::Command};
 
 fn main() {
     define_version_with_git();
+    define_revision();
+    define_features();
+    define_target();
+    define_profile();
+    define_built_by();
 }
 
 /// Defines a variable containing the version with the Git revision.
@@ -17,6 +22,10 @@ fn main() {
 /// * the build is done from a cargo checkout (via `cargo install --git`) and
 ///   the version does not contain `-dev`.
 ///
+/// If Git is not available, but the `FLAKE_REVISION` environment variable is
+/// defined, it is used instead to provide the revision from the Nix flake, for
+/// development versions only.
+///
 /// For instance:
 ///
 /// * Cargo version 1.0.0 on tag v1.0.0, clean state => `1.0.0`
@@ -25,21 +34,105 @@ fn main() {
 /// * Cargo version 1.1.0-dev on any commit, clean state => `1.1.0-dev+abcd1234`
 fn define_version_with_git() {
     let cargo_version = env!("CARGO_PKG_VERSION");
-    let version = version_with_git(cargo_version)
-        .unwrap_or_else(|_| String::from(cargo_version));
-
+    let version = version_with_features(cargo_version);
+    let version = version_with_revision(&version);
     println!("cargo:rustc-env=VERSION_WITH_GIT={version}");
 }
 
-/// Returns the version from cargo with a Git revision.
-fn version_with_git(cargo_version: &str) -> io::Result<String> {
+/// Defines a variable containing the Git revision.
+fn define_revision() {
+    let revision = revision();
+    println!("cargo:rustc-env=REVISION={revision}");
+}
+
+/// Defines a variable containing the list of enabled features.
+fn define_features() {
+    let features = features().join(", ");
+    println!("cargo:rustc-env=FEATURES={features}");
+}
+
+/// Passes the `TARGET` variable to the build.
+///
+/// # Panics
+///
+/// This function panics if the `TARGET` environment variable is not defined.
+fn define_target() {
+    #[allow(clippy::unwrap_used)]
+    let target = env::var("TARGET").unwrap();
+    println!("cargo:rustc-env=TARGET={target}");
+}
+
+/// Passes the `PROFILE` variable to the build.
+///
+/// # Panics
+///
+/// This function panics if the `PROFILE` environment variable is not defined.
+fn define_profile() {
+    #[allow(clippy::unwrap_used)]
+    let profile = env::var("PROFILE").unwrap();
+    println!("cargo:rustc-env=PROFILE={profile}");
+}
+
+/// Defines a variable containing the name of the build tool.
+fn define_built_by() {
+    let built_by = built_by();
+    println!("cargo:rustc-env=BUILT_BY={built_by}");
+}
+
+/// Returns the version with feature flags.
+fn version_with_features(cargo_version: &str) -> String {
+    let features = features().join("+");
+
+    if features.is_empty() {
+        String::from(cargo_version)
+    } else {
+        format!("{cargo_version}+{features}")
+    }
+}
+
+/// Returns the list of enabled features.
+fn features() -> Vec<&'static str> {
+    if env::var("CARGO_FEATURE_UNSTABLE_PRE_COMMIT").is_ok() {
+        vec!["unstable-pre-commit"]
+    } else {
+        vec![]
+    }
+}
+
+/// Returns the version from cargo with a revision.
+fn version_with_revision(cargo_version: &str) -> String {
+    if let Some(revision) = maybe_revision(cargo_version) {
+        format!("{cargo_version}+{revision}")
+    } else {
+        String::from(cargo_version)
+    }
+}
+
+/// Gets the revision from the Git or the flake if applicable.
+fn maybe_revision(cargo_version: &str) -> Option<String> {
+    revision_from_git(cargo_version)
+        .ok()
+        .flatten()
+        .or_else(|| revision_from_flake(cargo_version))
+}
+
+/// Gets the revision from the flake.
+fn revision_from_flake(cargo_version: &str) -> Option<String> {
+    if is_dev_version(cargo_version) {
+        env::var("FLAKE_REVISION").ok()
+    } else {
+        None
+    }
+}
+
+/// Gets the revision from Git.
+fn revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
     if git_describe()? == format!("v{cargo_version}")
         || is_cargo_checkout()? && !is_dev_version(cargo_version)
     {
-        Ok(String::from(cargo_version))
+        Ok(None)
     } else {
-        let revision = git_revision_and_state()?;
-        Ok(format!("{cargo_version}+{revision}"))
+        Ok(Some(git_revision_and_state()?))
     }
 }
 
@@ -98,4 +191,21 @@ fn is_cargo_checkout() -> io::Result<bool> {
 /// Returns whether the current version is a development version.
 fn is_dev_version(cargo_version: &str) -> bool {
     cargo_version.contains("-dev")
+}
+
+/// Gets the revision from Git or the flake.
+fn revision() -> String {
+    git_revision_and_state()
+        .ok()
+        .or_else(|| env::var("FLAKE_REVISION").ok())
+        .unwrap_or_default()
+}
+
+/// Returns the name of the build tool.
+fn built_by() -> &'static str {
+    if env::var("FLAKE_REVISION").is_ok() {
+        "nix"
+    } else {
+        "cargo"
+    }
 }

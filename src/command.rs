@@ -37,9 +37,28 @@ use crate::{
     error, hint,
 };
 
+/// The long version information.
+const LONG_VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    "\nrevision: ",
+    env!("REVISION"),
+    "\nfeatures: ",
+    env!("FEATURES"),
+    "\ntarget: ",
+    env!("TARGET"),
+    "\nprofile: ",
+    env!("PROFILE"),
+    "\nbuilt by: ",
+    env!("BUILT_BY"),
+);
+
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
-#[command(author, version = env!("VERSION_WITH_GIT"))]
+#[command(
+    author,
+    version = env!("VERSION_WITH_GIT"),
+    long_version = LONG_VERSION,
+)]
 pub enum GitZ {
     /// Initialises the configuration.
     Init(Init),
