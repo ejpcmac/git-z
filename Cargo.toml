@@ -86,8 +86,9 @@ single_use_lifetimes = "warn"
 multiple_unsafe_ops_per_block = "deny"
 undocumented_unsafe_blocks = "deny"
 
-# Enable all pedantic warnings except a few.
+# Enable all pedantic warnings…
 pedantic = { level = "warn", priority = -1 }
+# …except a few.
 case_sensitive_file_extension_comparisons = "allow"
 inline_always = "allow"
 linkedlist = "allow"
