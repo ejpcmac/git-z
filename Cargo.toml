@@ -52,6 +52,7 @@ thiserror = "1"
 toml = "0.8"
 toml_edit = "0.22"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 assert_cmd = "2"
