@@ -19,6 +19,7 @@ mod command;
 mod commit_cache;
 mod config;
 mod helpers;
+mod tracing;
 
 #[doc(hidden)]
 pub use command::GitZ;
