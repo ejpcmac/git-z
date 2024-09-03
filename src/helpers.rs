@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,12 +13,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! A Git extension to go beyond.
+//! General helpers.
 
-mod command;
-mod commit_cache;
-mod config;
-mod helpers;
-
-#[doc(hidden)]
-pub use command::GitZ;
+/// Uncapitalises the first character in s.
+pub fn uncapitalise(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(c) => c.to_lowercase().collect::<String>() + chars.as_str(),
+    }
+}
