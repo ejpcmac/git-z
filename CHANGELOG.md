@@ -10,6 +10,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+* [CLI] Add a new global `-v...` flag to control the log verbosity. By default,
+    no logs are emitted.
 * [`git z commit`] Ask whether to reuse the previous answers or commit message
     when the operation has been aborted or has failed.
 * *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
