@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,12 +23,15 @@ use std::{fs, io, marker::PhantomData};
 use thiserror::Error;
 use toml_edit::DocumentMut;
 
+use crate::tracing::LogResult as _;
+
 use super::{
     config_file, Config, ConfigFileError, FromTomlError, CONFIG_FILE_NAME,
 };
 
 /// A configuration updater.
 #[must_use]
+#[derive(Debug)]
 pub struct ConfigUpdater<State> {
     /// The parsed configuration.
     parsed_config: Config,
@@ -39,9 +42,11 @@ pub struct ConfigUpdater<State> {
 }
 
 /// Initial state of the updater.
+#[derive(Debug)]
 pub struct Init;
 
 /// Updated state of the updater.
+#[derive(Debug)]
 pub struct Updated;
 
 /// Whether to ask and require a ticket.
@@ -104,13 +109,18 @@ pub enum SaveError {
 
 impl ConfigUpdater<Init> {
     /// Loads the configuration into the updater.
+    #[tracing::instrument(name = "load_config", level = "trace")]
     pub fn load() -> Result<Self, LoadError> {
-        match fs::read_to_string(config_file()?) {
+        let config_file = config_file()?;
+        match fs::read_to_string(&config_file) {
             Ok(toml) => {
+                tracing::info!(?config_file, "loading the configuration");
+
                 // Parse the configuration first to ensure it is valid.
                 let parsed_config = Config::from_toml(&toml)?;
                 let toml_config =
-                    toml.parse().map_err(LoadError::TomlEditError)?;
+                    toml.parse().map_err(LoadError::TomlEditError).log_err()?;
+                tracing::debug!(?parsed_config);
 
                 Ok(Self {
                     parsed_config,
@@ -119,10 +129,14 @@ impl ConfigUpdater<Init> {
                 })
             }
 
-            Err(error) => match error.kind() {
-                io::ErrorKind::NotFound => Err(LoadError::NoConfigFile),
-                _ => Err(LoadError::ReadError(error)),
-            },
+            Err(error) => {
+                if error.kind() == io::ErrorKind::NotFound {
+                    tracing::error!(?config_file, "no configuration file");
+                    Err(LoadError::NoConfigFile)
+                } else {
+                    Err(LoadError::ReadError(error)).log_err()
+                }
+            }
         }
     }
 
@@ -144,6 +158,13 @@ impl ConfigUpdater<Init> {
         empty_prefix_to_hash: bool,
     ) -> Result<ConfigUpdater<Updated>, UpdateError> {
         self.check_version("0.1")?;
+
+        tracing::debug!(
+            ?switch_scopes_to_any,
+            ?ask_for_ticket,
+            ?empty_prefix_to_hash,
+            "updating the configuration"
+        );
 
         from_v0_1::update(
             &mut self.toml_config,
@@ -170,15 +191,21 @@ impl ConfigUpdater<Init> {
                 tried_from: updater_version.to_owned(),
                 actual: config_version.to_owned(),
             })
+            .log_err()
         }
     }
 }
 
 impl ConfigUpdater<Updated> {
     /// Writes the updated configuration to the configuration file.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn save(self) -> Result<(), SaveError> {
+        tracing::info!("saving the configuration");
+
         fs::write(config_file()?, self.toml_config.to_string())
-            .map_err(SaveError::WriteError)?;
+            .map_err(SaveError::WriteError)
+            .log_err()?;
+
         Ok(())
     }
 }

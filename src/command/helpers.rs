@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@ use thiserror::Error;
 
 use crate::{
     config::{Config, CONFIG_FILE_NAME, VERSION},
-    hint, warning,
+    hint,
+    tracing::LogResult as _,
+    warning,
 };
 
 /// Errors that can occur when not inside a Git worktree.
@@ -40,24 +42,27 @@ pub enum NotInGitWorktree {
 }
 
 /// Ensures the command is run from a Git worktree.
+#[tracing::instrument(level = "trace")]
 pub fn ensure_in_git_worktree() -> Result<(), NotInGitWorktree> {
     let is_inside_work_tree = Command::new("git")
         .args(["rev-parse", "--is-inside-work-tree"])
         .output()
-        .map_err(NotInGitWorktree::CannotRunGit)?;
+        .map_err(NotInGitWorktree::CannotRunGit)
+        .log_err()?;
 
     if !is_inside_work_tree.status.success() {
-        return Err(NotInGitWorktree::NotInRepo);
+        return Err(NotInGitWorktree::NotInRepo).log_err();
     }
 
     if is_inside_work_tree.stdout == b"true\n" {
         Ok(())
     } else {
-        Err(NotInGitWorktree::NotInWorktree)
+        Err(NotInGitWorktree::NotInWorktree).log_err()
     }
 }
 
 /// Loads the configuration.
+#[tracing::instrument(level = "trace")]
 pub fn load_config() -> Result<Config> {
     let config = Config::load()?;
 
@@ -84,6 +89,11 @@ macro_rules! success {
 macro_rules! warning {
     ($($arg:tt)*) => {{
         use colored::Colorize;
+
+        let log_message = $crate::helpers::uncapitalise(&format!($($arg)*));
+        let log_message = log_message.trim_end_matches(".");
+        tracing::warn!("{log_message}");
+
         let message = indoc::formatdoc!($($arg)*).yellow().bold();
         eprintln!("{message}");
     }};

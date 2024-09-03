@@ -40,6 +40,8 @@ use indexmap::{indexmap, IndexMap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::tracing::LogResult as _;
+
 /// Errors that can occur when loading the configuration.
 #[derive(Debug, Error)]
 pub enum LoadError {
@@ -157,31 +159,53 @@ impl Default for Config {
 
 impl Config {
     /// Loads the configuration of the repo or fallbacks to the default.
+    #[tracing::instrument(name = "load_config", level = "trace")]
     pub fn load() -> Result<Self, LoadError> {
-        match fs::read_to_string(config_file()?) {
-            Ok(config) => Ok(Self::from_toml(&config)?),
+        let config_file = config_file()?;
 
-            Err(error) => match error.kind() {
-                io::ErrorKind::NotFound => Ok(Self::default()),
-                _ => Err(LoadError::ReadError(error)),
-            },
+        match fs::read_to_string(&config_file) {
+            Ok(config) => {
+                tracing::info!(?config_file, "loading the configuration");
+                let config = Self::from_toml(&config)?;
+                tracing::debug!(?config);
+                Ok(config)
+            }
+            Err(error) => {
+                if error.kind() == io::ErrorKind::NotFound {
+                    tracing::info!(
+                        "no configuration file, using the default config"
+                    );
+                    Ok(Self::default())
+                } else {
+                    tracing::error!(
+                        ?error,
+                        ?config_file,
+                        "cannot read the configuration file",
+                    );
+                    Err(LoadError::ReadError(error))
+                }
+            }
         }
     }
 
     /// Builds the configuration from its TOML representation.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn from_toml(toml: &str) -> Result<Self, FromTomlError> {
-        let minimal_config: MinimalConfig =
-            toml::from_str(toml).map_err(FromTomlError::ParseError)?;
+        let minimal_config: MinimalConfig = toml::from_str(toml)
+            .map_err(FromTomlError::ParseError)
+            .log_err()?;
 
         match minimal_config.version.as_str() {
             VERSION => {
-                let config =
-                    toml::from_str(toml).map_err(FromTomlError::ParseError)?;
+                let config = toml::from_str(toml)
+                    .map_err(FromTomlError::ParseError)
+                    .log_err()?;
                 Ok(config)
             }
             "0.1" => {
-                let config: v0_1::Config =
-                    toml::from_str(toml).map_err(FromTomlError::ParseError)?;
+                let config: v0_1::Config = toml::from_str(toml)
+                    .map_err(FromTomlError::ParseError)
+                    .log_err()?;
                 Ok(config.into())
             }
             version @ ("0.2-dev.0" | "0.2-dev.1" | "0.2-dev.2"
@@ -190,10 +214,12 @@ impl Config {
                     version: version.to_owned(),
                     gitz_version: String::from("0.2.0"),
                 })
+                .log_err()
             }
             version => Err(FromTomlError::UnsupportedVersion {
                 version: version.to_owned(),
-            }),
+            })
+            .log_err(),
         }
     }
 }
@@ -204,21 +230,25 @@ pub fn config_file() -> Result<PathBuf, ConfigFileError> {
 }
 
 /// Returns the path of the root of the current Git repository.
+#[tracing::instrument(level = "trace")]
 fn repo_root() -> Result<PathBuf, RepoRootError> {
     let git_rev_parse = Command::new("git")
         .args(["rev-parse", "--show-toplevel"])
         .output()
-        .map_err(RepoRootError::CannotRunGit)?;
+        .map_err(RepoRootError::CannotRunGit)
+        .log_err()?;
 
     if git_rev_parse.status.success() {
         Ok(String::from_utf8(git_rev_parse.stdout)
-            .map_err(RepoRootError::EncodingError)?
+            .map_err(RepoRootError::EncodingError)
+            .log_err()?
             .trim()
             .into())
     } else {
         Err(RepoRootError::GitError(
             String::from_utf8(git_rev_parse.stderr)
-                .map_err(RepoRootError::EncodingError)?
+                .map_err(RepoRootError::EncodingError)
+                .log_err()?
                 .trim()
                 .to_owned(),
         ))

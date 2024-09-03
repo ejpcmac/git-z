@@ -26,6 +26,7 @@ use crate::{
         VERSION,
     },
     error, hint, success,
+    tracing::LogResult as _,
 };
 
 use super::helpers::ensure_in_git_worktree;
@@ -54,7 +55,10 @@ pub enum UpdateError {
 }
 
 impl super::Command for Update {
+    #[tracing::instrument(name = "update", level = "trace", skip_all)]
     fn run(&self) -> Result<()> {
+        tracing::info!(params = ?self, "running update");
+
         ensure_in_git_worktree()?;
 
         let updater = ConfigUpdater::load()?;
@@ -63,15 +67,15 @@ impl super::Command for Update {
             VERSION => success!("The configuration is already up to date."),
             "0.1" => update_from_v0_1(updater)?,
             version @ ("0.2-dev.0" | "0.2-dev.1" | "0.2-dev.2"
-            | "0.2-dev.3") => {
-                Err(UpdateError::UnsupportedDevelopmentVersion {
-                    version: version.to_owned(),
-                    gitz_version: String::from("0.2.0"),
-                })?;
-            }
+            | "0.2-dev.3") => Err(UpdateError::UnsupportedDevelopmentVersion {
+                version: version.to_owned(),
+                gitz_version: String::from("0.2.0"),
+            })
+            .log_err()?,
             version => Err(UpdateError::UnsupportedVersion {
                 version: version.to_owned(),
-            })?,
+            })
+            .log_err()?,
         }
 
         Ok(())
@@ -79,7 +83,10 @@ impl super::Command for Update {
 }
 
 /// Updates the configuration from version 0.1.
+#[tracing::instrument(level = "trace", skip_all)]
 fn update_from_v0_1(updater: ConfigUpdater<Init>) -> Result<()> {
+    tracing::info!("updating from version 0.1");
+
     let switch_scopes_to_any = ask_scopes_any(&updater)?;
     let ask_for_ticket = ask_ticket_management()?;
 
@@ -111,12 +118,16 @@ fn ask_scopes_any(updater: &ConfigUpdater<Init>) -> Result<bool> {
         It is now possible to accept any arbitrary scope instead of a pre-defined list.
     "};
 
-    Ok(Confirm::new(
+    let switch_scopes_to_any = Confirm::new(
         "Do you want to accept any scope instead of a pre-defined list?",
     )
     .with_help_message("Answer no to keep the current behaviour (default)")
     .with_default(false)
-    .prompt()?)
+    .prompt()
+    .log_err()?;
+
+    tracing::debug!(?switch_scopes_to_any);
+    Ok(switch_scopes_to_any)
 }
 
 /// Asks the user whether a ticket should be asked for / required.
@@ -134,18 +145,21 @@ fn ask_ticket_management() -> Result<AskForTicket> {
         "Should the committer be proposed to enter a ticket number?",
     )
     .with_default(true)
-    .prompt()?;
+    .prompt()
+    .log_err()?;
 
     let ask_for_ticket = if ask_for_ticket {
         let require = Confirm::new("Should the ticket number be required?")
             .with_default(true)
-            .prompt()?;
+            .prompt()
+            .log_err()?;
 
         AskForTicket::Ask { require }
     } else {
         AskForTicket::DontAsk
     };
 
+    tracing::debug!(?ask_for_ticket);
     Ok(ask_for_ticket)
 }
 
@@ -162,10 +176,12 @@ fn ask_empty_prefix_to_hash(updater: &ConfigUpdater<Init>) -> Result<bool> {
         from a branch named `feature/23-name`.
     "##};
 
-    Ok(
-        Confirm::new("Should any existing empty value in `ticket.prefixes` be replaced by \"#\"?")
-            .with_help_message("This will also remove any `#` prefix before `{{ ticket }}` in your commit template")
-            .with_default(true)
-            .prompt()?,
-    )
+    let empty_prefix_to_hash = Confirm::new("Should any existing empty value in `ticket.prefixes` be replaced by \"#\"?")
+        .with_help_message("This will also remove any `#` prefix before `{{ ticket }}` in your commit template")
+        .with_default(true)
+        .prompt()
+        .log_err()?;
+
+    tracing::debug!(?empty_prefix_to_hash);
+    Ok(empty_prefix_to_hash)
 }

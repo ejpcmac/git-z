@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ use eyre::Result;
 use inquire::Select;
 use thiserror::Error;
 
-use crate::{config::config_file, hint, success};
+use crate::{config::config_file, hint, success, tracing::LogResult as _};
 
 use super::helpers::ensure_in_git_worktree;
 
@@ -91,22 +91,28 @@ enum Ticket {
 }
 
 impl super::Command for Init {
+    #[tracing::instrument(name = "init", level = "trace", skip_all)]
     fn run(&self) -> Result<()> {
+        tracing::info!(params = ?self, "running init");
+
         ensure_in_git_worktree()?;
 
         let config_file = config_file()?;
 
         if !self.force && config_file.exists() {
-            Err(InitError::ExistingConfig)?;
+            Err(InitError::ExistingConfig).log_err()?;
         }
 
         let config = if self.default {
+            tracing::info!("using the default configuration");
             Config::default()
         } else {
+            tracing::info!("customising the configuration");
             Config::run_wizard()?
         };
 
-        fs::write(config_file, format!("{config}\n"))?;
+        tracing::info!(?config, "writing the configuration file");
+        fs::write(config_file, format!("{config}\n")).log_err()?;
 
         success!("A git-z.toml has been created!");
         hint!("You can now edit it to adjust the configuration.");
@@ -117,6 +123,7 @@ impl super::Command for Init {
 
 impl Config {
     /// Runs the wizard to fill the parameters for the configuration.
+    #[tracing::instrument(level = "trace")]
     fn run_wizard() -> Result<Self> {
         Ok(Self {
             scopes: Scopes::run_wizard()?,
@@ -136,9 +143,10 @@ impl Scopes {
 
         let choice = Select::new("Should git-z ask for a scope?", options)
             .with_starting_cursor(0)
-            .prompt()?;
+            .prompt()
+            .log_err()?;
 
-        let choice = match choice {
+        let scopes = match choice {
             "Ask for a scope, accept any" => Self::Ask {
                 accept: AcceptScopes::Any,
             },
@@ -148,7 +156,8 @@ impl Scopes {
             _ => Self::DontAsk,
         };
 
-        Ok(choice)
+        tracing::debug!(?scopes);
+        Ok(scopes)
     }
 }
 
@@ -164,9 +173,10 @@ impl Ticket {
         let choice =
             Select::new("Should git-z ask for a ticket number?", options)
                 .with_starting_cursor(1)
-                .prompt()?;
+                .prompt()
+                .log_err()?;
 
-        let choice = match choice {
+        let ticket = match choice {
             "Require a ticket number" => Self::Ask { required: true },
             "Ask for an optional ticket number" => {
                 Self::Ask { required: false }
@@ -174,7 +184,8 @@ impl Ticket {
             _ => Self::DontAsk,
         };
 
-        Ok(choice)
+        tracing::debug!(?ticket);
+        Ok(ticket)
     }
 }
 

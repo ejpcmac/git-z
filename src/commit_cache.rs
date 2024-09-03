@@ -20,6 +20,8 @@ use std::{fs, io, path::PathBuf, process::Command};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::tracing::LogResult as _;
+
 /// The commit cache.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CommitCache {
@@ -175,60 +177,97 @@ impl Default for CommitCache {
 
 impl CommitCache {
     /// Loads the commit cache of the repo or fallbacks to the default.
+    #[tracing::instrument(name = "load_cache", level = "trace")]
     pub fn load() -> Result<Self, LoadError> {
-        match fs::read_to_string(commit_cache_file()?) {
+        let commit_cache_file = commit_cache_file()?;
+        match fs::read_to_string(&commit_cache_file) {
             Ok(commit_cache) => {
+                tracing::debug!(?commit_cache_file, "loading the commit cache");
                 let commit_cache = Self::from_toml(&commit_cache)
                     .unwrap_or_else(|_| {
                         // If the existing cache is not usable, let’s discard it
                         // and start from a fresh one.
+                        tracing::warn!(
+                            ?commit_cache_file,
+                            "invalid commit cache, discarding it"
+                        );
                         Self::discard().ok();
                         Self::default()
                     });
 
+                tracing::debug!(?commit_cache);
                 Ok(commit_cache)
             }
 
-            Err(error) => match error.kind() {
-                io::ErrorKind::NotFound => Ok(Self::default()),
-                _ => Err(LoadError::Read(error)),
-            },
+            Err(error) => {
+                if error.kind() == io::ErrorKind::NotFound {
+                    tracing::debug!(
+                        "no commit cache, starting from an empty one"
+                    );
+                    Ok(Self::default())
+                } else {
+                    tracing::error!(
+                        ?error,
+                        ?commit_cache_file,
+                        "cannot read the commit cache"
+                    );
+                    Err(LoadError::Read(error))
+                }
+            }
         }
     }
 
     /// Gets the answer for the type.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn r#type(&self) -> Option<&str> {
-        self.wizard_answers.r#type.as_deref()
+        let r#type = self.wizard_answers.r#type.as_deref();
+        tracing::trace!(?r#type);
+        r#type
     }
 
     /// Gets the answer for the scope.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn scope(&self) -> Option<&str> {
-        self.wizard_answers.scope.as_deref()
+        let scope = self.wizard_answers.scope.as_deref();
+        tracing::trace!(?scope);
+        scope
     }
 
     /// Gets the answer for the description.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn description(&self) -> Option<&str> {
-        self.wizard_answers.description.as_deref()
+        let description = self.wizard_answers.description.as_deref();
+        tracing::trace!(?description);
+        description
     }
 
     /// Gets the answer for the breaking change.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn breaking_change(&self) -> Option<&str> {
-        self.wizard_answers.breaking_change.as_deref()
+        let breaking_change = self.wizard_answers.breaking_change.as_deref();
+        tracing::trace!(?breaking_change);
+        breaking_change
     }
 
     /// Gets the answer for the ticket.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn ticket(&self) -> Option<&str> {
-        self.wizard_answers.ticket.as_deref()
+        let ticket = self.wizard_answers.ticket.as_deref();
+        tracing::trace!(?ticket);
+        ticket
     }
 
     /// Resets the commit cache and discards it from the repo.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn reset(&mut self) -> Result<(), DiscardError> {
+        tracing::debug!("resetting the commit cache");
         self.wizard_answers = WizardAnswers::default();
         self.wizard_state = WizardState::default();
         Self::discard()
     }
 
     /// Sets the answer for the type.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn set_type(&mut self, r#type: &str) -> Result<(), SaveError> {
         self.wizard_state = WizardState::Ongoing;
         self.wizard_answers.r#type = Some(r#type.to_owned());
@@ -236,6 +275,7 @@ impl CommitCache {
     }
 
     /// Sets the answer for the scope.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn set_scope(&mut self, scope: Option<&str>) -> Result<(), SaveError> {
         self.wizard_state = WizardState::Ongoing;
         self.wizard_answers.scope = scope.map(ToOwned::to_owned);
@@ -243,6 +283,7 @@ impl CommitCache {
     }
 
     /// Sets the answer for the description.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn set_description(
         &mut self,
         description: &str,
@@ -253,6 +294,7 @@ impl CommitCache {
     }
 
     /// Sets the answer for the breaking change.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn set_breaking_change(
         &mut self,
         breaking_change: Option<&str>,
@@ -264,6 +306,7 @@ impl CommitCache {
     }
 
     /// Sets the answer for the ticket.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn set_ticket(
         &mut self,
         ticket: Option<&str>,
@@ -274,47 +317,65 @@ impl CommitCache {
     }
 
     /// Marks the wizard as ongoing.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn mark_wizard_as_ongoing(&mut self) -> Result<(), SaveError> {
+        tracing::trace!("marking the wizard as ongoing");
         self.wizard_state = WizardState::Ongoing;
         self.save()
     }
 
     /// Marks the wizard as completed.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn mark_wizard_as_completed(&mut self) -> Result<(), SaveError> {
+        tracing::debug!("marking the wizard as completed");
         self.wizard_state = WizardState::Completed;
         self.save()
     }
 
     /// Discards the current commit cache from the repo.
+    #[tracing::instrument(level = "trace")]
     pub fn discard() -> Result<(), DiscardError> {
-        fs::remove_file(commit_cache_file()?).map_err(DiscardError::Delete)?;
+        tracing::debug!("discarding the commit cache");
+        fs::remove_file(commit_cache_file()?)
+            .map_err(DiscardError::Delete)
+            .log_err()?;
         Ok(())
     }
 
     /// Saves the commit cache to the repo.
     // NOTE(allow): The function cannot actually panic (see note on expect).
     #[allow(clippy::unwrap_in_result, clippy::missing_panics_doc)]
+    #[tracing::instrument(level = "trace", skip_all)]
     fn save(&self) -> Result<(), SaveError> {
+        tracing::trace!(?self, "saving the commit cache");
+
         // NOTE(allow): We control the format, so a serialisation error would
         // be a bug in the code, not an error.
         #[allow(clippy::expect_used)]
         let commit_cache = toml::to_string(self)
             .expect("Failed to serialise the commit cache");
 
-        fs::create_dir_all(gitz_dir()?).map_err(SaveError::CreateDir)?;
+        fs::create_dir_all(gitz_dir()?)
+            .map_err(SaveError::CreateDir)
+            .log_err()?;
         fs::write(commit_cache_file()?, commit_cache)
-            .map_err(SaveError::Write)?;
+            .map_err(SaveError::Write)
+            .log_err()?;
+
         Ok(())
     }
 
     /// Builds a commit cache from its TOML representation.
+    #[tracing::instrument(level = "trace", skip_all)]
     fn from_toml(toml: &str) -> Result<Self, FromTomlError> {
-        let minimal_cache: MinimalCommitCache =
-            toml::from_str(toml).map_err(FromTomlError::ParseError)?;
+        let minimal_cache: MinimalCommitCache = toml::from_str(toml)
+            .map_err(FromTomlError::ParseError)
+            .log_err()?;
 
         if minimal_cache.version.as_str() == VERSION {
-            let cache =
-                toml::from_str(toml).map_err(FromTomlError::ParseError)?;
+            let cache = toml::from_str(toml)
+                .map_err(FromTomlError::ParseError)
+                .log_err()?;
             Ok(cache)
         } else {
             Err(FromTomlError::UnsupportedVersion {
@@ -335,24 +396,29 @@ fn gitz_dir() -> Result<PathBuf, GitZDirError> {
 }
 
 /// Returns the path of the Git directory.
+#[tracing::instrument(level = "trace")]
 fn git_dir() -> Result<PathBuf, GitDirError> {
     let git_rev_parse = Command::new("git")
         .args(["rev-parse", "--git-dir"])
         .output()
-        .map_err(GitDirError::CannotRunGit)?;
+        .map_err(GitDirError::CannotRunGit)
+        .log_err()?;
 
     if git_rev_parse.status.success() {
         Ok(String::from_utf8(git_rev_parse.stdout)
-            .map_err(GitDirError::EncodingError)?
+            .map_err(GitDirError::EncodingError)
+            .log_err()?
             .trim()
             .into())
     } else {
         Err(GitDirError::GitError(
             String::from_utf8(git_rev_parse.stderr)
-                .map_err(GitDirError::EncodingError)?
+                .map_err(GitDirError::EncodingError)
+                .log_err()?
                 .trim()
                 .to_owned(),
         ))
+        .log_err()
     }
 }
 
