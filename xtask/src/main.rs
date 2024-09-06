@@ -96,7 +96,7 @@ fn check_usage() {
 
 fn check_commits(ctx: &mut Context) {
     let is_pull_request =
-        matches!(env::var_os("IS_PULL_REQUEST"), Some(val) if val == "true");
+        env::var_os("IS_PULL_REQUEST").is_some_and(|val| val == "true");
 
     let commits = if is_pull_request {
         Some(String::from("HEAD~..HEAD^2"))
@@ -281,17 +281,17 @@ fn check_result(ctx: &Context) {
     let Context { checks, errors, .. } = ctx;
 
     let s = if *checks == 1 { "" } else { "s" };
-    let be = |n| if n == 1 { "has" } else { "have" };
+    let have = |n| if n == 1 { "has" } else { "have" };
 
     if *errors == 0 {
-        let be = be(*checks);
-        let message = format!("✅ {checks}/{checks} check{s} {be} passed!")
+        let have = have(*checks);
+        let message = format!("✅ {checks}/{checks} check{s} {have} passed!")
             .bold()
             .green();
         println!("\n{message}");
     } else {
-        let be = be(*errors);
-        let message = format!("❌ {errors}/{checks} check{s} {be} failed!")
+        let have = have(*errors);
+        let message = format!("❌ {errors}/{checks} check{s} {have} failed!")
             .bold()
             .red();
         eprintln!("\n{message}");
