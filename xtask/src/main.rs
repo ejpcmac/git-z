@@ -149,7 +149,7 @@ fn check_format(ctx: &mut Context) {
     action!(
         ctx,
         "Checking the Rust code is formatted",
-        "cargo fmt --check",
+        "cargo fmt --all --check",
     );
 
     action!(
