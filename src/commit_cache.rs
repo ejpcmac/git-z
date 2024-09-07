@@ -69,7 +69,7 @@ pub enum LoadError {
     CommitCacheFile(#[from] CommitCacheFileError),
     /// An error has occurred while reading the commit cache file.
     #[error("Failed to read the commit cache")]
-    Read(#[from] io::Error),
+    Read(io::Error),
 }
 
 /// Errors that can occur when saving the commit cache.
@@ -83,7 +83,7 @@ pub enum SaveError {
     CommitCacheFile(#[from] CommitCacheFileError),
     /// Error while writing the commit cache file.
     #[error("Failed to write the commit cache")]
-    Write(#[from] io::Error),
+    Write(io::Error),
 }
 
 /// Errors that can occur when discarding the commit cache.
@@ -94,7 +94,7 @@ pub enum DiscardError {
     CommitCacheFile(#[from] CommitCacheFileError),
     /// Error while deleting the commit cache file.
     #[error("Failed to delete the commit cache file")]
-    Delete(#[from] io::Error),
+    Delete(io::Error),
 }
 
 /// Errors that can occur when parsing the TOML.
@@ -108,7 +108,7 @@ pub enum FromTomlError {
     },
     /// The commit cache file cannot be parsed.
     #[error("Failed to parse the commit cache file")]
-    ParseError(#[from] toml::de::Error),
+    ParseError(toml::de::Error),
 }
 
 /// Errors that can occur when building the path of the commit cache file.
@@ -132,13 +132,13 @@ pub enum GitZDirError {
 pub enum GitDirError {
     /// The `git` command cannot be run.
     #[error("Failed to run the git command")]
-    CannotRunGit(#[from] io::Error),
+    CannotRunGit(io::Error),
     /// Git has returned an error.
     #[error("{0}")]
     GitError(String),
     /// The output of the git command is not proper UTF-8.
     #[error("The output of the git command is not proper UTF-8")]
-    EncodingError(#[from] std::string::FromUtf8Error),
+    EncodingError(std::string::FromUtf8Error),
 }
 
 /// A minimal commit cache to get the version.
@@ -284,7 +284,7 @@ impl CommitCache {
 
     /// Discards the current commit cache from the repo.
     pub fn discard() -> Result<(), DiscardError> {
-        fs::remove_file(commit_cache_file()?)?;
+        fs::remove_file(commit_cache_file()?).map_err(DiscardError::Delete)?;
         Ok(())
     }
 
@@ -298,17 +298,21 @@ impl CommitCache {
         let commit_cache = toml::to_string(self)
             .expect("Failed to serialise the commit cache");
 
-        fs::create_dir_all(gitz_dir()?)?;
-        fs::write(commit_cache_file()?, commit_cache)?;
+        fs::create_dir_all(gitz_dir()?).map_err(SaveError::Write)?;
+        fs::write(commit_cache_file()?, commit_cache)
+            .map_err(SaveError::Write)?;
         Ok(())
     }
 
     /// Builds a commit cache from its TOML representation.
     fn from_toml(toml: &str) -> Result<Self, FromTomlError> {
-        let minimal_cache: MinimalCommitCache = toml::from_str(toml)?;
+        let minimal_cache: MinimalCommitCache =
+            toml::from_str(toml).map_err(FromTomlError::ParseError)?;
 
         if minimal_cache.version.as_str() == VERSION {
-            Ok(toml::from_str(toml)?)
+            let cache =
+                toml::from_str(toml).map_err(FromTomlError::ParseError)?;
+            Ok(cache)
         } else {
             Err(FromTomlError::UnsupportedVersion {
                 version: minimal_cache.version,
@@ -331,14 +335,21 @@ fn gitz_dir() -> Result<PathBuf, GitZDirError> {
 fn git_dir() -> Result<PathBuf, GitDirError> {
     let git_rev_parse = Command::new("git")
         .args(["rev-parse", "--git-dir"])
-        .output()?;
+        .output()
+        .map_err(GitDirError::CannotRunGit)?;
 
     if git_rev_parse.status.success() {
-        let repo_root = String::from_utf8(git_rev_parse.stdout)?;
-        Ok(PathBuf::from(repo_root.trim()))
+        Ok(String::from_utf8(git_rev_parse.stdout)
+            .map_err(GitDirError::EncodingError)?
+            .trim()
+            .into())
     } else {
-        let git_error = String::from_utf8(git_rev_parse.stderr)?;
-        Err(GitDirError::GitError(git_error.trim().to_owned()))
+        Err(GitDirError::GitError(
+            String::from_utf8(git_rev_parse.stderr)
+                .map_err(GitDirError::EncodingError)?
+                .trim()
+                .to_owned(),
+        ))
     }
 }
 

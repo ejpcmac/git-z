@@ -30,7 +30,7 @@ use crate::{
 pub enum NotInGitWorktree {
     /// Git cannot be run.
     #[error("Failed to run the git command")]
-    CannotRunGit(#[from] io::Error),
+    CannotRunGit(io::Error),
     /// The command is not run from inside a Git repository.
     #[error("Not in a Git repository")]
     NotInRepo,
@@ -43,7 +43,8 @@ pub enum NotInGitWorktree {
 pub fn ensure_in_git_worktree() -> Result<(), NotInGitWorktree> {
     let is_inside_work_tree = Command::new("git")
         .args(["rev-parse", "--is-inside-work-tree"])
-        .output()?;
+        .output()
+        .map_err(NotInGitWorktree::CannotRunGit)?;
 
     if !is_inside_work_tree.status.success() {
         return Err(NotInGitWorktree::NotInRepo);

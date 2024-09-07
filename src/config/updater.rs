@@ -67,13 +67,13 @@ pub enum LoadError {
     NoConfigFile,
     /// An error has occurred while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
-    ReadError(#[from] io::Error),
+    ReadError(io::Error),
     /// The configuration is invalid.
     #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
     InvalidConfig(#[from] FromTomlError),
     /// The configuration is not a valid TOML document.
     #[error("Failed to parse {CONFIG_FILE_NAME} into a TOML document")]
-    TomlEditError(#[from] toml_edit::TomlError),
+    TomlEditError(toml_edit::TomlError),
 }
 
 /// Errors that can occur when updating the configuration.
@@ -99,7 +99,7 @@ pub enum SaveError {
     ConfigFileError(#[from] ConfigFileError),
     /// Error while writing the configuration file.
     #[error("Failed to write {CONFIG_FILE_NAME}")]
-    WriteError(#[from] io::Error),
+    WriteError(io::Error),
 }
 
 impl ConfigUpdater<Init> {
@@ -109,7 +109,8 @@ impl ConfigUpdater<Init> {
             Ok(toml) => {
                 // Parse the configuration first to ensure it is valid.
                 let parsed_config = Config::from_toml(&toml)?;
-                let toml_config = toml.parse()?;
+                let toml_config =
+                    toml.parse().map_err(LoadError::TomlEditError)?;
 
                 Ok(Self {
                     parsed_config,
@@ -176,7 +177,8 @@ impl ConfigUpdater<Init> {
 impl ConfigUpdater<Updated> {
     /// Writes the updated configuration to the configuration file.
     pub fn save(self) -> Result<(), SaveError> {
-        fs::write(config_file()?, self.toml_config.to_string())?;
+        fs::write(config_file()?, self.toml_config.to_string())
+            .map_err(SaveError::WriteError)?;
         Ok(())
     }
 }

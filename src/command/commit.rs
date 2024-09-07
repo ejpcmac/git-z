@@ -71,7 +71,7 @@ pub enum CommitError {
     PreCommitFailed,
     /// The commit template is invalid.
     #[error("Failed to parse the commit template")]
-    Template(#[from] tera::Error),
+    Template(tera::Error),
     /// Git has returned an error.
     #[error("Git has returned an error")]
     Git {

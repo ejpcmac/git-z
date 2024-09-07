@@ -48,7 +48,7 @@ pub enum LoadError {
     ConfigFileError(#[from] ConfigFileError),
     /// An error has occurred while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
-    ReadError(#[from] io::Error),
+    ReadError(io::Error),
     /// The configuration is invalid.
     #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
     InvalidConfig(#[from] FromTomlError),
@@ -73,7 +73,7 @@ pub enum FromTomlError {
     },
     /// The configuration file cannot be parsed.
     #[error("Failed to parse into a valid configuration")]
-    ParseError(#[from] toml::de::Error),
+    ParseError(toml::de::Error),
 }
 
 /// Errors that can occur when building the config file path.
@@ -89,13 +89,13 @@ pub enum ConfigFileError {
 pub enum RepoRootError {
     /// The `git` command cannot be run.
     #[error("Failed to run the git command")]
-    CannotRunGit(#[from] io::Error),
+    CannotRunGit(io::Error),
     /// Git has returned an error.
     #[error("{0}")]
     GitError(String),
     /// The output of the git command is not proper UTF-8.
     #[error("The output of the git command is not proper UTF-8")]
-    EncodingError(#[from] std::string::FromUtf8Error),
+    EncodingError(std::string::FromUtf8Error),
 }
 
 /// A minimal configuration to get the version.
@@ -170,12 +170,18 @@ impl Config {
 
     /// Builds the configuration from its TOML representation.
     pub fn from_toml(toml: &str) -> Result<Self, FromTomlError> {
-        let minimal_config: MinimalConfig = toml::from_str(toml)?;
+        let minimal_config: MinimalConfig =
+            toml::from_str(toml).map_err(FromTomlError::ParseError)?;
 
         match minimal_config.version.as_str() {
-            VERSION => Ok(toml::from_str(toml)?),
+            VERSION => {
+                let config =
+                    toml::from_str(toml).map_err(FromTomlError::ParseError)?;
+                Ok(config)
+            }
             "0.1" => {
-                let config: v0_1::Config = toml::from_str(toml)?;
+                let config: v0_1::Config =
+                    toml::from_str(toml).map_err(FromTomlError::ParseError)?;
                 Ok(config.into())
             }
             version @ ("0.2-dev.0" | "0.2-dev.1" | "0.2-dev.2"
@@ -201,14 +207,21 @@ pub fn config_file() -> Result<PathBuf, ConfigFileError> {
 fn repo_root() -> Result<PathBuf, RepoRootError> {
     let git_rev_parse = Command::new("git")
         .args(["rev-parse", "--show-toplevel"])
-        .output()?;
+        .output()
+        .map_err(RepoRootError::CannotRunGit)?;
 
     if git_rev_parse.status.success() {
-        let repo_root = String::from_utf8(git_rev_parse.stdout)?;
-        Ok(PathBuf::from(repo_root.trim()))
+        Ok(String::from_utf8(git_rev_parse.stdout)
+            .map_err(RepoRootError::EncodingError)?
+            .trim()
+            .into())
     } else {
-        let git_error = String::from_utf8(git_rev_parse.stderr)?;
-        Err(RepoRootError::GitError(git_error.trim().to_owned()))
+        Err(RepoRootError::GitError(
+            String::from_utf8(git_rev_parse.stderr)
+                .map_err(RepoRootError::EncodingError)?
+                .trim()
+                .to_owned(),
+        ))
     }
 }
 
