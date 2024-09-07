@@ -18,7 +18,7 @@
 use std::{fs, path::PathBuf, process::Command};
 
 use clap::Parser;
-use eyre::{bail, ensure, eyre, Context as _, Result};
+use eyre::{eyre, Context as _, Result};
 use indexmap::IndexMap;
 use inquire::{validator::Validation, Confirm, CustomUserError, Select, Text};
 use itertools::Itertools;
@@ -123,9 +123,9 @@ impl super::Command for Commit {
             let status = git_commit.status()?;
 
             if !status.success() {
-                bail!(CommitError::Git {
-                    status_code: status.code()
-                });
+                Err(CommitError::Git {
+                    status_code: status.code(),
+                })?;
             }
         }
 
@@ -172,7 +172,7 @@ fn run_pre_commit_hook() -> Result<()> {
             let status = Command::new(pre_commit).status()?;
 
             if !status.success() {
-                bail!(CommitError::PreCommitFailed);
+                Err(CommitError::PreCommitFailed)?;
             }
         } else {
             let path = pre_commit
@@ -448,10 +448,9 @@ fn get_current_branch() -> Result<String> {
         .args(["branch", "--show-current"])
         .output()?;
 
-    ensure!(
-        git_branch.status.success(),
-        "Failed to run `git branch --show-current`"
-    );
+    if !git_branch.status.success() {
+        return Err(eyre!("Failed to run `git branch --show-current`"));
+    }
 
     Ok(String::from_utf8(git_branch.stdout)?)
 }
@@ -584,10 +583,9 @@ fn git_dir() -> Result<PathBuf> {
         .args(["rev-parse", "--git-dir"])
         .output()?;
 
-    ensure!(
-        git_rev_parse.status.success(),
-        "Failed to run `git rev-parse --git-dir`"
-    );
+    if !git_rev_parse.status.success() {
+        return Err(eyre!("Failed to run `git rev-parse --git-dir`"));
+    }
 
     let git_dir = String::from_utf8(git_rev_parse.stdout)?;
     Ok(PathBuf::from(git_dir.trim()))

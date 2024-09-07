@@ -19,7 +19,7 @@ use std::fs;
 
 use askama::Template;
 use clap::Parser;
-use eyre::{bail, Result};
+use eyre::Result;
 use inquire::Select;
 use thiserror::Error;
 
@@ -97,7 +97,7 @@ impl super::Command for Init {
         let config_file = config_file()?;
 
         if !self.force && config_file.exists() {
-            bail!(InitError::ExistingConfig);
+            Err(InitError::ExistingConfig)?;
         }
 
         let config = if self.default {

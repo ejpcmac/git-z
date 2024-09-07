@@ -16,7 +16,7 @@
 //! The `update` subcommand.
 
 use clap::Parser;
-use eyre::{bail, Result};
+use eyre::Result;
 use inquire::Confirm;
 use thiserror::Error;
 
@@ -64,14 +64,14 @@ impl super::Command for Update {
             "0.1" => update_from_v0_1(updater)?,
             version @ ("0.2-dev.0" | "0.2-dev.1" | "0.2-dev.2"
             | "0.2-dev.3") => {
-                bail!(UpdateError::UnsupportedDevelopmentVersion {
+                Err(UpdateError::UnsupportedDevelopmentVersion {
                     version: version.to_owned(),
                     gitz_version: String::from("0.2.0"),
-                })
+                })?;
             }
-            version => bail!(UpdateError::UnsupportedVersion {
-                version: version.to_owned()
-            }),
+            version => Err(UpdateError::UnsupportedVersion {
+                version: version.to_owned(),
+            })?,
         }
 
         Ok(())
