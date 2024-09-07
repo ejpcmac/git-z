@@ -118,7 +118,7 @@ You should then find a Debian package in `target/debian/`.
 
 ### Windows
 
-With a Rust toolchain instalded on your machine, you can:
+With a Rust toolchain installed on your machine, you can:
 
 1. Install [WiX v3](https://wixtoolset.org/docs/wix3/).
 
