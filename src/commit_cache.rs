@@ -82,6 +82,9 @@ pub enum SaveError {
     #[error("Failed to get the path of the commit cache file")]
     CommitCacheFile(#[from] CommitCacheFileError),
     /// Error while writing the commit cache file.
+    #[error("Failed to create the git-z directory")]
+    CreateDir(io::Error),
+    /// Error while writing the commit cache file.
     #[error("Failed to write the commit cache")]
     Write(io::Error),
 }
@@ -298,7 +301,7 @@ impl CommitCache {
         let commit_cache = toml::to_string(self)
             .expect("Failed to serialise the commit cache");
 
-        fs::create_dir_all(gitz_dir()?).map_err(SaveError::Write)?;
+        fs::create_dir_all(gitz_dir()?).map_err(SaveError::CreateDir)?;
         fs::write(commit_cache_file()?, commit_cache)
             .map_err(SaveError::Write)?;
         Ok(())
