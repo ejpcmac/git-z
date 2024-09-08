@@ -2020,6 +2020,28 @@ mod usage_errors {
 
     #[cfg(feature = "unstable-pre-commit")]
     #[test]
+    fn prints_an_error_if_the_pre_commit_hook_cannot_be_run() -> Result<()> {
+        let temp_dir = setup_temp_dir()?;
+        install_hook(
+            &temp_dir,
+            "pre-commit",
+            &formatdoc! {r##"
+                #!/invalid
+                invalid
+            "##},
+        )?;
+
+        let mut process = spawn_command(gitz_commit(&temp_dir)?, TIMEOUT)?;
+
+        process.exp_string("Error: failed to run the pre-commit hook.")?;
+        process.exp_string("The OS reports:")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[cfg(feature = "unstable-pre-commit")]
+    #[test]
     fn prints_an_error_if_the_pre_commit_hook_fails() -> Result<()> {
         let temp_dir = setup_temp_dir()?;
         install_pre_commit_hook(&temp_dir, 1)?;

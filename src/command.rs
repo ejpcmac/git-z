@@ -246,6 +246,12 @@ fn handle_init_error(error: &InitError) -> ErrorHandling {
 fn handle_commit_error(error: &CommitError) -> ErrorHandling {
     match error {
         #[cfg(feature = "unstable-pre-commit")]
+        CommitError::CannotRunPreCommit(os_error) => {
+            error!("{error}.");
+            hint!("The OS reports: {os_error}.");
+            ErrorHandling::Exit(exitcode::UNAVAILABLE)
+        }
+        #[cfg(feature = "unstable-pre-commit")]
         CommitError::PreCommitFailed => {
             error!("{error}.");
             // NOTE: Use 1 as exit code to maintain the same behaviour as Git.

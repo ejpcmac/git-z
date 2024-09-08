@@ -37,7 +37,7 @@ use crate::{
 use super::helpers::ensure_in_git_worktree;
 
 #[cfg(feature = "unstable-pre-commit")]
-use std::env;
+use std::{env, io};
 
 #[cfg(feature = "unstable-pre-commit")]
 use is_executable::IsExecutable;
@@ -66,6 +66,10 @@ pub struct Commit {
 /// Usage errors of `git z commit`.
 #[derive(Debug, Error)]
 pub enum CommitError {
+    /// The pre-commit hook could not be run.
+    #[cfg(feature = "unstable-pre-commit")]
+    #[error("Failed to run the pre-commit hook")]
+    CannotRunPreCommit(io::Error),
     /// The pre-commit hook has failed.
     #[cfg(feature = "unstable-pre-commit")]
     #[error("The pre-commit hook has failed")]
@@ -185,8 +189,7 @@ fn run_pre_commit_hook() -> Result<()> {
 
             let status = Command::new(pre_commit)
                 .status()
-                // TODO: Add a test for this and add a usage error.
-                .wrap_err("failed to run the pre-commit hook")
+                .map_err(CommitError::CannotRunPreCommit)
                 .log_err()?;
 
             if !status.success() {
