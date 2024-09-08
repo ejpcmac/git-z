@@ -22,9 +22,10 @@ mod update;
 
 use std::error::Error as _;
 
-use clap::Parser;
+use clap::{ArgAction, Parser, Subcommand};
 use eyre::{Report, Result};
 use inquire::InquireError;
+use tracing_subscriber::fmt::format::FmtSpan;
 
 use self::{
     commit::{Commit, CommitError},
@@ -59,7 +60,18 @@ const LONG_VERSION: &str = concat!(
     version = env!("VERSION_WITH_GIT"),
     long_version = LONG_VERSION,
 )]
-pub enum GitZ {
+pub struct GitZ {
+    /// The command to run.
+    #[command(subcommand)]
+    command: GitZCommand,
+    /// The verbosity level.
+    #[arg(short = 'v', action = ArgAction::Count, global = true)]
+    verbosity: u8,
+}
+
+/// The subcommands of `git-z`.
+#[derive(Debug, Subcommand)]
+pub enum GitZCommand {
     /// Initialises the configuration.
     Init(Init),
     /// Runs the commit wizard.
@@ -77,16 +89,45 @@ trait Command {
 impl GitZ {
     /// Runs git-z.
     pub fn run() -> Result<()> {
-        let result = match Self::parse() {
-            Self::Init(init) => init.run(),
-            Self::Commit(commit) => commit.run(),
-            Self::Update(update) => update.run(),
+        let args = Self::parse();
+        setup_tracing(args.verbosity);
+
+        let result = match args.command {
+            GitZCommand::Init(init) => init.run(),
+            GitZCommand::Commit(commit) => commit.run(),
+            GitZCommand::Update(update) => update.run(),
         };
 
         match result {
             Err(error) => handle_errors(error),
             Ok(()) => Ok(()),
         }
+    }
+}
+
+/// Configures the tracing subscriber given the verbosity.
+fn setup_tracing(verbosity: u8) {
+    tracing_subscriber::fmt()
+        .with_env_filter(env_filter(verbosity))
+        .with_span_events(span_events(verbosity))
+        .init();
+}
+
+/// Returns the trace filter to apply given the verbosity.
+fn env_filter(verbosity: u8) -> &'static str {
+    match verbosity {
+        0 => "off",
+        1 => "git_z=info",
+        2 => "git_z=debug",
+        3_u8..=u8::MAX => "git_z=trace",
+    }
+}
+
+/// Returns the span events to enable given the verbosity.
+fn span_events(verbosity: u8) -> FmtSpan {
+    match verbosity {
+        0..=3 => FmtSpan::NONE,
+        4..=u8::MAX => FmtSpan::ACTIVE,
     }
 }
 
@@ -204,6 +245,12 @@ fn handle_init_error(error: &InitError) -> ErrorHandling {
 /// Prints proper error messages for `git z commit` usage errors.
 fn handle_commit_error(error: &CommitError) -> ErrorHandling {
     match error {
+        #[cfg(feature = "unstable-pre-commit")]
+        CommitError::CannotRunPreCommit(os_error) => {
+            error!("{error}.");
+            hint!("The OS reports: {os_error}.");
+            ErrorHandling::Exit(exitcode::UNAVAILABLE)
+        }
         #[cfg(feature = "unstable-pre-commit")]
         CommitError::PreCommitFailed => {
             error!("{error}.");

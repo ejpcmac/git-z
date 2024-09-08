@@ -51,6 +51,8 @@ tera = "1"
 thiserror = "1"
 toml = "0.8"
 toml_edit = "0.22"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 assert_cmd = "2"
@@ -147,7 +149,6 @@ string_slice = "warn"
 string_to_string = "warn"
 tests_outside_test_module = "warn"
 todo = "warn"
-try_err = "warn"
 unnecessary_safety_comment = "warn"
 unnecessary_safety_doc = "warn"
 unneeded_field_pattern = "warn"

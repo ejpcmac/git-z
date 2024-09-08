@@ -18,7 +18,7 @@
 use std::{fs, path::PathBuf, process::Command};
 
 use clap::Parser;
-use eyre::{bail, ensure, eyre, Context as _, Result};
+use eyre::{eyre, Context as _, Result};
 use indexmap::IndexMap;
 use inquire::{validator::Validation, Confirm, CustomUserError, Select, Text};
 use itertools::Itertools;
@@ -31,12 +31,13 @@ use crate::{
     command::helpers::load_config,
     commit_cache::{CommitCache, WizardState},
     config::{Config, Scopes, Ticket},
+    tracing::LogResult as _,
 };
 
 use super::helpers::ensure_in_git_worktree;
 
 #[cfg(feature = "unstable-pre-commit")]
-use std::env;
+use std::{env, io};
 
 #[cfg(feature = "unstable-pre-commit")]
 use is_executable::IsExecutable;
@@ -65,13 +66,17 @@ pub struct Commit {
 /// Usage errors of `git z commit`.
 #[derive(Debug, Error)]
 pub enum CommitError {
+    /// The pre-commit hook could not be run.
+    #[cfg(feature = "unstable-pre-commit")]
+    #[error("Failed to run the pre-commit hook")]
+    CannotRunPreCommit(io::Error),
     /// The pre-commit hook has failed.
     #[cfg(feature = "unstable-pre-commit")]
     #[error("The pre-commit hook has failed")]
     PreCommitFailed,
     /// The commit template is invalid.
     #[error("Failed to parse the commit template")]
-    Template(#[from] tera::Error),
+    Template(tera::Error),
     /// Git has returned an error.
     #[error("Git has returned an error")]
     Git {
@@ -96,7 +101,10 @@ struct CommitMessage {
 }
 
 impl super::Command for Commit {
+    #[tracing::instrument(name = "commit", level = "trace", skip_all)]
     fn run(&self) -> Result<()> {
+        tracing::info!(params = ?self, "running commit");
+
         ensure_in_git_worktree()?;
 
         let config = load_config()?;
@@ -109,6 +117,7 @@ impl super::Command for Commit {
         let commit_message = make_commit_message(&config)?;
 
         if self.print_only {
+            tracing::debug!("printing the commit message");
             println!("{commit_message}");
         } else {
             let mut git_commit = Command::new("git");
@@ -120,15 +129,19 @@ impl super::Command for Commit {
                 .args(&self.extra_args)
                 .args(["-em", &commit_message]);
 
-            let status = git_commit.status()?;
+            tracing::debug!(?git_commit, "calling git commit");
+            let status = git_commit.status().log_err()?;
+            tracing::debug!(?status);
 
             if !status.success() {
-                bail!(CommitError::Git {
-                    status_code: status.code()
-                });
+                Err(CommitError::Git {
+                    status_code: status.code(),
+                })
+                .log_err()?;
             }
         }
 
+        tracing::info!("commit success!");
         CommitCache::discard()?;
         Ok(())
     }
@@ -136,6 +149,7 @@ impl super::Command for Commit {
 
 impl CommitMessage {
     /// Runs the wizard to build a commit message from user input.
+    #[tracing::instrument(level = "trace", skip_all)]
     fn run_wizard(config: &Config, cache: &mut CommitCache) -> Result<Self> {
         let commit_message = Self {
             r#type: ask_type(config, cache)?,
@@ -147,6 +161,7 @@ impl CommitMessage {
 
         cache.mark_wizard_as_completed()?;
 
+        tracing::debug!(?commit_message);
         Ok(commit_message)
     }
 
@@ -164,16 +179,24 @@ impl CommitMessage {
 
 /// Runs the pre-commit hook if it exists.
 #[cfg(feature = "unstable-pre-commit")]
+#[tracing::instrument(level = "trace")]
 fn run_pre_commit_hook() -> Result<()> {
     let pre_commit = pre_commit()?;
 
     if pre_commit.exists() {
         if pre_commit.is_executable() {
-            let status = Command::new(pre_commit).status()?;
+            tracing::info!(path = ?pre_commit, "running the pre-commit hook");
+
+            let status = Command::new(pre_commit)
+                .status()
+                .map_err(CommitError::CannotRunPreCommit)
+                .log_err()?;
 
             if !status.success() {
-                bail!(CommitError::PreCommitFailed);
+                Err(CommitError::PreCommitFailed).log_err()?;
             }
+
+            tracing::info!("the pre-commit hook has returned a success");
         } else {
             let path = pre_commit
                 .strip_prefix(env::current_dir()?)
@@ -185,12 +208,15 @@ fn run_pre_commit_hook() -> Result<()> {
                 executable."
             );
         }
+    } else {
+        tracing::debug!("no pre-commit hook to run");
     }
 
     Ok(())
 }
 
 /// Makes a commit message.
+#[tracing::instrument(level = "trace", skip_all)]
 fn make_commit_message(config: &Config) -> Result<String> {
     let mut cache = CommitCache::load()?;
 
@@ -199,16 +225,27 @@ fn make_commit_message(config: &Config) -> Result<String> {
             make_message_from_wizard(config, &mut cache)
         }
         WizardState::Completed => {
+            tracing::debug!(
+                "completed wizard state present, checking whether a valid \
+                commit message is present"
+            );
             if let Some(message) = last_commit_message()? {
+                tracing::debug!(
+                    "valid commit message present, asking the user whether to \
+                    use it"
+                );
                 let do_reuse_message = ask_reuse_message()?;
 
                 if do_reuse_message {
+                    tracing::debug!("reusing the commit message");
                     Ok(message)
                 } else {
+                    tracing::debug!("not reusing the commit message");
                     cache.reset()?;
                     make_message_from_wizard(config, &mut cache)
                 }
             } else {
+                tracing::debug!("no valid commit message, rerun the wizard");
                 cache.mark_wizard_as_ongoing()?;
                 make_message_from_wizard(config, &mut cache)
             }
@@ -217,6 +254,7 @@ fn make_commit_message(config: &Config) -> Result<String> {
 }
 
 /// Makes a commit message by running the wizard.
+#[tracing::instrument(level = "trace", skip_all)]
 fn make_message_from_wizard(
     config: &Config,
     cache: &mut CommitCache,
@@ -224,32 +262,43 @@ fn make_message_from_wizard(
     let tera = build_and_check_template(config)?;
 
     if cache.wizard_state == WizardState::Ongoing {
+        tracing::debug!(
+            "ongoing wizard state present, asking the user whether to use it"
+        );
         let do_reuse_answers = ask_reuse_answers()?;
-        if !do_reuse_answers {
+
+        if do_reuse_answers {
+            tracing::debug!("reusing answers");
+        } else {
+            tracing::debug!("not reusing answers");
             cache.reset()?;
         }
     }
 
     let commit_message = CommitMessage::run_wizard(config, cache)?;
-    let context = Context::from_serialize(commit_message)?;
-    let message = tera.render("templates.commit", &context)?;
+    let context = Context::from_serialize(commit_message).log_err()?;
+    let message = tera.render("templates.commit", &context).log_err()?;
+    tracing::debug!(rendered_message = ?message,);
 
     Ok(message)
 }
 
 /// Loads the commit template and checks for errors.
+#[tracing::instrument(level = "trace", skip_all)]
 fn build_and_check_template(config: &Config) -> Result<Tera> {
     let mut tera = Tera::default();
 
     tera.add_raw_template("templates.commit", &config.templates.commit)
-        .map_err(CommitError::Template)?;
+        .map_err(CommitError::Template)
+        .log_err()?;
 
     // Render a dummy commit to catch early any variable error.
     tera.render(
         "templates.commit",
-        &Context::from_serialize(CommitMessage::dummy())?,
+        &Context::from_serialize(CommitMessage::dummy()).log_err()?,
     )
-    .map_err(CommitError::Template)?;
+    .map_err(CommitError::Template)
+    .log_err()?;
 
     Ok(tera)
 }
@@ -264,7 +313,8 @@ fn ask_reuse_message() -> Result<bool> {
         "This will use your last commit message without running the wizard.",
     )
     .with_default(true)
-    .prompt()?)
+    .prompt()
+    .log_err()?)
 }
 
 /// Asks the user whether to reuse answers from an aborted run.
@@ -276,7 +326,8 @@ fn ask_reuse_answers() -> Result<bool> {
         "The wizard will be run as usual with your answers pre-selected.",
     )
     .with_default(true)
-    .prompt()?)
+    .prompt()
+    .log_err()?)
 }
 
 /// Asks the user which type of commit they wants.
@@ -288,9 +339,11 @@ fn ask_type(config: &Config, cache: &mut CommitCache) -> Result<String> {
         .with_starting_cursor(cursor)
         .with_page_size(PAGE_SIZE)
         .with_formatter(&|choice| remove_type_description(choice.value))
-        .prompt()?;
+        .prompt()
+        .log_err()?;
     let r#type = remove_type_description(&choice);
 
+    tracing::debug!(?r#type);
     cache.set_type(&r#type)?;
 
     Ok(r#type)
@@ -307,7 +360,8 @@ fn ask_scope(
         Some(Scopes::Any) => Text::new("Scope")
             .with_initial_value(cache.scope().unwrap_or_default())
             .with_help_message("Press ESC or leave empty to omit the scope.")
-            .prompt_skippable()?
+            .prompt_skippable()
+            .log_err()?
             .filter(|s| !s.is_empty()),
 
         Some(Scopes::List { list }) => {
@@ -323,10 +377,12 @@ fn ask_scope(
                 .with_starting_cursor(cursor)
                 .with_help_message(help_message)
                 .with_page_size(PAGE_SIZE)
-                .prompt_skippable()?
+                .prompt_skippable()
+                .log_err()?
         }
     };
 
+    tracing::debug!(?scope);
     cache.set_scope(scope.as_deref())?;
 
     Ok(scope)
@@ -344,8 +400,10 @@ fn ask_description(cache: &mut CommitCache) -> Result<String> {
         .with_initial_value(cache.description().unwrap_or_default())
         .with_help_message(message)
         .with_validator(validate_description)
-        .prompt()?;
+        .prompt()
+        .log_err()?;
 
+    tracing::debug!(?description);
     cache.set_description(&description)?;
 
     Ok(description)
@@ -359,9 +417,11 @@ fn ask_breaking_change(cache: &mut CommitCache) -> Result<Option<String>> {
         .with_help_message(
             "Press ESC or leave empty if there are no breaking changes.",
         )
-        .prompt_skippable()?
+        .prompt_skippable()
+        .log_err()?
         .filter(|s| !s.is_empty());
 
+    tracing::debug!(?breaking_change);
     cache.set_breaking_change(breaking_change.as_deref())?;
 
     Ok(breaking_change)
@@ -389,17 +449,19 @@ fn ask_ticket(
                 .with_validator(validate_ticket);
 
             if *required {
-                Some(prompt.prompt()?)
+                Some(prompt.prompt().log_err()?)
             } else {
                 prompt
                     .with_help_message(
                         "Press ESC to omit the ticket reference.",
                     )
-                    .prompt_skippable()?
+                    .prompt_skippable()
+                    .log_err()?
             }
         }
     };
 
+    tracing::debug!(?ticket);
     cache.set_ticket(ticket.as_deref())?;
 
     Ok(ticket)
@@ -408,6 +470,7 @@ fn ask_ticket(
 /// Tries to extract a ticket number from the name of the current Git branch.
 // NOTE(allow): This function cannot actually panic. See the notes below.
 #[allow(clippy::missing_panics_doc)]
+#[tracing::instrument(level = "trace")]
 fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     // Replace `#` with an empty string in the regex, as we want to match
     // branches like `feature/23-name` when `#` is a valid prefix like for
@@ -415,16 +478,17 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     let regex = ticket_regex(prefixes).replace('#', "");
 
     let ticket = Regex::new(&regex)
-        .wrap_err("Impossible to build a regex from the list of prefixes")?
+        .wrap_err("Impossible to build a regex from the list of prefixes")
+        .log_err()?
         .captures(&get_current_branch()?)
         .map(|captures| {
-            // NOTE(indexing): Capture group 0 always corresponds to an implicit
+            // NOTE(allow): Capture group 0 always corresponds to an implicit
             // unnamed group that includes the entire match.
             #[allow(clippy::indexing_slicing)]
             captures[0].to_owned()
         })
         .map(|ticket| {
-            // NOTE(unwrap): This regex is known to be valid.
+            // NOTE(allow): This regex is known to be valid.
             #[allow(clippy::unwrap_used)]
             let regex = &Regex::new(r"^\d+$").unwrap();
 
@@ -439,21 +503,26 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
             }
         });
 
+    tracing::trace!(?ticket);
     Ok(ticket)
 }
 
 /// Gets the name of the current Git branch.
+#[tracing::instrument(level = "trace")]
 fn get_current_branch() -> Result<String> {
     let git_branch = Command::new("git")
         .args(["branch", "--show-current"])
-        .output()?;
+        .output()
+        .log_err()?;
 
-    ensure!(
-        git_branch.status.success(),
-        "Failed to run `git branch --show-current`"
-    );
+    if !git_branch.status.success() {
+        return Err(eyre!("Failed to run `git branch --show-current`"))
+            .log_err();
+    }
 
-    Ok(String::from_utf8(git_branch.stdout)?)
+    let current_branch = String::from_utf8(git_branch.stdout).log_err()?;
+    tracing::trace!(?current_branch);
+    Ok(current_branch)
 }
 
 /// Formats the list of types and their description.
@@ -475,7 +544,7 @@ fn format_types(types: &IndexMap<String, String>) -> Vec<String> {
 // NOTE(allow): This function cannot actually panic. See the notes below.
 #[allow(clippy::missing_panics_doc)]
 fn remove_type_description(choice: &str) -> String {
-    // NOTE(unwrap): Even an empty string will contain at list one split, so the
+    // NOTE(allow): Even an empty string will contain at list one split, so the
     // only call to next will always return Some(value).
     #[allow(clippy::unwrap_used)]
     choice.split(' ').next().unwrap().to_owned()
@@ -489,7 +558,7 @@ fn remove_type_description(choice: &str) -> String {
 fn validate_description(
     description: &str,
 ) -> Result<Validation, CustomUserError> {
-    // NOTE(unwrap): We know from the first condition that description.len() >
+    // NOTE(allow): We know from the first condition that description.len() >
     // 0, so there is at least one character in the string. Hence,
     // description.chars().next() in the third condition will always return
     // Some(value).
@@ -516,7 +585,8 @@ fn validate_ticket(ticket: &str) -> Result<Validation, CustomUserError> {
     let config = Config::load()?;
     let prefixes = &config
         .ticket
-        .ok_or(eyre!("no ticket prefix list"))?
+        .ok_or(eyre!("no ticket prefix list"))
+        .log_err()?
         .prefixes;
 
     let regex = ticket_regex(prefixes);
@@ -550,6 +620,7 @@ fn ticket_placeholder(prefixes: &[String]) -> Result<String> {
 }
 
 /// Returns the last commit message if it exists.
+#[tracing::instrument(level = "trace")]
 fn last_commit_message() -> Result<Option<String>> {
     let commit_editmsg = commit_editmsg()?;
 
@@ -558,10 +629,18 @@ fn last_commit_message() -> Result<Option<String>> {
 
     let maybe_message = commit_editmsg
         .exists()
-        .then(|| fs::read_to_string(commit_editmsg))
-        .transpose()?
+        .then(|| fs::read_to_string(&commit_editmsg))
+        .transpose()
+        .wrap_err_with(|| {
+            format!("failed to read {}", commit_editmsg.display())
+        })
+        .log_err()?
         .as_deref()
         .map(remove_commented_lines)
+        .map(|last_message| {
+            tracing::trace!(?last_message);
+            last_message
+        })
         .filter(|s| !s.trim().is_empty());
 
     Ok(maybe_message)
@@ -579,16 +658,17 @@ fn pre_commit() -> Result<PathBuf> {
 }
 
 /// Returns the path of the Git directory.
+#[tracing::instrument(level = "trace")]
 fn git_dir() -> Result<PathBuf> {
     let git_rev_parse = Command::new("git")
         .args(["rev-parse", "--git-dir"])
-        .output()?;
+        .output()
+        .log_err()?;
 
-    ensure!(
-        git_rev_parse.status.success(),
-        "Failed to run `git rev-parse --git-dir`"
-    );
+    if !git_rev_parse.status.success() {
+        return Err(eyre!("Failed to run `git rev-parse --git-dir`")).log_err();
+    }
 
-    let git_dir = String::from_utf8(git_rev_parse.stdout)?;
+    let git_dir = String::from_utf8(git_rev_parse.stdout).log_err()?;
     Ok(PathBuf::from(git_dir.trim()))
 }
