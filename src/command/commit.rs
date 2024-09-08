@@ -479,13 +479,13 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
         .log_err()?
         .captures(&get_current_branch()?)
         .map(|captures| {
-            // NOTE(indexing): Capture group 0 always corresponds to an implicit
+            // NOTE(allow): Capture group 0 always corresponds to an implicit
             // unnamed group that includes the entire match.
             #[allow(clippy::indexing_slicing)]
             captures[0].to_owned()
         })
         .map(|ticket| {
-            // NOTE(unwrap): This regex is known to be valid.
+            // NOTE(allow): This regex is known to be valid.
             #[allow(clippy::unwrap_used)]
             let regex = &Regex::new(r"^\d+$").unwrap();
 
@@ -541,7 +541,7 @@ fn format_types(types: &IndexMap<String, String>) -> Vec<String> {
 // NOTE(allow): This function cannot actually panic. See the notes below.
 #[allow(clippy::missing_panics_doc)]
 fn remove_type_description(choice: &str) -> String {
-    // NOTE(unwrap): Even an empty string will contain at list one split, so the
+    // NOTE(allow): Even an empty string will contain at list one split, so the
     // only call to next will always return Some(value).
     #[allow(clippy::unwrap_used)]
     choice.split(' ').next().unwrap().to_owned()
@@ -555,7 +555,7 @@ fn remove_type_description(choice: &str) -> String {
 fn validate_description(
     description: &str,
 ) -> Result<Validation, CustomUserError> {
-    // NOTE(unwrap): We know from the first condition that description.len() >
+    // NOTE(allow): We know from the first condition that description.len() >
     // 0, so there is at least one character in the string. Hence,
     // description.chars().next() in the third condition will always return
     // Some(value).

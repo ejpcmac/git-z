@@ -263,7 +263,7 @@ fn update_templates(toml_config: &mut DocumentMut, remove_hash_prefix: bool) {
 
 /// Adds a condition around the usage of the `ticket` variable.
 fn add_ticket_condition_to_commit_template(template: &str) -> String {
-    // NOTE(unwrap): This regex is known to be valid.
+    // NOTE(allow): This regex is known to be valid.
     #[allow(clippy::unwrap_used)]
     let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").unwrap();
     re.replace(template, "{% if ticket %}$1{% endif %}")
