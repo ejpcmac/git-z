@@ -1374,6 +1374,7 @@ mod commit_cache {
                 on multiple lines.
 
                 Footer: something.
+
             "},
         )?;
         install_commit_cache(
@@ -1736,12 +1737,12 @@ mod commit {
         process.exp_eof()?;
 
         #[cfg(not(feature = "unstable-pre-commit"))]
-        assert_git_commit(&temp_dir, "commit -em dummy template message\n\n");
+        assert_git_commit(&temp_dir, "commit -em dummy template message\n");
 
         #[cfg(feature = "unstable-pre-commit")]
         assert_git_commit(
             &temp_dir,
-            "commit --no-verify -em dummy template message\n\n",
+            "commit --no-verify -em dummy template message\n",
         );
 
         Ok(())
@@ -1784,7 +1785,6 @@ mod commit {
                 Refs: #21
 
                 BREAKING CHANGE: Nothing is like before.
-
             "},
         );
 
@@ -1799,7 +1799,6 @@ mod commit {
                 Refs: #21
 
                 BREAKING CHANGE: Nothing is like before.
-
             "},
         );
 
@@ -1827,13 +1826,13 @@ mod commit {
         #[cfg(not(feature = "unstable-pre-commit"))]
         assert_git_commit(
             &temp_dir,
-            "commit --extra --args -em dummy template message\n\n",
+            "commit --extra --args -em dummy template message\n",
         );
 
         #[cfg(feature = "unstable-pre-commit")]
         assert_git_commit(
             &temp_dir,
-            "commit --no-verify --extra --args -em dummy template message\n\n",
+            "commit --no-verify --extra --args -em dummy template message\n",
         );
 
         Ok(())

@@ -74,6 +74,9 @@ list = [
     "c:init",
     "c:update",
 
+    # Test helpers
+    "fake_git",
+
     # Cargo xtasks
     "xt:check",
 ]

@@ -42,7 +42,7 @@ commit() {
     fi
 
     echo "fake commit"
-    echo -e "$@" > .git/commit
+    echo -n "$@" > .git/commit
 }
 
 branch() {
