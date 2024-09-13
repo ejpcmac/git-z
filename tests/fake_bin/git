@@ -19,6 +19,18 @@
 ## A fake Git command used for testing.
 ##
 
+branch() {
+    case "$@" in
+        "branch --show-current")
+            if [ -f .git/branch ]; then
+                echo $(< .git/branch)
+            else
+                echo "main"
+            fi
+            ;;
+    esac
+}
+
 commit() {
     if [ -f .git/error ]; then
         echo "fake error"
@@ -45,18 +57,6 @@ commit() {
     echo -n "$@" > .git/commit
 }
 
-branch() {
-    case "$@" in
-        "branch --show-current")
-            if [ -f .git/branch ]; then
-                echo $(< .git/branch)
-            else
-                echo "main"
-            fi
-            ;;
-    esac
-}
-
 rev_parse() {
     case "$@" in
         "rev-parse --show-toplevel")
@@ -78,11 +78,11 @@ rev_parse() {
 }
 
 case $1 in
-    commit)
-        commit "$@"
-        ;;
     branch)
         branch "$@"
+        ;;
+    commit)
+        commit "$@"
         ;;
     rev-parse)
         rev_parse "$@"
