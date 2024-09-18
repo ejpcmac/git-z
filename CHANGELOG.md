@@ -22,8 +22,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 * [`git z commit`] Use fuzzy-finding when selecting types and scopes.
-* [Config] Update the default description for the `chore` type so that it states
-    this is used to remove code as well.
+* [Config] Enhance the descriptions for the default types.
 * [Config] Align error messages between the config and the updater.
 * [CLI] Provide more information in `git z --version`.
 * [CLI] Use standard exit codes as defined in `sysexits.h`.
