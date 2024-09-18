@@ -134,6 +134,7 @@ fn gitz_commit(temp_dir: impl AsRef<Path>) -> Result<Command> {
     let mut cmd = Command::new(cargo_bin("git-z"));
     cmd.current_dir(&temp_dir)
         .env("PATH", test_path)
+        .env("NO_COLOR", "true")
         .arg("commit");
 
     Ok(cmd)
@@ -1043,7 +1044,7 @@ mod commit_cache {
         // Ensure all answers are pre-filled.
 
         process.exp_string("Commit type")?;
-        process.exp_regex(">.*chore")?;
+        process.exp_string("> chore")?;
         process.send_line("")?;
 
         process.exp_string("Scope")?;
@@ -1087,7 +1088,7 @@ mod commit_cache {
 
         process.exp_string("Commit type")?;
         // Ensure this is pre-selected.
-        process.exp_regex(">.*chore")?;
+        process.exp_string("> chore")?;
 
         Ok(())
     }
@@ -1141,7 +1142,7 @@ mod commit_cache {
         fill_type(&mut process)?;
 
         process.exp_string("Scope")?;
-        process.exp_regex(">.*scope2")?;
+        process.exp_string("> scope2")?;
 
         Ok(())
     }
@@ -1172,7 +1173,7 @@ mod commit_cache {
         // Ensure all answers are not prefilled.
 
         process.exp_string("Commit type")?;
-        assert!(process.exp_regex(">.*chore").is_err());
+        assert!(process.exp_string("> chore").is_err());
         process.send_line("")?;
 
         process.exp_string("Scope")?;
