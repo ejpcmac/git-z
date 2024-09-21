@@ -201,10 +201,18 @@ fn test(ctx: &mut Context) {
 }
 
 fn check_unused_deps(ctx: &mut Context) {
+    #[cfg(not(target_os = "windows"))]
     action!(
         ctx,
         "Looking for unused dependencies",
         "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
+    );
+
+    #[cfg(target_os = "windows")]
+    action!(
+        ctx,
+        "Looking for unused dependencies",
+        "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --keep-going",
     );
 }
 
