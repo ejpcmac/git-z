@@ -164,6 +164,21 @@
                   testEnv;
               };
 
+              # NOTE: Use the musl target to build a statically-linked binary.
+              # We only add the target in a specialised devshell to avoid
+              # cluttering the toolchain defined in `rust-toolchain.toml` on all
+              # platforms.
+              deb = {
+                name = "cargo-deb";
+                packages = with pkgs; [
+                  (rust-toolchain.override {
+                    targets = [ "x86_64-unknown-linux-musl" ];
+                  })
+                  clang
+                  cargo-deb
+                ];
+              };
+
               # NOTE: cargo-udeps needs Rust nightly to run.
               udeps = {
                 name = "cargo-udeps";
