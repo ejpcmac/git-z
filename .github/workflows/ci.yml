@@ -139,15 +139,42 @@ jobs:
 
   unused-deps:
     name: Unused dependencies
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-latest
+          - system: aarch64-darwin
+            runner: macos-latest
+          - system: x86_64-windows
+            runner: windows-latest
     steps:
+      - name: Configure Git
+        run: git config --global core.autocrlf false
       - name: Clone the repository
         uses: actions/checkout@v4
       - name: Install Nix
+        if: matrix.system != 'x86_64-windows'
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the Nix cache
+        if: matrix.system != 'x86_64-windows'
         uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Setup the environment
-        run: nix build -L --no-link .#devShells.x86_64-linux.udeps
-      - name: Look for unused dependencies
+      - name: Setup the environment (with Nix)
+        if: matrix.system != 'x86_64-windows'
+        run: nix build -L --no-link .#devShells.${{ matrix.system }}.udeps
+      - name: Install the Rust toolchain (without Nix)
+        if: matrix.system == 'x86_64-windows'
+        run: rustup toolchain install nightly
+      - name: Setup the environment (without Nix)
+        if: matrix.system == 'x86_64-windows'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack,cargo-udeps
+      - name: Look for unused dependencies (with Nix)
+        if: matrix.system != 'x86_64-windows'
         run: nix develop .#udeps -c cargo xtask check unused-deps
+      - name: Look for unused dependencies (without Nix)
+        if: matrix.system == 'x86_64-windows'
+        run: cargo +nightly xtask check unused-deps
