@@ -178,3 +178,43 @@ jobs:
       - name: Look for unused dependencies (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo +nightly xtask check unused-deps
+
+  packages:
+    name: Packages
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-latest
+          - system: aarch64-darwin
+            runner: macos-latest
+          - system: x86_64-windows
+            runner: windows-latest
+    steps:
+      - name: Configure Git
+        run: git config --global core.autocrlf false
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        if: matrix.system != 'x86_64-windows'
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        if: matrix.system != 'x86_64-windows'
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment (with Nix)
+        if: matrix.system != 'x86_64-windows'
+        run: |
+          nix build -L --no-link .#devShells.${{ matrix.system }}.ci
+      - name: Setup the environment (without Nix)
+        if: matrix.system == 'x86_64-windows'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-wix
+      - name: Build the packages (with Nix)
+        if: matrix.system != 'x86_64-windows'
+        run: nix develop .#ci -c cargo xtask check packages
+      - name: Build and run the tests (without Nix)
+        if: matrix.system == 'x86_64-windows'
+        run: cargo xtask check packages
