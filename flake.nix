@@ -153,6 +153,11 @@
                   ++ ideEnv;
 
                 commands = [
+                  {
+                    name = "build-deb";
+                    command = "cargo deb --target=x86_64-unknown-linux-musl";
+                  }
+
                   # Pass-through commands to make some cargo extensions run in
                   # their own devshell.
                   {
