@@ -151,6 +151,19 @@
                 env =
                   testEnv
                   ++ ideEnv;
+
+                commands = [
+                  # Pass-through commands to make some cargo extensions run in
+                  # their own devshell.
+                  {
+                    name = "cargo-deb";
+                    command = "nix develop -L .#deb -c cargo $@";
+                  }
+                  {
+                    name = "cargo-udeps";
+                    command = "nix develop -L .#udeps -c cargo $@";
+                  }
+                ];
               };
 
               ci = {
