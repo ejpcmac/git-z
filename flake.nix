@@ -32,142 +32,149 @@
 
       perSystem = { self', system, ... }:
         let
-          packageName = "git-z";
-
           overlays = [ (import inputs.rust-overlay) ];
           pkgs = import inputs.nixpkgs { inherit system overlays; };
-
           rust-toolchain =
             pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-
-          naersk = pkgs.callPackage inputs.naersk {
-            cargo = rust-toolchain;
-            rustc = rust-toolchain;
-          };
-
-          mkPackage = { extraCargoBuildOptions ? [ ] }: naersk.buildPackage {
-            src = ./.;
-            cargoBuildOptions = opts: opts ++ extraCargoBuildOptions;
-            RUSTFLAGS = "-Amissing_docs";
-            FLAKE_REVISION = self.shortRev or
-              (builtins.replaceStrings [ "dirty" ] [ "modified" ]
-                self.dirtyShortRev);
-
-            nativeBuildInputs = with pkgs; [ makeWrapper ];
-
-            postInstall = with pkgs; ''
-              wrapProgram $out/bin/${packageName} \
-                --prefix PATH : ${lib.makeBinPath [ git ]}
-            '';
-          };
-
-          buildToolchain = with pkgs; [
-            rust-toolchain
-          ] ++ lib.optionals (!stdenv.isDarwin) [
-            clang
-          ];
-
-          checkToolchain = with pkgs; [
-            cargo-hack
-            cargo-nextest
-            committed
-            eclint
-            nixpkgs-fmt
-            taplo
-            typos
-            yamlfmt
-          ];
-
-          ideToolchain = with pkgs; [
-            nixd
-            rust-analyzer
-          ];
-
-          developmentTools = with pkgs; with self'.packages; [
-            cargo-bloat
-            cargo-outdated
-            cargo-watch
-            git
-            git-z
-            gitAndTools.gitflow
-          ];
-
-          testEnv = [
-            {
-              name = "TEST_PATH";
-              eval = "$PRJ_ROOT/tests/fake_bin:${pkgs.bash}/bin";
-            }
-          ];
-
-          ideEnv = [
-            {
-              name = "NIX_PATH";
-              value = "nixpkgs=${inputs.nixpkgs}";
-            }
-            {
-              name = "TYPOS_LSP_PATH";
-              value = "${pkgs.typos-lsp}/bin/typos-lsp";
-            }
-          ];
         in
         {
-          packages = {
-            default = self'.packages.${packageName};
+          ######################################################################
+          ##                             Packages                             ##
+          ######################################################################
 
-            ${packageName} = mkPackage { };
+          packages =
+            let
+              packageName = "git-z";
 
-            "${packageName}-unstable" = mkPackage {
-              extraCargoBuildOptions = [ "--features unstable-pre-commit" ];
+              naersk = pkgs.callPackage inputs.naersk {
+                cargo = rust-toolchain;
+                rustc = rust-toolchain;
+              };
+
+              mkPackage = { extraCargoBuildOptions ? [ ] }:
+                naersk.buildPackage {
+                  src = ./.;
+                  cargoBuildOptions = opts: opts ++ extraCargoBuildOptions;
+                  RUSTFLAGS = "-Amissing_docs";
+                  FLAKE_REVISION = self.shortRev or
+                    (builtins.replaceStrings [ "dirty" ] [ "modified" ]
+                      self.dirtyShortRev);
+
+                  nativeBuildInputs = with pkgs; [ makeWrapper ];
+
+                  postInstall = with pkgs; ''
+                    wrapProgram $out/bin/${packageName} \
+                      --prefix PATH : ${lib.makeBinPath [ git ]}
+                  '';
+                };
+            in
+            {
+              default = self'.packages.${packageName};
+
+              ${packageName} = mkPackage { };
+
+              "${packageName}-unstable" = mkPackage {
+                extraCargoBuildOptions = [ "--features unstable-pre-commit" ];
+              };
             };
-          };
 
-          devshells = {
-            default = {
-              name = "git-z";
+          ######################################################################
+          ##                            Devshells                             ##
+          ######################################################################
 
-              motd = ''
+          devshells =
+            let
+              buildToolchain = with pkgs; [
+                rust-toolchain
+              ] ++ lib.optionals (!stdenv.isDarwin) [
+                clang
+              ];
+
+              checkToolchain = with pkgs; [
+                cargo-hack
+                cargo-nextest
+                committed
+                eclint
+                nixpkgs-fmt
+                taplo
+                typos
+                yamlfmt
+              ];
+
+              ideToolchain = with pkgs; [
+                nixd
+                rust-analyzer
+              ];
+
+              developmentTools = with pkgs; with self'.packages; [
+                cargo-bloat
+                cargo-outdated
+                cargo-watch
+                git
+                git-z
+                gitAndTools.gitflow
+              ];
+
+              testEnv = [
+                {
+                  name = "TEST_PATH";
+                  eval = "$PRJ_ROOT/tests/fake_bin:${pkgs.bash}/bin";
+                }
+              ];
+
+              ideEnv = [
+                {
+                  name = "NIX_PATH";
+                  value = "nixpkgs=${inputs.nixpkgs}";
+                }
+                {
+                  name = "TYPOS_LSP_PATH";
+                  value = "${pkgs.typos-lsp}/bin/typos-lsp";
+                }
+              ];
+            in
+            {
+              default = {
+                name = "git-z";
+
+                motd = ''
 
                 {202}🔨 Welcome to the git-z devshell!{reset}
               '';
 
-              packages =
-                buildToolchain
-                ++ checkToolchain
-                ++ ideToolchain
-                ++ developmentTools;
+                packages =
+                  buildToolchain
+                  ++ checkToolchain
+                  ++ ideToolchain
+                  ++ developmentTools;
 
-              env =
-                testEnv
-                ++ ideEnv;
+                env =
+                  testEnv
+                  ++ ideEnv;
+              };
+
+              ci = {
+                name = "git-z CI";
+
+                packages =
+                  buildToolchain
+                  ++ checkToolchain;
+
+                env =
+                  testEnv;
+              };
+
+              # NOTE: cargo-udeps needs Rust nightly to run.
+              udeps = {
+                name = "cargo-udeps";
+                packages = with pkgs; [
+                  rust-bin.nightly."2024-08-27".minimal
+                  clang
+                  cargo-hack
+                  cargo-udeps
+                ];
+              };
             };
-
-            ci = {
-              name = "git-z CI";
-
-              motd = ''
-
-                {202}🔨 Welcome to the git-z CI environment!{reset}
-              '';
-
-              packages =
-                buildToolchain
-                ++ checkToolchain;
-
-              env =
-                testEnv;
-            };
-
-            # NOTE: cargo-udeps needs Rust nightly to run.
-            udeps = {
-              name = "cargo-udeps";
-              packages = with pkgs; [
-                rust-bin.nightly."2024-08-27".minimal
-                clang
-                cargo-hack
-                cargo-udeps
-              ];
-            };
-          };
         };
     };
 }
