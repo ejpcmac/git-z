@@ -75,6 +75,7 @@
             nixpkgs-fmt
             taplo
             typos
+            yamlfmt
           ];
 
           ideToolchain = with pkgs; [
