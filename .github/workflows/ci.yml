@@ -76,6 +76,7 @@ jobs:
     name: Compilation and static analysis
     runs-on: ${{ matrix.systems.runner }}
     strategy:
+      fail-fast: false
       matrix:
         systems:
           - system: x86_64-linux
@@ -115,6 +116,7 @@ jobs:
     name: Tests
     runs-on: ${{ matrix.systems.runner }}
     strategy:
+      fail-fast: false
       matrix:
         systems:
           - system: x86_64-linux
