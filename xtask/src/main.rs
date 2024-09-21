@@ -73,6 +73,7 @@ fn check(subcommand: Option<&str>) {
             "build" => build(&mut ctx),
             "test" => test(&mut ctx),
             "unused-deps" => check_unused_deps(&mut ctx),
+            "packages" => check_packages(&mut ctx),
             _ => check_usage(),
         }
     } else {
@@ -81,6 +82,7 @@ fn check(subcommand: Option<&str>) {
         build(&mut ctx);
         test(&mut ctx);
         check_unused_deps(&mut ctx);
+        check_packages(&mut ctx);
     }
 
     check_result(&ctx);
@@ -213,6 +215,36 @@ fn check_unused_deps(ctx: &mut Context) {
         ctx,
         "Looking for unused dependencies",
         "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --keep-going",
+    );
+}
+
+fn check_packages(ctx: &mut Context) {
+    #[cfg(not(target_os = "windows"))]
+    action!(
+        ctx,
+        "Checking that the git-z Nix package builds properly",
+        "nix build -L --no-link .#git-z",
+    );
+
+    #[cfg(not(target_os = "windows"))]
+    action!(
+        ctx,
+        "Checking that the git-z-unstable Nix package builds properly",
+        "nix build -L --no-link .#git-z-unstable",
+    );
+
+    #[cfg(target_os = "linux")]
+    action!(
+        ctx,
+        "Checking that the Debian package builds properly",
+        "nix develop -L .#deb -c cargo deb --target=x86_64-unknown-linux-musl",
+    );
+
+    #[cfg(target_os = "windows")]
+    action!(
+        ctx,
+        "Checking that the MSI package builds properly",
+        "cargo wix --package git-z --nocapture",
     );
 }
 
