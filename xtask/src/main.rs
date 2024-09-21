@@ -70,17 +70,17 @@ fn check(subcommand: Option<&str>) {
         match check {
             "commits" => check_commits(&mut ctx),
             "format" => check_format(&mut ctx),
-            "unused-deps" => check_unused_deps(&mut ctx),
             "build" => build(&mut ctx),
             "test" => test(&mut ctx),
+            "unused-deps" => check_unused_deps(&mut ctx),
             _ => check_usage(),
         }
     } else {
         check_commits(&mut ctx);
         check_format(&mut ctx);
-        check_unused_deps(&mut ctx);
         build(&mut ctx);
         test(&mut ctx);
+        check_unused_deps(&mut ctx);
     }
 
     check_result(&ctx);
@@ -172,14 +172,6 @@ fn check_format(ctx: &mut Context) {
     action!(ctx, "Checking for typos", "typos");
 }
 
-fn check_unused_deps(ctx: &mut Context) {
-    action!(
-        ctx,
-        "Looking for unused dependencies",
-        "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
-    );
-}
-
 fn build(ctx: &mut Context) {
     action!(
         ctx,
@@ -205,6 +197,14 @@ fn test(ctx: &mut Context) {
             "Running the tests for all packages with all feature combinations",
             "cargo hack nextest run --workspace --feature-powerset --keep-going",
         ),
+    );
+}
+
+fn check_unused_deps(ctx: &mut Context) {
+    action!(
+        ctx,
+        "Looking for unused dependencies",
+        "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
     );
 }
 
