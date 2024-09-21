@@ -163,6 +163,12 @@ fn check_format(ctx: &mut Context) {
         "taplo fmt --check",
     );
 
+    action!(
+        ctx,
+        "Checking that YAML documents are formatted",
+        "yamlfmt -lint ."
+    );
+
     action!(ctx, "Checking for typos", "typos");
 }
 
