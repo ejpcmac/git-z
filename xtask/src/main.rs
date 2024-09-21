@@ -128,10 +128,9 @@ fn check_commits(ctx: &mut Context) {
 
 fn check_format(ctx: &mut Context) {
     let editorconfig_excluded_files = [
-        "**/*.rs",
-        "**/*.toml",
-        "*.lock",
-        "*.toml",
+        "**.lock",
+        "**.rs",
+        "**.toml",
         "LICENSE",
         "templates/*",
         "wix/gpl-3.0.rtf",
