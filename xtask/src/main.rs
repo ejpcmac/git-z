@@ -115,7 +115,7 @@ fn check_commits(ctx: &mut Context) {
         action!(
             ctx,
             step!(
-                "Listing commits to check",
+                "Listing the commits to check",
                 "git --no-pager log --pretty=format:'%C(yellow)%h%Creset %s' {commits}",
             ),
             step!(
@@ -142,19 +142,19 @@ fn check_format(ctx: &mut Context) {
 
     action!(
         ctx,
-        "Checking compliance with Editorconfig",
+        "Checking for compliance with Editorconfig",
         "eclint -exclude {exclude}",
     );
 
     action!(
         ctx,
-        "Checking the Rust code is formatted",
+        "Checking that the Rust code is formatted",
         "cargo fmt --all --check",
     );
 
     action!(
         ctx,
-        "Checking the Nix code is formatted",
+        "Checking that the Nix code is formatted",
         "nixpkgs-fmt --check .",
     );
 
