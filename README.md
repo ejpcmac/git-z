@@ -126,7 +126,7 @@ With a Rust toolchain installed on your machine, you can:
 2. Run:
 
         > cargo install cargo-wix
-        > cargo wix --nocapture
+        > cargo wix --package git-z --nocapture
 
 You should find an installer in `target/wix/`.
 
