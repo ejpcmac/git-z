@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//! CLI tests for `git z commit`.
+
 // NOTE: rexpect is only compatible with Unix-like systems, so let’s just not
 // compile the CLI tests on Windows.
 #![cfg(not(target_os = "windows"))]

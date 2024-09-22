@@ -70,17 +70,19 @@ fn check(subcommand: Option<&str>) {
         match check {
             "commits" => check_commits(&mut ctx),
             "format" => check_format(&mut ctx),
-            "unused-deps" => check_unused_deps(&mut ctx),
             "build" => build(&mut ctx),
             "test" => test(&mut ctx),
+            "unused-deps" => check_unused_deps(&mut ctx),
+            "packages" => check_packages(&mut ctx),
             _ => check_usage(),
         }
     } else {
         check_commits(&mut ctx);
         check_format(&mut ctx);
-        check_unused_deps(&mut ctx);
         build(&mut ctx);
         test(&mut ctx);
+        check_unused_deps(&mut ctx);
+        check_packages(&mut ctx);
     }
 
     check_result(&ctx);
@@ -115,7 +117,7 @@ fn check_commits(ctx: &mut Context) {
         action!(
             ctx,
             step!(
-                "Listing commits to check",
+                "Listing the commits to check",
                 "git --no-pager log --pretty=format:'%C(yellow)%h%Creset %s' {commits}",
             ),
             step!(
@@ -128,10 +130,9 @@ fn check_commits(ctx: &mut Context) {
 
 fn check_format(ctx: &mut Context) {
     let editorconfig_excluded_files = [
-        "**/*.rs",
-        "**/*.toml",
-        "*.lock",
-        "*.toml",
+        "**.lock",
+        "**.rs",
+        "**.toml",
         "LICENSE",
         "templates/*",
         "wix/gpl-3.0.rtf",
@@ -142,19 +143,19 @@ fn check_format(ctx: &mut Context) {
 
     action!(
         ctx,
-        "Checking compliance with Editorconfig",
+        "Checking for compliance with Editorconfig",
         "eclint -exclude {exclude}",
     );
 
     action!(
         ctx,
-        "Checking the Rust code is formatted",
+        "Checking that the Rust code is formatted",
         "cargo fmt --all --check",
     );
 
     action!(
         ctx,
-        "Checking the Nix code is formatted",
+        "Checking that the Nix code is formatted",
         "nixpkgs-fmt --check .",
     );
 
@@ -164,15 +165,13 @@ fn check_format(ctx: &mut Context) {
         "taplo fmt --check",
     );
 
-    action!(ctx, "Checking for typos", "typos");
-}
-
-fn check_unused_deps(ctx: &mut Context) {
     action!(
         ctx,
-        "Looking for unused dependencies",
-        "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
+        "Checking that YAML documents are formatted",
+        "yamlfmt -lint ."
     );
+
+    action!(ctx, "Checking for typos", "typos");
 }
 
 fn build(ctx: &mut Context) {
@@ -200,6 +199,52 @@ fn test(ctx: &mut Context) {
             "Running the tests for all packages with all feature combinations",
             "cargo hack nextest run --workspace --feature-powerset --keep-going",
         ),
+    );
+}
+
+fn check_unused_deps(ctx: &mut Context) {
+    #[cfg(not(target_os = "windows"))]
+    action!(
+        ctx,
+        "Looking for unused dependencies",
+        "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
+    );
+
+    #[cfg(target_os = "windows")]
+    action!(
+        ctx,
+        "Looking for unused dependencies",
+        "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --keep-going",
+    );
+}
+
+fn check_packages(ctx: &mut Context) {
+    #[cfg(not(target_os = "windows"))]
+    action!(
+        ctx,
+        "Checking that the git-z Nix package builds properly",
+        "nix build -L --no-link .#git-z",
+    );
+
+    #[cfg(not(target_os = "windows"))]
+    action!(
+        ctx,
+        "Checking that the git-z-unstable Nix package builds properly",
+        "nix build -L --no-link .#git-z-unstable",
+    );
+
+    #[cfg(target_os = "linux")]
+    action!(
+        ctx,
+        "Checking that the Debian package builds properly",
+        "nix develop -L .#deb -c cargo deb --target=x86_64-unknown-linux-musl",
+    );
+
+    #[cfg(target_os = "windows")]
+    action!(
+        ctx,
+        "Checking that the MSI package builds properly",
+        "cargo wix --package git-z --nocapture",
     );
 }
 

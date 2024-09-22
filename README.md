@@ -110,11 +110,12 @@ Then, edit the `git-z.toml` at the root of your repository.
 
 ### Linux (Debian)
 
-With Docker installed on your machine, you can run:
+From inside a Nix devshell, you can run:
 
-    $ ./build-deb.sh
+    $ build-deb
 
-You should then find a Debian package in `target/debian/`.
+You should then find a Debian package in
+`target/x86_64-unknown-linux-musl/debian/`.
 
 ### Windows
 
@@ -125,7 +126,7 @@ With a Rust toolchain installed on your machine, you can:
 2. Run:
 
         > cargo install cargo-wix
-        > cargo wix --nocapture
+        > cargo wix --package git-z --nocapture
 
 You should find an installer in `target/wix/`.
 

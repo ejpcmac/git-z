@@ -55,6 +55,7 @@ list = [
     "version",
     "vscode",
     "wix",
+    "yamlfmt",
 
     # Binary
     "main",

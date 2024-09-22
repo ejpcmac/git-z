@@ -1,6 +1,6 @@
 [package]
 name = "git-z"
-version = "0.2.1-dev"
+version = "0.2.1-dev.0"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
 categories = ["command-line-utilities", "development-tools"]
 edition = "2021"
@@ -54,12 +54,10 @@ toml_edit = "0.22"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-[dev-dependencies]
+[target.'cfg(not(windows))'.dev-dependencies]
 assert_cmd = "2"
 assert_fs = "1"
 predicates = "3"
-
-[target.'cfg(not(windows))'.dev-dependencies]
 rexpect = "0.5"
 
 [workspace]
