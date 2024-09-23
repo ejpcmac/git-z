@@ -45,46 +45,6 @@ fn define_version_with_git() {
     println!("cargo:rustc-env=VERSION_WITH_GIT={version}");
 }
 
-/// Defines a variable containing the Git revision.
-fn define_revision() {
-    let revision = revision();
-    println!("cargo:rustc-env=REVISION={revision}");
-}
-
-/// Defines a variable containing the list of enabled features.
-fn define_features() {
-    let features = features().join(", ");
-    println!("cargo:rustc-env=FEATURES={features}");
-}
-
-/// Passes the `TARGET` variable to the build.
-///
-/// # Panics
-///
-/// This function panics if the `TARGET` environment variable is not defined.
-fn define_target() {
-    #[allow(clippy::unwrap_used)]
-    let target = env::var("TARGET").unwrap();
-    println!("cargo:rustc-env=TARGET={target}");
-}
-
-/// Passes the `PROFILE` variable to the build.
-///
-/// # Panics
-///
-/// This function panics if the `PROFILE` environment variable is not defined.
-fn define_profile() {
-    #[allow(clippy::unwrap_used)]
-    let profile = env::var("PROFILE").unwrap();
-    println!("cargo:rustc-env=PROFILE={profile}");
-}
-
-/// Defines a variable containing the name of the build tool.
-fn define_built_by() {
-    let built_by = built_by();
-    println!("cargo:rustc-env=BUILT_BY={built_by}");
-}
-
 /// Returns the version with feature flags.
 fn version_with_features(cargo_version: &str) -> String {
     let features = features().join("+");
@@ -121,15 +81,6 @@ fn maybe_revision(cargo_version: &str) -> Option<String> {
         .flatten()
         .or_else(|| maybe_revision_from_flake(cargo_version))
         .or_else(|| maybe_revision_from_cargo_vcs_info(cargo_version))
-}
-
-/// Gets the revision from the flake if applicable.
-fn maybe_revision_from_flake(cargo_version: &str) -> Option<String> {
-    if is_dev_version(cargo_version) {
-        env::var("FLAKE_REVISION").ok()
-    } else {
-        None
-    }
 }
 
 /// Gets the revision from Git if applicable.
@@ -206,6 +157,15 @@ fn is_cargo_checkout() -> io::Result<bool> {
     Ok(output.status.success() && output.stdout == b"?? .cargo-ok\n")
 }
 
+/// Gets the revision from the flake if applicable.
+fn maybe_revision_from_flake(cargo_version: &str) -> Option<String> {
+    if is_dev_version(cargo_version) {
+        env::var("FLAKE_REVISION").ok()
+    } else {
+        None
+    }
+}
+
 /// Gets the revision from the `.cargo_vcs_info.json` if applicable.
 fn maybe_revision_from_cargo_vcs_info(cargo_version: &str) -> Option<String> {
     if is_dev_version(cargo_version) {
@@ -251,6 +211,12 @@ fn is_dev_version(cargo_version: &str) -> bool {
     cargo_version.contains("-dev")
 }
 
+/// Defines a variable containing the Git revision.
+fn define_revision() {
+    let revision = revision();
+    println!("cargo:rustc-env=REVISION={revision}");
+}
+
 /// Gets the revision from Git or the flake.
 fn revision() -> String {
     git_revision_and_state()
@@ -259,6 +225,40 @@ fn revision() -> String {
         .or_else(|| env::var("FLAKE_REVISION").ok())
         .or_else(|| revision_from_cargo_vcs_info().ok())
         .unwrap_or_default()
+}
+
+/// Defines a variable containing the list of enabled features.
+fn define_features() {
+    let features = features().join(", ");
+    println!("cargo:rustc-env=FEATURES={features}");
+}
+
+/// Passes the `TARGET` variable to the build.
+///
+/// # Panics
+///
+/// This function panics if the `TARGET` environment variable is not defined.
+fn define_target() {
+    #[allow(clippy::unwrap_used)]
+    let target = env::var("TARGET").unwrap();
+    println!("cargo:rustc-env=TARGET={target}");
+}
+
+/// Passes the `PROFILE` variable to the build.
+///
+/// # Panics
+///
+/// This function panics if the `PROFILE` environment variable is not defined.
+fn define_profile() {
+    #[allow(clippy::unwrap_used)]
+    let profile = env::var("PROFILE").unwrap();
+    println!("cargo:rustc-env=PROFILE={profile}");
+}
+
+/// Defines a variable containing the name of the build tool.
+fn define_built_by() {
+    let built_by = built_by();
+    println!("cargo:rustc-env=BUILT_BY={built_by}");
 }
 
 /// Returns the name of the build tool.
