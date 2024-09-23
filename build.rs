@@ -1,6 +1,8 @@
 //! The build script for git-z.
 
-use std::{env, io, process::Command};
+use std::{env, fs, io, process::Command};
+
+use serde::{Deserialize, Serialize};
 
 fn main() {
     define_version_with_git();
@@ -26,6 +28,10 @@ fn main() {
 /// defined, it is used instead to provide the revision from the Nix flake, for
 /// development versions only.
 ///
+/// If neither Git nor the `FLAKE_REVISION` are available, but a
+/// `.cargo_vcs_info.json` is present, it is used to provide the revision, for
+/// development versions only.
+///
 /// For instance:
 ///
 /// * Cargo version 1.0.0 on tag v1.0.0, clean state => `1.0.0`
@@ -39,10 +45,186 @@ fn define_version_with_git() {
     println!("cargo:rustc-env=VERSION_WITH_GIT={version}");
 }
 
+/// Returns the version with feature flags.
+fn version_with_features(cargo_version: &str) -> String {
+    let features = features().join("+");
+
+    if features.is_empty() {
+        String::from(cargo_version)
+    } else {
+        format!("{cargo_version}+{features}")
+    }
+}
+
+/// Returns the list of enabled features.
+fn features() -> Vec<&'static str> {
+    if env::var("CARGO_FEATURE_UNSTABLE_PRE_COMMIT").is_ok() {
+        vec!["unstable-pre-commit"]
+    } else {
+        vec![]
+    }
+}
+
+/// Returns the version from cargo with a revision.
+fn version_with_revision(cargo_version: &str) -> String {
+    if let Some(revision) = maybe_revision(cargo_version) {
+        format!("{cargo_version}+{revision}")
+    } else {
+        String::from(cargo_version)
+    }
+}
+
+/// Gets the revision from the Git or the flake if applicable.
+fn maybe_revision(cargo_version: &str) -> Option<String> {
+    maybe_revision_from_git(cargo_version)
+        .ok()
+        .flatten()
+        .or_else(|| maybe_revision_from_flake(cargo_version))
+        .or_else(|| maybe_revision_from_cargo_vcs_info(cargo_version))
+}
+
+/// Gets the revision from Git if applicable.
+fn maybe_revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
+    if git_describe()?.is_some_and(|s| s == format!("v{cargo_version}"))
+        || is_cargo_checkout()? && !is_dev_version(cargo_version)
+    {
+        Ok(None)
+    } else {
+        Ok(git_revision_and_state()?)
+    }
+}
+
+/// Returns the result of `git describe --always --dirty=-modified`.
+///
+/// # Panics
+///
+/// This function panics if the output of `git describe` is not valid UTF-8.
+fn git_describe() -> io::Result<Option<String>> {
+    let output = Command::new("git")
+        .args(["describe", "--always", "--dirty=-modified"])
+        .output()?;
+
+    #[allow(clippy::unwrap_used)]
+    Ok(output
+        .status
+        .success()
+        .then(|| String::from_utf8(output.stdout).unwrap().trim().to_owned()))
+}
+
+/// Returns the current Git revision and its dirtiness.
+fn git_revision_and_state() -> io::Result<Option<String>> {
+    git_revision()?
+        .map(|revision| {
+            if git_is_dirty()? && !is_cargo_checkout()? {
+                Ok(format!("{revision}-modified"))
+            } else {
+                Ok(revision)
+            }
+        })
+        .transpose()
+}
+
+/// Returns the current Git revision.
+///
+/// # Panics
+///
+/// This function panics if the output of `git rev-parse` is not valid UTF-8.
+fn git_revision() -> io::Result<Option<String>> {
+    let output = Command::new("git")
+        .args(["rev-parse", "--short", "HEAD"])
+        .output()?;
+
+    #[allow(clippy::unwrap_used)]
+    Ok(output
+        .status
+        .success()
+        .then(|| String::from_utf8(output.stdout).unwrap().trim().to_owned()))
+}
+
+/// Returns whether the current Git worktree is dirty.
+fn git_is_dirty() -> io::Result<bool> {
+    let output = Command::new("git")
+        .args(["status", "--porcelain"])
+        .output()?;
+    Ok(output.status.success() && !output.stdout.is_empty())
+}
+
+/// Returns whether the current worktree is a checkout from cargo.
+fn is_cargo_checkout() -> io::Result<bool> {
+    let output = Command::new("git")
+        .args(["status", "--porcelain"])
+        .output()?;
+    Ok(output.status.success() && output.stdout == b"?? .cargo-ok\n")
+}
+
+/// Gets the revision from the flake if applicable.
+fn maybe_revision_from_flake(cargo_version: &str) -> Option<String> {
+    if is_dev_version(cargo_version) {
+        env::var("FLAKE_REVISION").ok()
+    } else {
+        None
+    }
+}
+
+/// Gets the revision from the `.cargo_vcs_info.json` if applicable.
+fn maybe_revision_from_cargo_vcs_info(cargo_version: &str) -> Option<String> {
+    if is_dev_version(cargo_version) {
+        revision_from_cargo_vcs_info().ok()
+    } else {
+        None
+    }
+}
+
+/// Gets the revision from the `.cargo_vcs_info.json`.
+fn revision_from_cargo_vcs_info() -> io::Result<String> {
+    /// Contents of the `.cargo_vcs_info.json`.
+    #[derive(Serialize, Deserialize)]
+    struct CargoVcsInfo {
+        /// The Git information.
+        git: GitInfo,
+    }
+
+    /// Git information.
+    #[derive(Serialize, Deserialize)]
+    struct GitInfo {
+        /// The commit hash.
+        sha1: String,
+        /// Whether the worktree was dirty.
+        dirty: Option<bool>,
+    }
+
+    let vcs_info: CargoVcsInfo =
+        serde_json::from_str(&fs::read_to_string(".cargo_vcs_info.json")?)?;
+
+    let revision = vcs_info.git.sha1.chars().take(8).collect();
+    let revision = if vcs_info.git.dirty == Some(true) {
+        format!("{revision}-modified")
+    } else {
+        revision
+    };
+
+    Ok(revision)
+}
+
+/// Returns whether the current version is a development version.
+fn is_dev_version(cargo_version: &str) -> bool {
+    cargo_version.contains("-dev")
+}
+
 /// Defines a variable containing the Git revision.
 fn define_revision() {
     let revision = revision();
     println!("cargo:rustc-env=REVISION={revision}");
+}
+
+/// Gets the revision from Git or the flake.
+fn revision() -> String {
+    git_revision_and_state()
+        .ok()
+        .flatten()
+        .or_else(|| env::var("FLAKE_REVISION").ok())
+        .or_else(|| revision_from_cargo_vcs_info().ok())
+        .unwrap_or_default()
 }
 
 /// Defines a variable containing the list of enabled features.
@@ -77,128 +259,6 @@ fn define_profile() {
 fn define_built_by() {
     let built_by = built_by();
     println!("cargo:rustc-env=BUILT_BY={built_by}");
-}
-
-/// Returns the version with feature flags.
-fn version_with_features(cargo_version: &str) -> String {
-    let features = features().join("+");
-
-    if features.is_empty() {
-        String::from(cargo_version)
-    } else {
-        format!("{cargo_version}+{features}")
-    }
-}
-
-/// Returns the list of enabled features.
-fn features() -> Vec<&'static str> {
-    if env::var("CARGO_FEATURE_UNSTABLE_PRE_COMMIT").is_ok() {
-        vec!["unstable-pre-commit"]
-    } else {
-        vec![]
-    }
-}
-
-/// Returns the version from cargo with a revision.
-fn version_with_revision(cargo_version: &str) -> String {
-    if let Some(revision) = maybe_revision(cargo_version) {
-        format!("{cargo_version}+{revision}")
-    } else {
-        String::from(cargo_version)
-    }
-}
-
-/// Gets the revision from the Git or the flake if applicable.
-fn maybe_revision(cargo_version: &str) -> Option<String> {
-    revision_from_git(cargo_version)
-        .ok()
-        .flatten()
-        .or_else(|| revision_from_flake(cargo_version))
-}
-
-/// Gets the revision from the flake.
-fn revision_from_flake(cargo_version: &str) -> Option<String> {
-    if is_dev_version(cargo_version) {
-        env::var("FLAKE_REVISION").ok()
-    } else {
-        None
-    }
-}
-
-/// Gets the revision from Git.
-fn revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
-    if git_describe()? == format!("v{cargo_version}")
-        || is_cargo_checkout()? && !is_dev_version(cargo_version)
-    {
-        Ok(None)
-    } else {
-        Ok(Some(git_revision_and_state()?))
-    }
-}
-
-/// Returns the result of `git describe --always --dirty=-modified`.
-///
-/// # Panics
-///
-/// This function panics if the output of `git describe` is not valid UTF-8.
-fn git_describe() -> io::Result<String> {
-    let output = Command::new("git")
-        .args(["describe", "--always", "--dirty=-modified"])
-        .output()?;
-    #[allow(clippy::unwrap_used)]
-    Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
-}
-
-/// Returns the current Git revision and its dirtiness.
-fn git_revision_and_state() -> io::Result<String> {
-    let revision = git_revision()?;
-    if git_is_dirty()? && !is_cargo_checkout()? {
-        Ok(format!("{revision}-modified"))
-    } else {
-        Ok(revision)
-    }
-}
-
-/// Returns the current Git revision.
-///
-/// # Panics
-///
-/// This function panics if the output of `git rev-parse` is not valid UTF-8.
-fn git_revision() -> io::Result<String> {
-    let output = Command::new("git")
-        .args(["rev-parse", "--short", "HEAD"])
-        .output()?;
-    #[allow(clippy::unwrap_used)]
-    Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
-}
-
-/// Returns whether the current Git worktree is dirty.
-fn git_is_dirty() -> io::Result<bool> {
-    let output = Command::new("git")
-        .args(["status", "--porcelain"])
-        .output()?;
-    Ok(!output.stdout.is_empty())
-}
-
-/// Returns whether the current wortree is a checkout from cargo.
-fn is_cargo_checkout() -> io::Result<bool> {
-    let output = Command::new("git")
-        .args(["status", "--porcelain"])
-        .output()?;
-    Ok(output.stdout == b"?? .cargo-ok\n")
-}
-
-/// Returns whether the current version is a development version.
-fn is_dev_version(cargo_version: &str) -> bool {
-    cargo_version.contains("-dev")
-}
-
-/// Gets the revision from Git or the flake.
-fn revision() -> String {
-    git_revision_and_state()
-        .ok()
-        .or_else(|| env::var("FLAKE_REVISION").ok())
-        .unwrap_or_default()
 }
 
 /// Returns the name of the build tool.
