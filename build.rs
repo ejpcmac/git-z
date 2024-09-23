@@ -110,14 +110,14 @@ fn version_with_revision(cargo_version: &str) -> String {
 
 /// Gets the revision from the Git or the flake if applicable.
 fn maybe_revision(cargo_version: &str) -> Option<String> {
-    revision_from_git(cargo_version)
+    maybe_revision_from_git(cargo_version)
         .ok()
         .flatten()
-        .or_else(|| revision_from_flake(cargo_version))
+        .or_else(|| maybe_revision_from_flake(cargo_version))
 }
 
-/// Gets the revision from the flake.
-fn revision_from_flake(cargo_version: &str) -> Option<String> {
+/// Gets the revision from the flake if applicable.
+fn maybe_revision_from_flake(cargo_version: &str) -> Option<String> {
     if is_dev_version(cargo_version) {
         env::var("FLAKE_REVISION").ok()
     } else {
@@ -125,14 +125,14 @@ fn revision_from_flake(cargo_version: &str) -> Option<String> {
     }
 }
 
-/// Gets the revision from Git.
-fn revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
-    if git_describe()? == format!("v{cargo_version}")
+/// Gets the revision from Git if applicable.
+fn maybe_revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
+    if git_describe()?.is_some_and(|s| s == format!("v{cargo_version}"))
         || is_cargo_checkout()? && !is_dev_version(cargo_version)
     {
         Ok(None)
     } else {
-        Ok(Some(git_revision_and_state()?))
+        Ok(git_revision_and_state()?)
     }
 }
 
@@ -141,22 +141,29 @@ fn revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
 /// # Panics
 ///
 /// This function panics if the output of `git describe` is not valid UTF-8.
-fn git_describe() -> io::Result<String> {
+fn git_describe() -> io::Result<Option<String>> {
     let output = Command::new("git")
         .args(["describe", "--always", "--dirty=-modified"])
         .output()?;
+
     #[allow(clippy::unwrap_used)]
-    Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
+    Ok(output
+        .status
+        .success()
+        .then(|| String::from_utf8(output.stdout).unwrap().trim().to_owned()))
 }
 
 /// Returns the current Git revision and its dirtiness.
-fn git_revision_and_state() -> io::Result<String> {
-    let revision = git_revision()?;
-    if git_is_dirty()? && !is_cargo_checkout()? {
-        Ok(format!("{revision}-modified"))
-    } else {
-        Ok(revision)
-    }
+fn git_revision_and_state() -> io::Result<Option<String>> {
+    git_revision()?
+        .map(|revision| {
+            if git_is_dirty()? && !is_cargo_checkout()? {
+                Ok(format!("{revision}-modified"))
+            } else {
+                Ok(revision)
+            }
+        })
+        .transpose()
 }
 
 /// Returns the current Git revision.
@@ -164,12 +171,16 @@ fn git_revision_and_state() -> io::Result<String> {
 /// # Panics
 ///
 /// This function panics if the output of `git rev-parse` is not valid UTF-8.
-fn git_revision() -> io::Result<String> {
+fn git_revision() -> io::Result<Option<String>> {
     let output = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .output()?;
+
     #[allow(clippy::unwrap_used)]
-    Ok(String::from_utf8(output.stdout).unwrap().trim().to_owned())
+    Ok(output
+        .status
+        .success()
+        .then(|| String::from_utf8(output.stdout).unwrap().trim().to_owned()))
 }
 
 /// Returns whether the current Git worktree is dirty.
@@ -177,15 +188,15 @@ fn git_is_dirty() -> io::Result<bool> {
     let output = Command::new("git")
         .args(["status", "--porcelain"])
         .output()?;
-    Ok(!output.stdout.is_empty())
+    Ok(output.status.success() && !output.stdout.is_empty())
 }
 
-/// Returns whether the current wortree is a checkout from cargo.
+/// Returns whether the current worktree is a checkout from cargo.
 fn is_cargo_checkout() -> io::Result<bool> {
     let output = Command::new("git")
         .args(["status", "--porcelain"])
         .output()?;
-    Ok(output.stdout == b"?? .cargo-ok\n")
+    Ok(output.status.success() && output.stdout == b"?? .cargo-ok\n")
 }
 
 /// Returns whether the current version is a development version.
@@ -197,6 +208,7 @@ fn is_dev_version(cargo_version: &str) -> bool {
 fn revision() -> String {
     git_revision_and_state()
         .ok()
+        .flatten()
         .or_else(|| env::var("FLAKE_REVISION").ok())
         .unwrap_or_default()
 }
