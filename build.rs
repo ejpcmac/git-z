@@ -1,6 +1,8 @@
 //! The build script for git-z.
 
-use std::{env, io, process::Command};
+use std::{env, fs, io, process::Command};
+
+use serde::{Deserialize, Serialize};
 
 fn main() {
     define_version_with_git();
@@ -24,6 +26,10 @@ fn main() {
 ///
 /// If Git is not available, but the `FLAKE_REVISION` environment variable is
 /// defined, it is used instead to provide the revision from the Nix flake, for
+/// development versions only.
+///
+/// If neither Git nor the `FLAKE_REVISION` are available, but a
+/// `.cargo_vcs_info.json` is present, it is used to provide the revision, for
 /// development versions only.
 ///
 /// For instance:
@@ -114,6 +120,7 @@ fn maybe_revision(cargo_version: &str) -> Option<String> {
         .ok()
         .flatten()
         .or_else(|| maybe_revision_from_flake(cargo_version))
+        .or_else(|| maybe_revision_from_cargo_vcs_info(cargo_version))
 }
 
 /// Gets the revision from the flake if applicable.
@@ -199,6 +206,46 @@ fn is_cargo_checkout() -> io::Result<bool> {
     Ok(output.status.success() && output.stdout == b"?? .cargo-ok\n")
 }
 
+/// Gets the revision from the `.cargo_vcs_info.json` if applicable.
+fn maybe_revision_from_cargo_vcs_info(cargo_version: &str) -> Option<String> {
+    if is_dev_version(cargo_version) {
+        revision_from_cargo_vcs_info().ok()
+    } else {
+        None
+    }
+}
+
+/// Gets the revision from the `.cargo_vcs_info.json`.
+fn revision_from_cargo_vcs_info() -> io::Result<String> {
+    /// Contents of the `.cargo_vcs_info.json`.
+    #[derive(Serialize, Deserialize)]
+    struct CargoVcsInfo {
+        /// The Git information.
+        git: GitInfo,
+    }
+
+    /// Git information.
+    #[derive(Serialize, Deserialize)]
+    struct GitInfo {
+        /// The commit hash.
+        sha1: String,
+        /// Whether the worktree was dirty.
+        dirty: Option<bool>,
+    }
+
+    let vcs_info: CargoVcsInfo =
+        serde_json::from_str(&fs::read_to_string(".cargo_vcs_info.json")?)?;
+
+    let revision = vcs_info.git.sha1.chars().take(8).collect();
+    let revision = if vcs_info.git.dirty == Some(true) {
+        format!("{revision}-modified")
+    } else {
+        revision
+    };
+
+    Ok(revision)
+}
+
 /// Returns whether the current version is a development version.
 fn is_dev_version(cargo_version: &str) -> bool {
     cargo_version.contains("-dev")
@@ -210,6 +257,7 @@ fn revision() -> String {
         .ok()
         .flatten()
         .or_else(|| env::var("FLAKE_REVISION").ok())
+        .or_else(|| revision_from_cargo_vcs_info().ok())
         .unwrap_or_default()
 }
 
