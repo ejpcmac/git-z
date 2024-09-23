@@ -135,7 +135,7 @@ impl Default for Config {
             "build" => "update the toolchain, build scripts or package definitions",
             "env" => "update the development environment",
             "ide" => "update the IDE configuration",
-            "ci" => "update the CI configuration",
+            "ci" => "update the CI configuration (including local check scripts)",
             "revert" => "revert a previous commit",
             "chore" => "update or remove something that is not covered by any other type",
             "wip" => "work in progress / to be rebased and squashed later",
