@@ -468,8 +468,6 @@ fn ask_ticket(
 }
 
 /// Tries to extract a ticket number from the name of the current Git branch.
-// NOTE(allow): This function cannot actually panic. See the notes below.
-#[allow(clippy::missing_panics_doc)]
 #[tracing::instrument(level = "trace")]
 fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     // Replace `#` with an empty string in the regex, as we want to match
@@ -481,15 +479,12 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
         .wrap_err("Impossible to build a regex from the list of prefixes")
         .log_err()?
         .captures(&get_current_branch()?)
-        .map(|captures| {
-            // NOTE(allow): Capture group 0 always corresponds to an implicit
-            // unnamed group that includes the entire match.
-            #[allow(clippy::indexing_slicing)]
-            captures[0].to_owned()
-        })
+        .map(|captures| captures[0].to_owned())
         .map(|ticket| {
-            // NOTE(allow): This regex is known to be valid.
-            #[allow(clippy::unwrap_used)]
+            #[expect(
+                clippy::unwrap_used,
+                reason = "This regex is known to be valid."
+            )]
             let regex = &Regex::new(r"^\d+$").unwrap();
 
             // If one of the valid prefixes is `#` and the matched ticket ID is
@@ -541,28 +536,38 @@ fn format_types(types: &IndexMap<String, String>) -> Vec<String> {
 }
 
 /// Removes the type description from the choice.
-// NOTE(allow): This function cannot actually panic. See the notes below.
-#[allow(clippy::missing_panics_doc)]
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic."
+)]
 fn remove_type_description(choice: &str) -> String {
-    // NOTE(allow): Even an empty string will contain at list one split, so the
-    // only call to next will always return Some(value).
-    #[allow(clippy::unwrap_used)]
+    #[expect(
+        clippy::unwrap_used,
+        reason = "Even an empty string will contain at least one split, so the \
+            only call to next will always return Some(value)."
+    )]
     choice.split(' ').next().unwrap().to_owned()
 }
 
 /// Validates the commit description.
-// NOTE(allow): This function cannot actually panic. See the notes below.
-#[allow(clippy::missing_panics_doc)]
-// NOTE(allow): The signature of the function is imposed by Inquire.
-#[allow(clippy::unnecessary_wraps)]
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic."
+)]
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "The signature of the function is imposed by Inquire."
+)]
 fn validate_description(
     description: &str,
 ) -> Result<Validation, CustomUserError> {
-    // NOTE(allow): We know from the first condition that description.len() >
-    // 0, so there is at least one character in the string. Hence,
-    // description.chars().next() in the third condition will always return
-    // Some(value).
-    #[allow(clippy::unwrap_used)]
+    #[expect(
+        clippy::unwrap_used,
+        reason = "We know from the first condition that description.len() > 0, \
+            so there is at least one character in the string. Hence, \
+            description.chars().next() in the third condition will always \
+            return Some(value)."
+    )]
     if description.len() < 5 {
         Ok(Validation::Invalid(
             "The description must be longer than 5 characters".into(),

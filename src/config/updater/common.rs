@@ -15,11 +15,14 @@
 
 //! Common helper functions between updaters.
 
-// NOTE: Updaters make a heavy usage of `expect` instead of proper error
-// handling. This is because `ConfigUpdater::load` already validates the
-// configuration by parsing it to a `Config`. Any error occurring here is a bug,
-// hence should lead to a panic.
-#![allow(clippy::expect_used, clippy::missing_panics_doc)]
+#![expect(
+    clippy::expect_used,
+    clippy::missing_panics_doc,
+    reason = "Updaters make a heavy usage of `expect` instead of proper error \
+        handling. This is because `ConfigUpdater::load` already validates the \
+        configuration by parsing it to a `Config`. Any error occurring here is \
+        a bug, hence should lead to a panic."
+)]
 
 use indoc::indoc;
 use toml_edit::{DocumentMut, Item};

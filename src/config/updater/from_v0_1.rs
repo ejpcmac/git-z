@@ -15,11 +15,14 @@
 
 //! Configuration updater from version 0.1.
 
-// NOTE: Updaters make a heavy usage of `expect` instead of proper error
-// handling. This is because `ConfigUpdater::load` already validates the
-// configuration by parsing it to a `Config`. Any error occurring here is a bug,
-// hence should lead to a panic.
-#![allow(clippy::expect_used, clippy::missing_panics_doc)]
+#![expect(
+    clippy::expect_used,
+    clippy::missing_panics_doc,
+    reason = "Updaters make a heavy usage of `expect` instead of proper error \
+        handling. This is because `ConfigUpdater::load` already validates the \
+        configuration by parsing it to a `Config`. Any error occurring here is \
+        a bug, hence should lead to a panic."
+)]
 
 use indoc::indoc;
 use regex::Regex;
@@ -263,8 +266,7 @@ fn update_templates(toml_config: &mut DocumentMut, remove_hash_prefix: bool) {
 
 /// Adds a condition around the usage of the `ticket` variable.
 fn add_ticket_condition_to_commit_template(template: &str) -> String {
-    // NOTE(allow): This regex is known to be valid.
-    #[allow(clippy::unwrap_used)]
+    #[expect(clippy::unwrap_used, reason = "This regex is known to be valid.")]
     let re = Regex::new(r"(.*\{\{ ticket \}\}.*)").unwrap();
     re.replace(template, "{% if ticket %}$1{% endif %}")
         .to_string()

@@ -173,7 +173,12 @@ fn handle_errors(error: Report) -> Result<()> {
     match handling {
         ErrorHandling::Return(error) => Err(error),
         ErrorHandling::Exit(code) => {
-            #[allow(clippy::exit)]
+            #[expect(
+                clippy::exit,
+                reason = "This function is purposefully written to handle \
+                    errors, write a useful message and exit with an error \
+                    code. This is the only place in the code where it is done."
+            )]
             std::process::exit(code);
         }
     }

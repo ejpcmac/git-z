@@ -343,15 +343,19 @@ impl CommitCache {
     }
 
     /// Saves the commit cache to the repo.
-    // NOTE(allow): The function cannot actually panic (see note on expect).
-    #[allow(clippy::unwrap_in_result, clippy::missing_panics_doc)]
+    #[expect(
+        clippy::unwrap_in_result,
+        reason = "The expect in this function should not actually panic."
+    )]
     #[tracing::instrument(level = "trace", skip_all)]
     fn save(&self) -> Result<(), SaveError> {
         tracing::trace!(?self, "saving the commit cache");
 
-        // NOTE(allow): We control the format, so a serialisation error would
-        // be a bug in the code, not an error.
-        #[allow(clippy::expect_used)]
+        #[expect(
+            clippy::expect_used,
+            reason = "We control the format, so a serialisation error would be \
+                a bug in the code, not an error."
+        )]
         let commit_cache = toml::to_string(self)
             .expect("Failed to serialise the commit cache");
 
