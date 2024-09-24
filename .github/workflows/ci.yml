@@ -215,6 +215,6 @@ jobs:
       - name: Build the packages (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: nix develop .#ci -c cargo xtask check packages
-      - name: Build and run the tests (without Nix)
+      - name: Build the packages (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo xtask check packages
