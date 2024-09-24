@@ -95,16 +95,16 @@ fn maybe_revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
 }
 
 /// Returns the result of `git describe --always --dirty=-modified`.
-///
-/// # Panics
-///
-/// This function panics if the output of `git describe` is not valid UTF-8.
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic on modern systems."
+)]
 fn git_describe() -> io::Result<Option<String>> {
     let output = Command::new("git")
         .args(["describe", "--always", "--dirty=-modified"])
         .output()?;
 
-    #[allow(clippy::unwrap_used)]
+    #[expect(clippy::unwrap_used, reason = "Non-UTF-8 outputs are obsolete.")]
     Ok(output
         .status
         .success()
@@ -125,16 +125,16 @@ fn git_revision_and_state() -> io::Result<Option<String>> {
 }
 
 /// Returns the current Git revision.
-///
-/// # Panics
-///
-/// This function panics if the output of `git rev-parse` is not valid UTF-8.
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic on modern systems."
+)]
 fn git_revision() -> io::Result<Option<String>> {
     let output = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .output()?;
 
-    #[allow(clippy::unwrap_used)]
+    #[expect(clippy::unwrap_used, reason = "Non-UTF-8 outputs are obsolete.")]
     Ok(output
         .status
         .success()
@@ -234,23 +234,23 @@ fn define_features() {
 }
 
 /// Passes the `TARGET` variable to the build.
-///
-/// # Panics
-///
-/// This function panics if the `TARGET` environment variable is not defined.
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic."
+)]
 fn define_target() {
-    #[allow(clippy::unwrap_used)]
+    #[expect(clippy::unwrap_used, reason = "TARGET is defined by cargo")]
     let target = env::var("TARGET").unwrap();
     println!("cargo:rustc-env=TARGET={target}");
 }
 
 /// Passes the `PROFILE` variable to the build.
-///
-/// # Panics
-///
-/// This function panics if the `PROFILE` environment variable is not defined.
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic."
+)]
 fn define_profile() {
-    #[allow(clippy::unwrap_used)]
+    #[expect(clippy::unwrap_used, reason = "PROFILE is defined by cargo")]
     let profile = env::var("PROFILE").unwrap();
     println!("cargo:rustc-env=PROFILE={profile}");
 }
