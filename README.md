@@ -158,6 +158,6 @@ Before contributing to this project, please read the
 
 ## License
 
-Copyright © 2023 Jean-Philippe Cugnet
+Copyright © 2023-2024 Jean-Philippe Cugnet
 
 This project is licensed under the [GNU General Public License 3.0](LICENSE).
