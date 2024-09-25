@@ -34,7 +34,8 @@ On the roadmap:
 
 ### Installation with Nix
 
-You can add `git-z` to your user profile by running:
+If you are a **Nix** user on **Linux** or **macOS**, you can add `git-z` to your
+user profile by running:
 
     nix profile install github:ejpcmac/git-z
 
@@ -64,10 +65,10 @@ up a `flake.nix` like this:
         {
           devShells.default = pkgs.mkShell {
             buildInputs = [
-              # Tools.
+              # Tools
               git-z
 
-              # Other dependencies.
+              # Other dependencies
             ];
           };
         };
@@ -77,14 +78,34 @@ up a `flake.nix` like this:
 
 </details>
 
-### Installation with Cargo
+### Installation from the Debian package
 
-    cargo install git-z
+If you are a **Debian** user—or of derivatives like **Ubuntu**—, you can install
+`git-z` by running:
+
+    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.1/git-z_0.2.1-1_amd64.deb
+    sudo apt update
+    sudo apt install ./git-z_0.2.1-1_amd64.deb
+
+### Installation from the MSI package
+
+If you are a **Windows** user, you can download an MSI package on the [the
+release page](https://github.com/ejpcmac/git-z/releases/latest) and install it.
+You may need to allow its execution by doing *Right Click > Properties*, then
+checking the *Unblock* box in the security section at the bottom of the page.
 
 ### Installation from a pre-built binary
 
-A Debian package and a Windows MSI installer are available at the bottom of [the
-release page](https://github.com/ejpcmac/git-z/releases/latest).
+If you are a user of any other **Linux** distribution, **macOS** or **Windows**,
+you can download a statically-linked executable on [the release
+page](https://github.com/ejpcmac/git-z/releases/latest). Just rename it to
+`git-z`—or `git-z.exe` on Windows—and put it somewhere in your `PATH`.
+
+### Installation with Cargo
+
+If you are a **Rust programmer**, you can install `git-z` by running:
+
+    cargo install git-z
 
 ## Usage
 
@@ -137,6 +158,6 @@ Before contributing to this project, please read the
 
 ## License
 
-Copyright © 2023 Jean-Philippe Cugnet
+Copyright © 2023-2024 Jean-Philippe Cugnet
 
 This project is licensed under the [GNU General Public License 3.0](LICENSE).

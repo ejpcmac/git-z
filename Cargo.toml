@@ -1,6 +1,6 @@
 [package]
 name = "git-z"
-version = "0.2.1-dev.0"
+version = "0.2.1"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
 categories = ["command-line-utilities", "development-tools"]
 edition = "2021"
@@ -11,17 +11,22 @@ repository = "https://github.com/ejpcmac/git-z"
 resolver = "2"
 description = "A Git extension to go beyond."
 
+# NOTE: Run `cargo package --list` before releasing a new version to ensure no
+# unneeded files are included.
 exclude = [
     "/.*",
     "/CHANGELOG.md",
     "/CONTRIBUTING.md",
     "/build-deb.sh",
     "/clippy.toml",
+    "/committed.toml",
     "/flake.*",
     "/git-z.toml",
     "/rust-toolchain.toml",
     "/rustfmt.toml",
+    "/taplo.toml",
     "/wix/",
+    "/yamlfmt.yml",
 ]
 
 [package.metadata.deb]

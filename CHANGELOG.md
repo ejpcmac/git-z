@@ -6,15 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic
 Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.1] - 2024-09-25
 
 ### Added
 
-* [CLI] Add tracing logs in all layers.
-* [CLI] Add a new global `-v...` flag to control the log verbosity. By default,
-    no logs are emitted.
 * [`git z commit`] Ask whether to reuse the previous answers or commit message
     when the operation has been aborted or has failed.
+* [CLI] Add a new global `-v...` flag to control the log verbosity. By default,
+    no logs are emitted.
+* [CLI] Add tracing logs in all layers.
 * *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
     feature enabled, run the `pre-commit` hook before the wizard if it exists. A
     new `-n|--no-verify` option is added to prevent the hook from running.
@@ -22,14 +22,14 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 * [`git z commit`] Use fuzzy-finding when selecting types and scopes.
-* [Config] Enhance the descriptions for the default types.
-* [Config] Align error messages between the config and the updater.
-* [CLI] Provide more information in `git z --version`.
-* [CLI] Use standard exit codes as defined in `sysexits.h`.
 * [`git z commit`] Pass the extra arguments to `git commit` before `-em
     <message>`.
+* [CLI] Provide more information in `git z --version`.
+* [CLI] Use standard exit codes as defined in `sysexits.h`.
+* [Config] Enhance the descriptions for the default types.
+* [Config] Align error messages between the config and the updater.
 * [Cargo] Update the dependencies.
-* [Rust] Update from 1.74.1 to 1.78.0.
+* [Rust] Update from 1.74.1 to 1.81.0.
 * *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
     feature enabled, passes `--no-verify` to `git commit`. This is to avoid
     running the `pre-commit` hook twice, but this also disables the `commit-msg`
@@ -138,6 +138,6 @@ in the current repository.
         * the valid ticket prefixes,
         * the commit template.
 
-[Unreleased]: https://github.com/ejpcmac/git-z/compare/main...develop
+[0.2.1]: https://github.com/ejpcmac/git-z/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ejpcmac/git-z/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ejpcmac/git-z/releases/tag/v0.1.0

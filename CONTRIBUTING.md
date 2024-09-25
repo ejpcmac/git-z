@@ -73,12 +73,18 @@ branches. **Please never commit to `main`.**
 Install:
 
 * a Rust toolchain,
-* the following linters:
+* the following cargo extensions:
+    * `cargo-hack`,
+    * `cargo-nextest`,
+    * `cargo-deb` (only on Linux),
+    * `cargo-wix` (only on Windows),
+* the following linters and formatters:
     * `committed`,
     * `eclint`,
     * `nixpkgs-fmt`,
     * `taplo`,
     * `typos`,
+    * `yamlfmt`,
 * optionally `git-flow`.
 
 ### Checking that everything works
@@ -107,7 +113,7 @@ To make a change, please use this workflow:
     Alternatively, if you are working on a feature which would need more work,
     you can create a feature branch with `git-flow`:
 
-        git flow feature start <my_feature>
+        git flow feature start <issue_id>-<my_feature>
 
     *Note: always open an issue and ask before starting a big feature, to avoid
     it not being merged and your time lost.*
@@ -154,7 +160,8 @@ Please format your code with the following tools:
 
 * Rust with `rustfmt`,
 * Nix with `nixpkgs-fmt`,
-* TOML with `taplo`.
+* TOML with `taplo`,
+* YAML with `yamlfmt`.
 
 All contributed code must be documented. In general, take your inspiration from
 the existing code.
