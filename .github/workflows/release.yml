@@ -177,10 +177,10 @@ jobs:
           no-print-matched-heading: true
       - name: Preview the release
         run: |
-          echo "Release name: ${{ needs.version.outputs.version }}"
-          echo "Release body:"
-          echo "${{ steps.extract-changelog.outputs.markdown }}"
-          echo "Artifacts:"
+          echo 'Release name: ${{ needs.version.outputs.version }}'
+          echo 'Release body:'
+          echo '${{ steps.extract-changelog.outputs.markdown }}'
+          echo 'Artifacts:'
           echo
           for f in binary-*/*; do
             echo "- $(basename $f)"
