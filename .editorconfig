@@ -21,3 +21,6 @@ trim_trailing_whitespace = false
 # NOTE: The README.md contains a Nix example, which is indented by two spaces.
 # We need to reduce the indent size here to avoid any linting issue.
 indent_size = 2
+# NOTE: The README.md contains some examples with URLs being too long to fit on
+# 80-character lines.
+max_line_length = 100
