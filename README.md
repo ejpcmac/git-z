@@ -1,6 +1,8 @@
 # git-z
 
-[![Crates.io](https://img.shields.io/crates/v/git-z)](https://crates.io/crates/git-z)
+[
+  ![Crates.io](https://img.shields.io/crates/v/git-z)
+](https://crates.io/crates/git-z)
 [![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
 
 A Git extension to go beyond.
@@ -32,12 +34,16 @@ On the roadmap:
 
 ### Installation with Nix
 
-You can add `git-z` to your user profile by running:
+If you are a **Nix** user on **Linux** or **macOS**, you can add `git-z` to your
+user profile by running:
 
     nix profile install github:ejpcmac/git-z
 
 Alternatively, you can add `git-z` to your development environment by setting
 up a `flake.nix` like this:
+
+<details>
+<summary>Click to expand the example</summary>
 
 ```nix
 {
@@ -51,18 +57,18 @@ up a `flake.nix` like this:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "x86_64-linux" ];
 
-      perSystem = { system, ... }:
+      perSystem = { inputs', ... }:
         let
-          pkgs = inputs.nixpkgs.legacyPackages.${system};
-          git-z = inputs.git-z.packages.${system}.git-z;
+          pkgs = inputs'.nixpkgs.legacyPackages;
+          git-z = inputs'.git-z.packages.git-z;
         in
         {
           devShells.default = pkgs.mkShell {
             buildInputs = [
-              # Tools.
+              # Tools
               git-z
 
-              # Other dependencies.
+              # Other dependencies
             ];
           };
         };
@@ -70,7 +76,34 @@ up a `flake.nix` like this:
 }
 ```
 
+</details>
+
+### Installation from the Debian package
+
+If you are a **Debian** user—or of derivatives like **Ubuntu**—, you can install
+`git-z` by running:
+
+    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.1/git-z_0.2.1-1_amd64.deb
+    sudo apt update
+    sudo apt install ./git-z_0.2.1-1_amd64.deb
+
+### Installation from the MSI package
+
+If you are a **Windows** user, you can download an MSI package on the [the
+release page](https://github.com/ejpcmac/git-z/releases/latest) and install it.
+You may need to allow its execution by doing *Right Click > Properties*, then
+checking the *Unblock* box in the security section at the bottom of the page.
+
+### Installation from a pre-built binary
+
+If you are a user of any other **Linux** distribution, **macOS** or **Windows**,
+you can download a statically-linked executable on [the release
+page](https://github.com/ejpcmac/git-z/releases/latest). Just rename it to
+`git-z`—or `git-z.exe` on Windows—and put it somewhere in your `PATH`.
+
 ### Installation with Cargo
+
+If you are a **Rust programmer**, you can install `git-z` by running:
 
     cargo install git-z
 
@@ -98,22 +131,23 @@ Then, edit the `git-z.toml` at the root of your repository.
 
 ### Linux (Debian)
 
-With Docker installed on your machine, you can run:
+From inside a Nix devshell, you can run:
 
-    $ ./build-deb.sh
+    $ build-deb
 
-You should then find a Debian package in `target/debian/`.
+You should then find a Debian package in
+`target/x86_64-unknown-linux-musl/debian/`.
 
 ### Windows
 
-With a Rust toolchain instalded on your machine, you can:
+With a Rust toolchain installed on your machine, you can:
 
 1. Install [WiX v3](https://wixtoolset.org/docs/wix3/).
 
 2. Run:
 
         > cargo install cargo-wix
-        > cargo wix --nocapture
+        > cargo wix --package git-z --nocapture
 
 You should find an installer in `target/wix/`.
 
@@ -124,6 +158,6 @@ Before contributing to this project, please read the
 
 ## License
 
-Copyright © 2023 Jean-Philippe Cugnet
+Copyright © 2023-2024 Jean-Philippe Cugnet
 
 This project is licensed under the [GNU General Public License 3.0](LICENSE).

@@ -25,67 +25,189 @@
     };
   };
 
-  outputs = { flake-parts, ... }@inputs:
+  outputs = { self, flake-parts, ... }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ inputs.devshell.flakeModule ];
-      systems = [ "x86_64-linux" ];
+      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
 
       perSystem = { self', system, ... }:
         let
           overlays = [ (import inputs.rust-overlay) ];
           pkgs = import inputs.nixpkgs { inherit system overlays; };
-
-          rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-          naersk = pkgs.callPackage inputs.naersk {
-            cargo = rust-toolchain;
-            rustc = rust-toolchain;
-          };
-
-          packageName = "git-z";
+          rust-toolchain =
+            pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
         in
         {
-          packages = {
-            default = self'.packages.${packageName};
+          ######################################################################
+          ##                             Packages                             ##
+          ######################################################################
 
-            ${packageName} = naersk.buildPackage {
-              src = ./.;
-              RUSTFLAGS = "-Amissing_docs";
+          packages =
+            let
+              packageName = "git-z";
 
-              nativeBuildInputs = with pkgs; [ makeWrapper ];
+              naersk = pkgs.callPackage inputs.naersk {
+                cargo = rust-toolchain;
+                rustc = rust-toolchain;
+              };
 
-              postInstall = with pkgs; ''
-                wrapProgram $out/bin/${packageName} \
-                  --prefix PATH : ${lib.makeBinPath [ git ]}
-              '';
+              mkPackage = { extraCargoBuildOptions ? [ ] }:
+                naersk.buildPackage {
+                  src = ./.;
+                  cargoBuildOptions = opts: opts ++ extraCargoBuildOptions;
+                  RUSTFLAGS = "-Amissing_docs";
+                  FLAKE_REVISION = self.shortRev or
+                    (builtins.replaceStrings [ "dirty" ] [ "modified" ]
+                      self.dirtyShortRev);
+
+                  nativeBuildInputs = with pkgs; [ makeWrapper ];
+
+                  postInstall = with pkgs; ''
+                    wrapProgram $out/bin/${packageName} \
+                      --prefix PATH : ${lib.makeBinPath [ git ]}
+                  '';
+                };
+            in
+            {
+              default = self'.packages.${packageName};
+
+              ${packageName} = mkPackage { };
+
+              "${packageName}-unstable" = mkPackage {
+                extraCargoBuildOptions = [ "--features unstable-pre-commit" ];
+              };
             };
-          };
 
-          devshells.default = {
-            name = "git-z";
+          ######################################################################
+          ##                            Devshells                             ##
+          ######################################################################
 
-            motd = ''
+          devshells =
+            let
+              buildToolchain = with pkgs; [
+                rust-toolchain
+              ] ++ lib.optionals (!stdenv.isDarwin) [
+                clang
+              ];
 
-              {202}🔨 Welcome to the git-z devshell!{reset}
-            '';
+              checkToolchain = with pkgs; [
+                cargo-hack
+                cargo-nextest
+                committed
+                eclint
+                nixpkgs-fmt
+                taplo
+                typos
+                yamlfmt
+              ];
 
-            packages = with pkgs; with self'.packages; [
-              # Build toolchain.
-              rust-toolchain
-              clang
+              ideToolchain = with pkgs; [
+                nixd
+                rust-analyzer
+              ];
 
-              # IDE toolchain.
-              nil
-              nixpkgs-fmt
-              rust-analyzer
+              developmentTools = with pkgs; with self'.packages; [
+                cargo-bloat
+                cargo-outdated
+                cargo-watch
+                git
+                git-z
+                gitAndTools.gitflow
+              ];
 
-              # Tools.
-              cargo-outdated
-              cargo-watch
-              git
-              git-z
-              gitAndTools.gitflow
-            ];
-          };
+              testEnv = [
+                {
+                  name = "TEST_PATH";
+                  eval = "$PRJ_ROOT/tests/fake_bin:${pkgs.bash}/bin";
+                }
+              ];
+
+              ideEnv = [
+                {
+                  name = "NIX_PATH";
+                  value = "nixpkgs=${inputs.nixpkgs}";
+                }
+                {
+                  name = "TYPOS_LSP_PATH";
+                  value = "${pkgs.typos-lsp}/bin/typos-lsp";
+                }
+              ];
+            in
+            {
+              default = {
+                name = "git-z";
+
+                motd = ''
+
+                {202}🔨 Welcome to the git-z devshell!{reset}
+              '';
+
+                packages =
+                  buildToolchain
+                  ++ checkToolchain
+                  ++ ideToolchain
+                  ++ developmentTools;
+
+                env =
+                  testEnv
+                  ++ ideEnv;
+
+                commands = [
+                  {
+                    name = "build-deb";
+                    command = "cargo deb --target=x86_64-unknown-linux-musl";
+                  }
+
+                  # Pass-through commands to make some cargo extensions run in
+                  # their own devshell.
+                  {
+                    name = "cargo-deb";
+                    command = "nix develop -L .#deb -c cargo $@";
+                  }
+                  {
+                    name = "cargo-udeps";
+                    command = "nix develop -L .#udeps -c cargo $@";
+                  }
+                ];
+              };
+
+              ci = {
+                name = "git-z CI";
+
+                packages =
+                  buildToolchain
+                  ++ checkToolchain;
+
+                env =
+                  testEnv;
+              };
+
+              # NOTE: Use the musl target to build a statically-linked binary.
+              # We only add the target in a specialised devshell to avoid
+              # cluttering the toolchain defined in `rust-toolchain.toml` on all
+              # platforms.
+              deb = {
+                name = "cargo-deb";
+                packages = with pkgs; [
+                  (rust-toolchain.override {
+                    targets = [ "x86_64-unknown-linux-musl" ];
+                  })
+                  clang
+                  cargo-deb
+                ];
+              };
+
+              # NOTE: cargo-udeps needs Rust nightly to run.
+              udeps = {
+                name = "cargo-udeps";
+                packages = with pkgs; [
+                  rust-bin.nightly."2024-09-24".minimal
+                  clang
+                  cargo-hack
+                  cargo-udeps
+                ];
+              };
+            };
         };
     };
 }

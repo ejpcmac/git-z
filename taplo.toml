@@ -1,0 +1,32 @@
+include = [
+    "*.toml",
+    ".config/*.toml",
+    "templates/**/*.toml",
+    "tests/**/*.toml",
+    "xtask/**/*.toml",
+]
+
+exclude = [
+    ".cargo/config.toml",
+    "tests/res/config/v0_1_doc-and-user-comments.toml",
+    "tests/res/config/v0_1_standard.toml",
+    "tests/res/config/v0_1_user-comments.toml",
+]
+
+[formatting]
+indent_string = "    "
+reorder_arrays = true
+
+[[rule]]
+include = ["**/Cargo.toml"]
+keys = ["*dependencies", "features", "lints.*", "target.*.*dependencies"]
+
+[rule.formatting]
+reorder_keys = true
+
+[[rule]]
+include = ["**/Cargo.toml"]
+keys = ["*dependencies.*", "target.*.*dependencies.*"]
+
+[rule.formatting]
+reorder_keys = false

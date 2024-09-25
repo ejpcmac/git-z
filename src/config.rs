@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,10 +19,6 @@ pub mod updater;
 
 mod v0_1;
 mod v0_2;
-mod v0_2_dev_0;
-mod v0_2_dev_1;
-mod v0_2_dev_2;
-mod v0_2_dev_3;
 
 // NOTE: When you switch to a new version:
 //
@@ -44,42 +40,64 @@ use indexmap::{indexmap, IndexMap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-/// An error that can occur when loading the configuration.
+use crate::tracing::LogResult as _;
+
+/// Errors that can occur when loading the configuration.
 #[derive(Debug, Error)]
 pub enum LoadError {
+    /// The path of the configuration cannot be resolved.
     #[error("Failed to get the configuration file path")]
     ConfigFileError(#[from] ConfigFileError),
+    /// An error has occurred while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
-    ReadError(#[from] io::Error),
+    ReadError(io::Error),
+    /// The configuration is invalid.
     #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
     InvalidConfig(#[from] FromTomlError),
 }
 
-/// An error that can occur when parsing the TOML.
+/// Errors that can occur when parsing the TOML.
 #[derive(Debug, Error)]
 pub enum FromTomlError {
-    #[error("Configuration version {0} is not supported")]
-    UnsupportedVersion(String),
+    /// The version of the configuration is not supported.
+    #[error("Unsupported configuration version {version}")]
+    UnsupportedVersion {
+        /// The unsupported version.
+        version: String,
+    },
+    /// The version of the configuration is an old development one.
+    #[error("Unsupported development configuration version {version}")]
+    UnsupportedDevelopmentVersion {
+        /// The unsupported development version.
+        version: String,
+        /// The release of `git-z` supporting updates from this version.
+        gitz_version: String,
+    },
+    /// The configuration file cannot be parsed.
     #[error("Failed to parse into a valid configuration")]
-    ParseError(#[from] toml::de::Error),
+    ParseError(toml::de::Error),
 }
 
-/// An error that can occur when building the config file path.
+/// Errors that can occur when building the config file path.
 #[derive(Debug, Error)]
 pub enum ConfigFileError {
+    /// An error has occurred while getting the root of the Git repository.
     #[error("Failed to get the Git repo root")]
     RepoRootError(#[from] RepoRootError),
 }
 
-/// An error that can occur when getting the Git repo root.
+/// Errors that can occur when getting the Git repo root.
 #[derive(Debug, Error)]
 pub enum RepoRootError {
+    /// The `git` command cannot be run.
     #[error("Failed to run the git command")]
-    CannotRunGit(#[from] io::Error),
+    CannotRunGit(io::Error),
+    /// Git has returned an error.
     #[error("{0}")]
     GitError(String),
+    /// The output of the git command is not proper UTF-8.
     #[error("The output of the git command is not proper UTF-8")]
-    EncodingError(#[from] std::string::FromUtf8Error),
+    EncodingError(std::string::FromUtf8Error),
 }
 
 /// A minimal configuration to get the version.
@@ -99,26 +117,27 @@ pub const CONFIG_FILE_NAME: &str = "git-z.toml";
 /// The current version of the configuration file.
 pub const VERSION: &str = "0.2";
 
+/// The default commit message template.
 const DEFAULT_TEMPLATE: &str = include_str!("../templates/COMMIT_EDITMSG");
 
 impl Default for Config {
     fn default() -> Self {
         let default_types = indexmap! {
-            "feat" => "adds a new feature in the code",
-            "sec" => "patches a security issue",
-            "fix" => "patches a code bug",
-            "perf" => "enhances the performance, without adding a new feature",
-            "refactor" => "refactors the code",
-            "test" => "adds, updates or removes tests only",
-            "docs" => "updates the documentation only",
-            "style" => "updates the style, like running clang-format or changing headers",
-            "deps" => "adds, updates or removes external dependencies",
-            "build" => "updates the build system or build scripts",
-            "env" => "updates the development environment",
-            "ide" => "updates the IDE configuration",
-            "ci" => "updates the CI configuration",
-            "revert" => "reverts a previous commit",
-            "chore" => "updates something that is not covered by any other type",
+            "feat" => "add a new feature in the code (including tests for the feature)",
+            "sec" => "patch a security issue (including updating a dependency for security)",
+            "fix" => "patch a bug in the code",
+            "perf" => "enhance the performance of the code",
+            "refactor" => "refactor the code",
+            "test" => "add, update (including refactoring) or remove tests only",
+            "docs" => "update the documentation only (including README and alike)",
+            "style" => "update the style, like running a code formatter or changing headers",
+            "deps" => "add, update or remove external dependencies used by the code",
+            "build" => "update the toolchain, build scripts or package definitions",
+            "env" => "update the development environment",
+            "ide" => "update the IDE configuration",
+            "ci" => "update the CI configuration (including local check scripts)",
+            "revert" => "revert a previous commit",
+            "chore" => "update or remove something that is not covered by any other type",
             "wip" => "work in progress / to be rebased and squashed later",
             "debug" => "commit used for debugging purposes, not to be integrated",
         };
@@ -139,47 +158,68 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Loads the configuration the repo or fallbacks to the default.
+    /// Loads the configuration of the repo or fallbacks to the default.
+    #[tracing::instrument(name = "load_config", level = "trace")]
     pub fn load() -> Result<Self, LoadError> {
-        match fs::read_to_string(config_file()?) {
-            Ok(config) => Ok(Self::from_toml(&config)?),
+        let config_file = config_file()?;
 
-            Err(error) => match error.kind() {
-                io::ErrorKind::NotFound => Ok(Self::default()),
-                _ => Err(LoadError::ReadError(error)),
-            },
+        match fs::read_to_string(&config_file) {
+            Ok(config) => {
+                tracing::info!(?config_file, "loading the configuration");
+                let config = Self::from_toml(&config)?;
+                tracing::debug!(?config);
+                Ok(config)
+            }
+            Err(error) => {
+                if error.kind() == io::ErrorKind::NotFound {
+                    tracing::info!(
+                        "no configuration file, using the default config"
+                    );
+                    Ok(Self::default())
+                } else {
+                    tracing::error!(
+                        ?error,
+                        ?config_file,
+                        "cannot read the configuration file",
+                    );
+                    Err(LoadError::ReadError(error))
+                }
+            }
         }
     }
 
     /// Builds the configuration from its TOML representation.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn from_toml(toml: &str) -> Result<Self, FromTomlError> {
-        let minimal_config: MinimalConfig = toml::from_str(toml)?;
+        let minimal_config: MinimalConfig = toml::from_str(toml)
+            .map_err(FromTomlError::ParseError)
+            .log_err()?;
 
         match minimal_config.version.as_str() {
-            VERSION => Ok(toml::from_str(toml)?),
-            "0.2-dev.3" => {
-                let config: v0_2_dev_3::Config = toml::from_str(toml)?;
-                Ok(config.into())
-            }
-            "0.2-dev.2" => {
-                let config: v0_2_dev_2::Config = toml::from_str(toml)?;
-                Ok(config.into())
-            }
-            "0.2-dev.1" => {
-                let config: v0_2_dev_1::Config = toml::from_str(toml)?;
-                Ok(config.into())
-            }
-            "0.2-dev.0" => {
-                let config: v0_2_dev_0::Config = toml::from_str(toml)?;
-                Ok(config.into())
+            VERSION => {
+                let config = toml::from_str(toml)
+                    .map_err(FromTomlError::ParseError)
+                    .log_err()?;
+                Ok(config)
             }
             "0.1" => {
-                let config: v0_1::Config = toml::from_str(toml)?;
+                let config: v0_1::Config = toml::from_str(toml)
+                    .map_err(FromTomlError::ParseError)
+                    .log_err()?;
                 Ok(config.into())
             }
-            version => {
-                Err(FromTomlError::UnsupportedVersion(version.to_owned()))
+            version @ ("0.2-dev.0" | "0.2-dev.1" | "0.2-dev.2"
+            | "0.2-dev.3") => {
+                Err(FromTomlError::UnsupportedDevelopmentVersion {
+                    version: version.to_owned(),
+                    gitz_version: String::from("0.2.0"),
+                })
+                .log_err()
             }
+            version => Err(FromTomlError::UnsupportedVersion {
+                version: version.to_owned(),
+            })
+            .log_err(),
         }
     }
 }
@@ -189,148 +229,29 @@ pub fn config_file() -> Result<PathBuf, ConfigFileError> {
     Ok(repo_root()?.join(CONFIG_FILE_NAME))
 }
 
+/// Returns the path of the root of the current Git repository.
+#[tracing::instrument(level = "trace")]
 fn repo_root() -> Result<PathBuf, RepoRootError> {
     let git_rev_parse = Command::new("git")
         .args(["rev-parse", "--show-toplevel"])
-        .output()?;
+        .output()
+        .map_err(RepoRootError::CannotRunGit)
+        .log_err()?;
 
     if git_rev_parse.status.success() {
-        let repo_root = String::from_utf8(git_rev_parse.stdout)?;
-        Ok(PathBuf::from(repo_root.trim()))
+        Ok(String::from_utf8(git_rev_parse.stdout)
+            .map_err(RepoRootError::EncodingError)
+            .log_err()?
+            .trim()
+            .into())
     } else {
-        let git_error = String::from_utf8(git_rev_parse.stderr)?;
-        Err(RepoRootError::GitError(git_error.trim().to_owned()))
-    }
-}
-
-impl From<v0_2_dev_3::Config> for Config {
-    fn from(old: v0_2_dev_3::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: old.ticket.map(Into::into),
-            templates: old.templates.into(),
-        }
-    }
-}
-
-impl From<v0_2_dev_3::Scopes> for Scopes {
-    fn from(old: v0_2_dev_3::Scopes) -> Self {
-        match old {
-            v0_2_dev_3::Scopes::Any => Self::Any,
-            v0_2_dev_3::Scopes::List { list } => Self::List { list },
-        }
-    }
-}
-
-impl From<v0_2_dev_3::Ticket> for Ticket {
-    fn from(old: v0_2_dev_3::Ticket) -> Self {
-        Self {
-            required: old.required,
-            prefixes: old.prefixes,
-        }
-    }
-}
-
-impl From<v0_2_dev_3::Templates> for Templates {
-    fn from(old: v0_2_dev_3::Templates) -> Self {
-        Self { commit: old.commit }
-    }
-}
-
-impl From<v0_2_dev_2::Config> for Config {
-    fn from(old: v0_2_dev_2::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: old.ticket.map(Into::into),
-            templates: old.templates.into(),
-        }
-    }
-}
-
-impl From<v0_2_dev_2::Scopes> for Scopes {
-    fn from(old: v0_2_dev_2::Scopes) -> Self {
-        match old {
-            v0_2_dev_2::Scopes::List { list } => Self::List { list },
-        }
-    }
-}
-
-impl From<v0_2_dev_2::Ticket> for Ticket {
-    fn from(old: v0_2_dev_2::Ticket) -> Self {
-        Self {
-            required: old.required,
-            prefixes: old.prefixes,
-        }
-    }
-}
-
-impl From<v0_2_dev_2::Templates> for Templates {
-    fn from(old: v0_2_dev_2::Templates) -> Self {
-        Self { commit: old.commit }
-    }
-}
-
-impl From<v0_2_dev_1::Config> for Config {
-    fn from(old: v0_2_dev_1::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: old.ticket.map(Into::into),
-            templates: old.templates.into(),
-        }
-    }
-}
-
-impl From<v0_2_dev_1::Scopes> for Scopes {
-    fn from(old: v0_2_dev_1::Scopes) -> Self {
-        match old {
-            v0_2_dev_1::Scopes::List { list } => Self::List { list },
-        }
-    }
-}
-
-impl From<v0_2_dev_1::Ticket> for Ticket {
-    fn from(old: v0_2_dev_1::Ticket) -> Self {
-        Self {
-            required: old.required,
-            prefixes: old.prefixes,
-        }
-    }
-}
-
-impl From<v0_2_dev_1::Templates> for Templates {
-    fn from(old: v0_2_dev_1::Templates) -> Self {
-        Self { commit: old.commit }
-    }
-}
-
-impl From<v0_2_dev_0::Config> for Config {
-    fn from(old: v0_2_dev_0::Config) -> Self {
-        Self {
-            version: old.version,
-            types: old.types,
-            scopes: old.scopes.map(Into::into),
-            ticket: Some(Ticket {
-                required: true,
-                prefixes: old.ticket.prefixes,
-            }),
-            templates: Templates {
-                commit: old.templates.commit,
-            },
-        }
-    }
-}
-
-impl From<v0_2_dev_0::Scopes> for Scopes {
-    fn from(old: v0_2_dev_0::Scopes) -> Self {
-        match old {
-            v0_2_dev_0::Scopes::List { list } => Self::List { list },
-        }
+        Err(RepoRootError::GitError(
+            String::from_utf8(git_rev_parse.stderr)
+                .map_err(RepoRootError::EncodingError)
+                .log_err()?
+                .trim()
+                .to_owned(),
+        ))
     }
 }
 
@@ -351,6 +272,12 @@ impl From<v0_1::Config> for Config {
     }
 }
 
+/// Splits the types from their documentation.
+///
+/// In the config version 0.1, the list of types is just a list of strings. The
+/// documentation for each type is simply separated from the type itself by a
+/// space, which is kind of a hack. This function splits the types from their
+/// documentation, putting them in two separate strings.
 fn split_types_and_docs(types: &[String]) -> IndexMap<String, String> {
     types
         .iter()
@@ -359,6 +286,7 @@ fn split_types_and_docs(types: &[String]) -> IndexMap<String, String> {
         .collect()
 }
 
+/// Splits a type from its documentation.
 fn split_type_and_doc(type_and_doc: &str) -> (String, String) {
     let mut split = type_and_doc.splitn(2, ' ');
     let ty = split.next().unwrap_or_default().to_owned();

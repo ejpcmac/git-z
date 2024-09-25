@@ -3,13 +3,14 @@
     "editor.rulers": [
         80
     ],
+    "evenBetterToml.taplo.bundled": false,
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
     "nix.enableLanguageServer": true,
-    "nix.serverPath": "nil",
+    "nix.serverPath": "nixd",
     "nix.serverSettings": {
-        "nil": {
+        "nixd": {
             "formatting": {
                 "command": [
                     "nixpkgs-fmt"
@@ -17,6 +18,7 @@
             }
         }
     },
+    "rewrap.autoWrap.enabled": true,
     "rust-analyzer.check.command": "clippy",
     "rust-analyzer.server.path": "rust-analyzer"
 }

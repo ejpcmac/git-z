@@ -1,0 +1,12 @@
+version = "0.2"
+
+[types]
+type = "description"
+
+[scopes]
+accept = "any"
+
+[templates]
+commit = """
+{% invalid
+"""

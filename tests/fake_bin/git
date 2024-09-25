@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+## git-z - A Git extension to go beyond.
+## Copyright (C) 2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, version 3 of the License.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+##
+## A fake Git command used for testing.
+##
+
+branch() {
+    case "$@" in
+        "branch --show-current")
+            if [ -f .git/branch ]; then
+                echo $(< .git/branch)
+            else
+                echo "main"
+            fi
+            ;;
+    esac
+}
+
+commit() {
+    if [ -f .git/error ]; then
+        echo "fake error"
+        exit $(< .git/error)
+    fi
+
+    if [[ "$@" != *"--no-verify"* ]]; then
+        if [ -x .git/hooks/pre-commit ]; then
+            .git/hooks/pre-commit
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
+        fi
+
+        if [ -x .git/hooks/commit-msg ]; then
+            .git/hooks/commit-msg
+            if [ $? -ne 0 ]; then
+                exit 1
+            fi
+        fi
+    fi
+
+    echo "fake commit"
+    echo -n "$@" > .git/commit
+}
+
+rev_parse() {
+    case "$@" in
+        "rev-parse --show-toplevel")
+            pwd
+            ;;
+        "rev-parse --git-dir")
+            echo "$(pwd)/.git"
+            ;;
+        "rev-parse --is-inside-work-tree")
+            if [ ! -d .git ]; then
+                return 1
+            elif [ -f .git/bare ]; then
+                echo "false"
+            else
+                echo "true"
+            fi
+            ;;
+    esac
+}
+
+case $1 in
+    branch)
+        branch "$@"
+        ;;
+    commit)
+        commit "$@"
+        ;;
+    rev-parse)
+        rev_parse "$@"
+        ;;
+esac

@@ -1,0 +1,51 @@
+version = "0.2"
+
+# Custom description for types.
+[types]
+type = "a first description"
+second_type = "another description"
+
+# Custom description for scopes.
+[scopes]
+# What kind of scope to accept.
+#
+# Can be one of: "any", "list". If it is "list", a `list` key containing a list
+# of valid scopes is required.
+accept = "list"
+list = [
+    # First two scopes
+    "a",
+    "b",
+
+    # Third scope
+    "c",
+]
+
+# The ticket / issue reference configuration.
+#
+# This table is optional: if omitted, no ticket will be asked for.
+[ticket]
+# Set to true to require a ticket number.
+# Set to false to ask for a ticket without requiring it.
+required = true
+# Custom description for prefixes.
+prefixes = ["#", "GH-"]
+
+# Templates written with the Tera [1] templating engine.
+#
+# Each template is documented below, with its list of available variables.
+# Variables marked as optional can be `None`, hence should be checked for
+# presence in the template.
+#
+# [1] https://tera.netlify.app/
+[templates]
+# Custom description for the commit template.
+commit = """
+{{ type }}{% if scope %}({{ scope }}){% endif %}{% if breaking_change %}!{% endif %}: {{ description }}
+
+# Feel free to enter a longer description here.
+
+{% if ticket %}Refs: {{ ticket }}{% endif %}
+
+{% if breaking_change %}BREAKING CHANGE: {{ breaking_change }}{% endif %}
+"""

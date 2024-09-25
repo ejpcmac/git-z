@@ -21,6 +21,7 @@ branches. **Please never commit to `main`.**
 3. Add the main repository as a remote:
 
         git remote add upstream https://github.com/ejpcmac/git-z.git
+        git fetch --all
 
 4. Checkout `develop`:
 
@@ -28,20 +29,18 @@ branches. **Please never commit to `main`.**
 
 ### Development environment (with Nix)
 
-1. Install Nix by running the script and following the instructions:
+1. Install [Nix](https://zero-to-nix.com/start/install):
 
-        sh <(curl -L https://nixos.org/nix/install) --no-daemon
+        curl --proto '=https' --tlsv1.2 -sSf -L \
+            https://install.determinate.systems/nix | sh -s -- install
 
-2. Enable Nix flakes:
-
-        echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
-
-3. Optionally install [direnv](https://github.com/direnv/direnv) to
+2. Optionally install [direnv](https://github.com/direnv/direnv) to
     automatically setup the environment when you enter the project directory:
 
-        nix profile install "nixpkgs#direnv"
+        nix profile install "nixpkgs#direnv" "nixpkgs#nix-direnv"
 
-    In this case, you also need to add to your `~/.<shell>rc`:
+    In this case, you also need to [hook direnv into your
+    shell](https://direnv.net/docs/hook.html) by adding to your `~/.<shell>rc`:
 
     ```sh
     eval "$(direnv hook <shell>)"
@@ -49,35 +48,52 @@ branches. **Please never commit to `main`.**
 
     *Make sure to replace `<shell>` by your shell, namely `bash`, `zsh`, …*
 
-4. In the project directory, if you **did not** install direnv, start a Nix
-   shell:
+    For the caching mechanism to work, you also need to setup `nix-direnv`:
 
-        nix develop
+        mkdir -p $HOME/.config/direnv
+        echo "source $HOME/.nix-profile/share/nix-direnv/direnvrc" \
+            > $HOME/.config/direnv/direnvrc
 
-    If you opted to use direnv, please allow the `.envrc` instead of running a
-    Nix shell manually:
+3. In the project directory, if you opted to use direnv, please allow the
+    `.envrc` by running:
 
         direnv allow
 
-    In this case, direnv will automatically update your environment to behave
-    like a Nix shell whenever you enter the project directory.
+    direnv will then automatically update your environment to behave like a Nix
+    devshell whenever your enter the project directory, making all tools
+    available.
+
+    If you **did not** install direnv, you’ll need to manually start a devshell
+    each time you enter the project by running:
+
+        nix develop
 
 ### Development environment (without Nix)
 
-Install a Rust toolchain, and optionally install `git-flow`.
+Install:
 
-### Building the project
+* a Rust toolchain,
+* the following cargo extensions:
+    * `cargo-hack`,
+    * `cargo-nextest`,
+    * `cargo-deb` (only on Linux),
+    * `cargo-wix` (only on Windows),
+* the following linters and formatters:
+    * `committed`,
+    * `eclint`,
+    * `nixpkgs-fmt`,
+    * `taplo`,
+    * `typos`,
+    * `yamlfmt`,
+* optionally `git-flow`.
 
-1. Build the project:
+### Checking that everything works
 
-        cd git-z
-        cargo build
+You can build the project and run all CI checks with:
 
-2. Run the tests:
+    cargo xtask check
 
-        cargo test
-
-All the tests should pass.
+All the checks should pass.
 
 ## Workflow
 
@@ -97,10 +113,10 @@ To make a change, please use this workflow:
     Alternatively, if you are working on a feature which would need more work,
     you can create a feature branch with `git-flow`:
 
-        git flow feature start <my_feature>
+        git flow feature start <issue_id>-<my_feature>
 
     *Note: always open an issue and ask before starting a big feature, to avoid
-    it not beeing merged and your time lost.*
+    it not being merged and your time lost.*
 
 3. Work on your feature (don’t forget to write tests):
 
@@ -130,16 +146,22 @@ To make a change, please use this workflow:
     feature. If it is the case, we should have discussed this before as stated
     above.*
 
-6. Run the tests to ensure there is no regression and all works as expected:
+6. Run the checks to ensure there is no regression and everything works as
+    expected:
 
-        cargo test
+        cargo xtask check
 
 7. If it’s all good, open a pull request to merge your branch into the `develop`
     branch on the main repository.
 
 ## Coding style
 
-Please format your code with `rustfmt`.
+Please format your code with the following tools:
+
+* Rust with `rustfmt`,
+* Nix with `nixpkgs-fmt`,
+* TOML with `taplo`,
+* YAML with `yamlfmt`.
 
 All contributed code must be documented. In general, take your inspiration from
 the existing code.

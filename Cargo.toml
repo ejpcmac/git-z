@@ -1,6 +1,6 @@
 [package]
 name = "git-z"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
 categories = ["command-line-utilities", "development-tools"]
 edition = "2021"
@@ -11,17 +11,22 @@ repository = "https://github.com/ejpcmac/git-z"
 resolver = "2"
 description = "A Git extension to go beyond."
 
+# NOTE: Run `cargo package --list` before releasing a new version to ensure no
+# unneeded files are included.
 exclude = [
     "/.*",
     "/CHANGELOG.md",
     "/CONTRIBUTING.md",
     "/build-deb.sh",
     "/clippy.toml",
+    "/committed.toml",
     "/flake.*",
     "/git-z.toml",
     "/rust-toolchain.toml",
     "/rustfmt.toml",
+    "/taplo.toml",
     "/wix/",
+    "/yamlfmt.yml",
 ]
 
 [package.metadata.deb]
@@ -30,20 +35,42 @@ depends = "git"
 [package.metadata.wix]
 license = "wix/gpl-3.0.rtf"
 
+[features]
+unstable-pre-commit = ["dep:is_executable"]
+
 [dependencies]
 askama = "0.12"
 clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
 colored = "2"
+exitcode = "1"
 eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
-inquire = "0.6"
+indoc = "2"
+inquire = "0.7"
+is_executable = { version = "1", optional = true }
+itertools = "0.13"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
 thiserror = "1"
 toml = "0.8"
-toml_edit = "0.21"
+toml_edit = "0.22"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[build-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(not(windows))'.dev-dependencies]
+assert_cmd = "2"
+assert_fs = "1"
+predicates = "3"
+rexpect = "0.5"
+
+[workspace]
+members = ["xtask"]
 
 [lints.rust]
 # Forbidden
@@ -51,7 +78,7 @@ unsafe_code = "forbid"
 unsafe_op_in_unsafe_fn = "forbid"
 
 # Denied
-let_underscore = "deny"
+let_underscore = { level = "deny", priority = -1 }
 missing_docs = "deny"
 unused_must_use = "deny"
 
@@ -59,8 +86,8 @@ unused_must_use = "deny"
 macro_use_extern_crate = "warn"
 missing_abi = "warn"
 missing_debug_implementations = "warn"
-nonstandard_style = "warn"
-rust_2018_idioms = "warn"
+nonstandard_style = { level = "warn", priority = -1 }
+rust_2018_idioms = { level = "warn", priority = -1 }
 single_use_lifetimes = "warn"
 
 [lints.clippy]
@@ -68,8 +95,9 @@ single_use_lifetimes = "warn"
 multiple_unsafe_ops_per_block = "deny"
 undocumented_unsafe_blocks = "deny"
 
-# Enable all pedantic warnings except a few.
-pedantic = "warn"
+# Enable all pedantic warnings…
+pedantic = { level = "warn", priority = -1 }
+# …except a few.
 case_sensitive_file_extension_comparisons = "allow"
 inline_always = "allow"
 linkedlist = "allow"
@@ -79,31 +107,39 @@ must_use_candidate = "allow"
 
 # Enable many restrictions.
 alloc_instead_of_core = "warn"
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
 as_conversions = "warn"
 as_underscore = "warn"
 assertions_on_result_states = "warn"
+cfg_not_test = "warn"
 clone_on_ref_ptr = "warn"
 dbg_macro = "warn"
 default_numeric_fallback = "warn"
 default_union_representation = "warn"
 else_if_without_else = "warn"
 empty_drop = "warn"
+empty_enum_variants_with_brackets = "warn"
 empty_structs_with_brackets = "warn"
 error_impl_error = "warn"
 exit = "warn"
 expect_used = "warn"
+field_scoped_visibility_modifiers = "warn"
 filetype_is_file = "warn"
 float_cmp_const = "warn"
 format_push_string = "warn"
 get_unwrap = "warn"
 if_then_some_else_none = "warn"
 indexing_slicing = "warn"
+infinite_loop = "warn"
+iter_over_hash_type = "warn"
 let_underscore_must_use = "warn"
 lossy_float_literal = "warn"
 map_err_ignore = "warn"
 mem_forget = "warn"
 min_ident_chars = "warn"
 missing_assert_message = "warn"
+missing_docs_in_private_items = "warn"
 mod_module_files = "warn"
 multiple_inherent_impl = "warn"
 mutex_atomic = "warn"
@@ -114,6 +150,7 @@ pub_without_shorthand = "warn"
 rc_buffer = "warn"
 rc_mutex = "warn"
 redundant_type_annotations = "warn"
+renamed_function_params = "warn"
 rest_pat_in_fully_bound_structs = "warn"
 same_name_method = "warn"
 semicolon_inside_block = "warn"
@@ -123,7 +160,6 @@ string_slice = "warn"
 string_to_string = "warn"
 tests_outside_test_module = "warn"
 todo = "warn"
-try_err = "warn"
 unnecessary_safety_comment = "warn"
 unnecessary_safety_doc = "warn"
 unneeded_field_pattern = "warn"
@@ -133,6 +169,6 @@ unwrap_used = "warn"
 verbose_file_reads = "warn"
 
 # Other groups
-cargo = "warn"
+cargo = { level = "warn", priority = -1 }
 redundant_pub_crate = "warn"
 use_self = "warn"

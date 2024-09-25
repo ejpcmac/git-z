@@ -42,8 +42,11 @@ pub struct Config {
 pub enum Scopes {
     /// Accepts any arbitrary scope.
     Any,
-    /// Accepts a list of scopes.
-    List { list: Vec<String> },
+    /// Accepts only scopes from a list.
+    List {
+        /// The list of accepted scopes.
+        list: Vec<String>,
+    },
 }
 
 /// Ticket reference configuration.

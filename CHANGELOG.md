@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic
 Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2024-09-25
+
+### Added
+
+* [`git z commit`] Ask whether to reuse the previous answers or commit message
+    when the operation has been aborted or has failed.
+* [CLI] Add a new global `-v...` flag to control the log verbosity. By default,
+    no logs are emitted.
+* [CLI] Add tracing logs in all layers.
+* *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
+    feature enabled, run the `pre-commit` hook before the wizard if it exists. A
+    new `-n|--no-verify` option is added to prevent the hook from running.
+
+### Changed
+
+* [`git z commit`] Use fuzzy-finding when selecting types and scopes.
+* [`git z commit`] Pass the extra arguments to `git commit` before `-em
+    <message>`.
+* [CLI] Provide more information in `git z --version`.
+* [CLI] Use standard exit codes as defined in `sysexits.h`.
+* [Config] Enhance the descriptions for the default types.
+* [Config] Align error messages between the config and the updater.
+* [Cargo] Update the dependencies.
+* [Rust] Update from 1.74.1 to 1.81.0.
+* *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
+    feature enabled, passes `--no-verify` to `git commit`. This is to avoid
+    running the `pre-commit` hook twice, but this also disables the `commit-msg`
+    hook as an unwanted side-effect.
+
+### Removed
+
+* [`git z update`] Remove support for updating from `0.2-dev.*` versions.
+* [Config] Remove support for `0.2-dev.*` versions.
+
+### Fixed
+
+* [`git z commit`] Use the proper configuration name in hints.
+* [Updater] Properly update the documentation for scopes. Previously, it was not
+    updating the documentation above the `scopes` table, keeping the one form
+    version 0.1.
+
 ## [0.2.0] - 2023-12-28
 
 ### Highlights
@@ -60,7 +101,7 @@ in the current repository.
 * [CLI] Do not print an error on cancelled / interrupted operations.
 * [`git z commit`] Do not print an error on `git commit` failure.
 * [`git z commit`] Check the commit template early and pretty-print any error
-    mesasge.
+    message.
 * [`git z commit`] Consider `#` as a special ticket prefix: when matching in the
     branch name, `#` is omitted from the match so that branches like
     `feature/23-name` are valid, and `#` is then added to the matching ticket
@@ -84,7 +125,7 @@ in the current repository.
 ### Added
 
 * Initial version, featuring:
-    * `git z commit`, a wizard that helps to buid a commit message by asking:
+    * `git z commit`, a wizard that helps to build a commit message by asking:
         * a type,
         * a optional scope,
         * a commit message (5-50 characters),
@@ -97,5 +138,6 @@ in the current repository.
         * the valid ticket prefixes,
         * the commit template.
 
+[0.2.1]: https://github.com/ejpcmac/git-z/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ejpcmac/git-z/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ejpcmac/git-z/releases/tag/v0.1.0

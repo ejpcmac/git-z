@@ -1,0 +1,201 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - release/*
+    tags:
+      - v*
+
+# NOTE: This is needed to create releases.
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  CLICOLOR_FORCE: 1
+
+jobs:
+  version:
+    name: Get and check the version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install taplo
+        uses: taiki-e/install-action@v2
+        with:
+          tool: taplo-cli
+      - name: Get the version from the Cargo.toml
+        id: version
+        run: |
+          echo "version=$(taplo get -f Cargo.toml package.version)" \
+            >> "$GITHUB_OUTPUT"
+      - name: Check that the tag matches the version
+        if: startsWith(github.ref, 'refs/tags')
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          tag_name="${{ github.ref_name }}"
+          if [ "$tag_name" != "v$version" ]; then
+            echo "The tag ($tag_name) does not match the version ($version)" >&2
+            exit 1
+          fi
+
+  build-bin:
+    name: Build a binary
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            runner: ubuntu-latest
+          - target: x86_64-apple-darwin
+            runner: macos-13
+          - target: aarch64-apple-darwin
+            runner: macos-latest
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+    steps:
+      - name: Configure Git
+        run: git config --global core.autocrlf false
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Determine the name of the binary
+        id: name
+        shell: bash
+        run: |
+          version=${{ needs.version.outputs.version }}
+          target=${{ matrix.target }}
+          echo "name=git-z-$version-$target" >> "$GITHUB_OUTPUT"
+      - name: Install the Rust toolchain
+        run: rustup target add ${{ matrix.target }}
+      - name: Build the binary
+        shell: bash
+        run: |
+          cargo build --release --target=${{ matrix.target }}
+          mkdir dist
+          if [ "${{ matrix.runner }}" = "windows-latest" ]; then
+            mv target/${{ matrix.target }}/release/git-z.exe \
+              dist/${{ steps.name.outputs.name }}.exe
+          else
+            mv target/${{ matrix.target }}/release/git-z \
+              dist/${{ steps.name.outputs.name }}
+          fi
+      - name: Strip the binary
+        if: matrix.runner != 'windows-latest'
+        run: strip dist/*
+      - name: Upload the binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.target }}
+          path: dist/*
+
+  build-deb:
+    name: Build a Debian package
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install the Rust toolchain
+        run: rustup target add x86_64-unknown-linux-musl
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+      - name: Build the Debian package
+        run: cargo deb --target=x86_64-unknown-linux-musl
+      - name: Upload the Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-debian
+          path: target/x86_64-unknown-linux-musl/debian/*.deb
+
+  build-msi:
+    name: Build an MSI package
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - name: Configure Git
+        run: git config --global core.autocrlf false
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install the Rust toolchain
+        run: rustup target add x86_64-pc-windows-msvc
+      - name: Install cargo-wix
+        run: cargo install cargo-wix
+      - name: Build the MSI package
+        run: cargo wix --package git-z --nocapture
+      - name: Upload the MSI package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-msi
+          path: target/wix/*.msi
+
+  publish:
+    name: Publish on crates.io
+    needs:
+      - version
+      - build-bin
+      - build-deb
+      - build-msi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Publish on crates.io (dry-run)
+        if: ${{ !startsWith(github.ref, 'refs/tags') }}
+        run: cargo publish --verbose --locked --dry-run
+      - name: Publish on crates.io
+        if: startsWith(github.ref, 'refs/tags')
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --verbose --locked
+
+  release:
+    name: Create a GitHub release
+    needs:
+      - version
+      - build-bin
+      - build-deb
+      - build-msi
+      - publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Download the built packages
+        uses: actions/download-artifact@v4
+      - name: Extract the changelog
+        id: extract-changelog
+        uses: sean0x42/markdown-extract@v2
+        with:
+          file: CHANGELOG.md
+          pattern: ${{ needs.version.outputs.version }}
+          no-print-matched-heading: true
+      - name: Preview the release
+        run: |
+          echo 'Release name: ${{ needs.version.outputs.version }}'
+          echo 'Release body:'
+          echo '${{ steps.extract-changelog.outputs.markdown }}'
+          echo 'Artifacts:'
+          echo
+          for f in binary-*/*; do
+            echo "- $(basename $f)"
+          done
+          for f in package-*/*; do
+            echo "- $(basename $f)"
+          done
+      - name: Create a release
+        if: startsWith(github.ref, 'refs/tags')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ needs.version.outputs.version }}
+          body: ${{ steps.extract-changelog.outputs.markdown }}
+          draft: false
+          prerelease: false
+          files: |-
+            binary-*/*
+            package-*/*
