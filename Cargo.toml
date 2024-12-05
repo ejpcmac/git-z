@@ -53,7 +53,7 @@ itertools = "0.13"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
-thiserror = "1"
+thiserror = "2"
 toml = "0.8"
 toml_edit = "0.22"
 tracing = "0.1"
