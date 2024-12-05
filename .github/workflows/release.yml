@@ -64,6 +64,8 @@ jobs:
         run: git config --global core.autocrlf false
       - name: Clone the repository
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
       - name: Determine the name of the binary
         id: name
         shell: bash
@@ -101,6 +103,8 @@ jobs:
     steps:
       - name: Clone the repository
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
       - name: Install the Rust toolchain
         run: rustup target add x86_64-unknown-linux-musl
       - name: Install cargo-deb
@@ -122,6 +126,8 @@ jobs:
         run: git config --global core.autocrlf false
       - name: Clone the repository
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
       - name: Install the Rust toolchain
         run: rustup target add x86_64-pc-windows-msvc
       - name: Install cargo-wix
