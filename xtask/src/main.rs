@@ -201,11 +201,11 @@ fn test(ctx: &mut Context) {
         ctx,
         step!(
             "Building the tests for all packages with all feature combinations",
-            "cargo hack nextest run --workspace --feature-powerset --keep-going --no-run",
+            "cargo hack nextest run --workspace --exclude xtask --feature-powerset --keep-going --no-run",
         ),
         step!(
             "Running the tests for all packages with all feature combinations",
-            "cargo hack nextest run --workspace --feature-powerset --keep-going",
+            "cargo hack nextest run --workspace --exclude xtask --feature-powerset --keep-going",
         ),
         // step!(
         //     "Running the doctests for all packages with all feature combinations",
