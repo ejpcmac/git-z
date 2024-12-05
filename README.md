@@ -4,6 +4,9 @@
   ![Crates.io](https://img.shields.io/crates/v/git-z)
 ](https://crates.io/crates/git-z)
 [![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
+[![Conventional
+Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)
+](https://conventionalcommits.org)
 
 A Git extension to go beyond.
 
