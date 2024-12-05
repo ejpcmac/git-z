@@ -21,7 +21,7 @@ use clap::Parser;
 use eyre::{eyre, Context as _, Result};
 use indexmap::IndexMap;
 use inquire::{validator::Validation, Confirm, CustomUserError, Select, Text};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
@@ -40,7 +40,7 @@ use super::helpers::ensure_in_git_worktree;
 use std::{env, io};
 
 #[cfg(feature = "unstable-pre-commit")]
-use is_executable::IsExecutable;
+use is_executable::IsExecutable as _;
 
 #[cfg(feature = "unstable-pre-commit")]
 use crate::warning;

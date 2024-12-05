@@ -78,7 +78,7 @@ pub fn load_config() -> Result<Config> {
 #[macro_export]
 macro_rules! success {
     ($($arg:tt)*) => {{
-        use colored::Colorize;
+        use colored::Colorize as _;
         let message = indoc::formatdoc!($($arg)*).green().bold();
         println!("{message}");
     }};
@@ -88,7 +88,7 @@ macro_rules! success {
 #[macro_export]
 macro_rules! warning {
     ($($arg:tt)*) => {{
-        use colored::Colorize;
+        use colored::Colorize as _;
 
         let log_message = $crate::helpers::uncapitalise(&format!($($arg)*));
         let log_message = log_message.trim_end_matches(".");
@@ -103,7 +103,7 @@ macro_rules! warning {
 #[macro_export]
 macro_rules! error {
     ($($arg:tt)*) => {{
-        use colored::Colorize;
+        use colored::Colorize as _;
         let message = indoc::formatdoc!($($arg)*);
         let message = $crate::helpers::uncapitalise(&message);
         let message = format!("Error: {message}").red().bold();
@@ -115,7 +115,7 @@ macro_rules! error {
 #[macro_export]
 macro_rules! hint {
     ($($arg:tt)*) => {{
-        use colored::Colorize;
+        use colored::Colorize as _;
         let message = indoc::formatdoc!($($arg)*).blue();
         eprintln!("{message}");
     }};
