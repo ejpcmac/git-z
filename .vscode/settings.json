@@ -1,8 +1,6 @@
 {
     "editor.formatOnSave": true,
-    "editor.rulers": [
-        80
-    ],
+    "editor.rulers": [80],
     "evenBetterToml.taplo.bundled": false,
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
@@ -12,13 +10,23 @@
     "nix.serverSettings": {
         "nixd": {
             "formatting": {
-                "command": [
-                    "nixpkgs-fmt"
-                ]
+                "command": ["nixpkgs-fmt"]
             }
         }
     },
     "rewrap.autoWrap.enabled": true,
     "rust-analyzer.check.command": "clippy",
-    "rust-analyzer.server.path": "rust-analyzer"
+    "rust-analyzer.server.path": "rust-analyzer",
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+        "editor.formatOnSave": false
+    },
+    "[yaml]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
 }

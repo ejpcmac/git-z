@@ -90,7 +90,9 @@ fn check(subcommand: Option<&str>) {
 
 fn check_usage() {
     let name = env::args().next().unwrap();
-    eprintln!("usage: {name} check [commits|format|unused-deps|build|test]");
+    eprintln!(
+        "usage: {name} check [commits|format|build|test|unused-deps|packages]"
+    );
     process::exit(1);
 }
 
@@ -167,8 +169,8 @@ fn check_format(ctx: &mut Context) {
 
     action!(
         ctx,
-        "Checking that YAML documents are formatted",
-        "yamlfmt -lint ."
+        "Checking that YAML and JSON documents are formatted",
+        "prettier --check ."
     );
 
     action!(ctx, "Checking for typos", "typos");
@@ -178,12 +180,18 @@ fn build(ctx: &mut Context) {
     action!(
         ctx,
         "Building all packages with all feature combinations",
-        "cargo hack build --workspace --all-targets --feature-powerset --keep-going",
+        "cargo hack build --no-dev-deps --workspace --feature-powerset --keep-going",
     );
 
     action!(
         ctx,
         "Checking for clippy warnings in all packages with all feature combinations",
+        "cargo hack clippy --no-dev-deps --workspace --feature-powerset --keep-going -- -D warnings",
+    );
+
+    action!(
+        ctx,
+        "Checking for clippy warnings in all packages for all targets with all feature combinations",
         "cargo hack clippy --workspace --all-targets --feature-powerset --keep-going -- -D warnings",
     );
 }
@@ -199,23 +207,43 @@ fn test(ctx: &mut Context) {
             "Running the tests for all packages with all feature combinations",
             "cargo hack nextest run --workspace --feature-powerset --keep-going",
         ),
+        // step!(
+        //     "Running the doctests for all packages with all feature combinations",
+        //     "cargo hack test --doc --workspace --exclude xtask --feature-powerset --keep-going",
+        // ),
     );
 }
 
 fn check_unused_deps(ctx: &mut Context) {
     #[cfg(not(target_os = "windows"))]
-    action!(
-        ctx,
-        "Looking for unused dependencies",
-        "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
-    );
+    {
+        action!(
+            ctx,
+            "Looking for unused dependencies",
+            "nix develop -L .#udeps -c cargo hack udeps --workspace --feature-powerset --keep-going",
+        );
+
+        action!(
+            ctx,
+            "Looking for unused dev-dependencies",
+            "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
+        );
+    }
 
     #[cfg(target_os = "windows")]
-    action!(
-        ctx,
-        "Looking for unused dependencies",
-        "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --keep-going",
-    );
+    {
+        action!(
+            ctx,
+            "Looking for unused dependencies",
+            "cargo +nightly hack udeps --workspace --feature-powerset --keep-going",
+        );
+
+        action!(
+            ctx,
+            "Looking for unused dev-dependencies",
+            "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --keep-going",
+        );
+    }
 }
 
 fn check_packages(ctx: &mut Context) {
@@ -255,10 +283,38 @@ fn check_packages(ctx: &mut Context) {
 #[macro_export]
 macro_rules! action {
     ($ctx:ident, $name:literal, $command:literal $(,)?) => {{
-        action!($ctx, step!($name, $command));
+        action!($ctx, cwd: ".", step!($name, $command));
     }};
 
     ($ctx:ident, step!($name:literal, $command:literal $(,)?) $(,)?) => {{
+        action!($ctx, cwd: ".", step!($name, $command));
+    }};
+
+    (
+        $ctx:ident,
+        step!($name:literal, $command:literal $(,)?),
+        $(step!($names:literal, $commands:literal $(,)?)),+
+        $(,)?
+    ) => {{
+        action!(
+            $ctx,
+            cwd: ".",
+            step!($name, $command),
+            $(step!($names, $commands)),+
+        );
+    }};
+
+    ($ctx:ident, cwd: $cwd:literal, $name:literal, $command:literal $(,)?) => {{
+        action!($ctx, cwd: $cwd, step!($name, $command));
+    }};
+
+    (
+        $ctx:ident,
+        cwd: $cwd:literal,
+        step!($name:literal, $command:literal $(,)?)
+        $(,)?
+    ) => {{
+        let _push_dir = $ctx.sh.push_dir($cwd);
         let result = step!($ctx, $name, $command);
         $ctx.checks += 1;
         let message = if result.is_ok() {
@@ -273,10 +329,12 @@ macro_rules! action {
 
     (
         $ctx:ident,
+        cwd: $cwd:literal,
         step!($name:literal, $command:literal $(,)?),
         $(step!($names:literal, $commands:literal $(,)?)),+
         $(,)?
     ) => {{
+        let _push_dir = $ctx.sh.push_dir($cwd);
         let result = step!($ctx, $name, $command);
         if result.is_ok() {
             println!();

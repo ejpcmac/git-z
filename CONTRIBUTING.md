@@ -82,9 +82,9 @@ Install:
     * `committed`,
     * `eclint`,
     * `nixpkgs-fmt`,
+    * `prettier`,
     * `taplo`,
     * `typos`,
-    * `yamlfmt`,
 * optionally `git-flow`.
 
 ### Checking that everything works
@@ -161,7 +161,7 @@ Please format your code with the following tools:
 * Rust with `rustfmt`,
 * Nix with `nixpkgs-fmt`,
 * TOML with `taplo`,
-* YAML with `yamlfmt`.
+* YAML and JSON with `prettier`.
 
 All contributed code must be documented. In general, take your inspiration from
 the existing code.

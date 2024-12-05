@@ -13,6 +13,7 @@ allowed-duplicate-crates = [
     "windows_x86_64_msvc",
 ]
 
-allowed-idents-below-min-chars = ["c", "i", "j", "n", "s", "w", "x", "y", "z"]
+allowed-idents-below-min-chars = ["c", "i", "j", "n", "s"]
 check-private-items = true
+# NOTE: ".." indicates that default values should be included.
 doc-valid-idents = [".."]
