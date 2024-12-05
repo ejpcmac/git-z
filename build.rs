@@ -97,14 +97,14 @@ fn maybe_revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
 /// Returns the result of `git describe --always --dirty=-modified`.
 #[expect(
     clippy::missing_panics_doc,
-    reason = "The unwrap in the function cannot actually panic on modern systems."
+    reason = "the unwrap in the function cannot actually panic on modern systems"
 )]
 fn git_describe() -> io::Result<Option<String>> {
     let output = Command::new("git")
         .args(["describe", "--always", "--dirty=-modified"])
         .output()?;
 
-    #[expect(clippy::unwrap_used, reason = "Non-UTF-8 outputs are obsolete.")]
+    #[expect(clippy::unwrap_used, reason = "non-UTF-8 outputs are obsolete")]
     Ok(output
         .status
         .success()
@@ -127,14 +127,14 @@ fn git_revision_and_state() -> io::Result<Option<String>> {
 /// Returns the current Git revision.
 #[expect(
     clippy::missing_panics_doc,
-    reason = "The unwrap in the function cannot actually panic on modern systems."
+    reason = "the unwrap in the function cannot actually panic on modern systems"
 )]
 fn git_revision() -> io::Result<Option<String>> {
     let output = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .output()?;
 
-    #[expect(clippy::unwrap_used, reason = "Non-UTF-8 outputs are obsolete.")]
+    #[expect(clippy::unwrap_used, reason = "non-UTF-8 outputs are obsolete")]
     Ok(output
         .status
         .success()
@@ -236,7 +236,7 @@ fn define_features() {
 /// Passes the `TARGET` variable to the build.
 #[expect(
     clippy::missing_panics_doc,
-    reason = "The unwrap in the function cannot actually panic."
+    reason = "the unwrap in the function cannot actually panic"
 )]
 fn define_target() {
     #[expect(clippy::unwrap_used, reason = "TARGET is defined by cargo")]
@@ -247,7 +247,7 @@ fn define_target() {
 /// Passes the `PROFILE` variable to the build.
 #[expect(
     clippy::missing_panics_doc,
-    reason = "The unwrap in the function cannot actually panic."
+    reason = "the unwrap in the function cannot actually panic"
 )]
 fn define_profile() {
     #[expect(clippy::unwrap_used, reason = "PROFILE is defined by cargo")]

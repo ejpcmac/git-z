@@ -191,7 +191,7 @@ impl CommitCache {
                             ?commit_cache_file,
                             "invalid commit cache, discarding it"
                         );
-                        Self::discard().ok();
+                        let _ = Self::discard().ok();
                         Self::default()
                     });
 
