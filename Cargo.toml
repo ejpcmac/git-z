@@ -67,7 +67,7 @@ serde_json = "1"
 assert_cmd = "2"
 assert_fs = "1"
 predicates = "3"
-rexpect = "0.5"
+rexpect = "0.6"
 
 [workspace]
 members = ["xtask"]
