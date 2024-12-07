@@ -36,6 +36,7 @@ use rexpect::{
 use std::{fs::Permissions, os::unix::fs::PermissionsExt};
 
 const TIMEOUT: Option<u64> = Some(1_000);
+const COMMIT_CACHE_VERSION: &str = "0.1";
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                  Helpers                                   //
@@ -893,8 +894,6 @@ mod wizard {
 mod commit_cache {
     use super::*;
 
-    const VERSION: &str = "0.1";
-
     #[test]
     fn saves_each_answer_along_the_way() -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
@@ -913,7 +912,7 @@ mod commit_cache {
         assert_commit_cache(
             &temp_dir,
             formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -925,7 +924,7 @@ mod commit_cache {
         assert_commit_cache(
             &temp_dir,
             formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -941,7 +940,7 @@ mod commit_cache {
         assert_commit_cache(
             &temp_dir,
             formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -958,7 +957,7 @@ mod commit_cache {
         assert_commit_cache(
             &temp_dir,
             formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -973,7 +972,7 @@ mod commit_cache {
         assert_commit_cache(
             &temp_dir,
             formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1009,7 +1008,7 @@ mod commit_cache {
         assert_commit_cache(
             &temp_dir,
             formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1046,7 +1045,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -1075,7 +1074,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -1124,7 +1123,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -1152,7 +1151,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -1180,7 +1179,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -1208,7 +1207,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -1256,7 +1255,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
@@ -1283,7 +1282,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1311,7 +1310,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1350,7 +1349,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1378,7 +1377,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1404,7 +1403,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1442,7 +1441,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1492,7 +1491,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
@@ -1517,7 +1516,7 @@ mod commit_cache {
         install_commit_cache(
             &temp_dir,
             &formatdoc! {r##"
-                version = "{VERSION}"
+                version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
