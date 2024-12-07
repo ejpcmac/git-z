@@ -20,7 +20,12 @@
 #![cfg(not(target_os = "windows"))]
 #![allow(clippy::pedantic, clippy::restriction)]
 
-use std::{fs, path::Path, process::Command};
+use std::{
+    fs::{self, Permissions},
+    os::unix::fs::PermissionsExt,
+    path::Path,
+    process::Command,
+};
 
 use assert_cmd::cargo::cargo_bin;
 use assert_fs::{assert::IntoPathPredicate, prelude::*, TempDir};
@@ -32,8 +37,8 @@ use rexpect::{
     session::{spawn_command, PtySession},
 };
 
-#[cfg(feature = "unstable-pre-commit")]
-use std::{fs::Permissions, os::unix::fs::PermissionsExt};
+#[cfg(not(feature = "unstable-pre-commit"))]
+use eyre::bail;
 
 const TIMEOUT: Option<u64> = Some(1_000);
 const COMMIT_CACHE_VERSION: &str = "0.1";
@@ -45,6 +50,8 @@ const COMMIT_CACHE_VERSION: &str = "0.1";
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Git {
     Fake,
+    #[cfg(not(feature = "unstable-pre-commit"))]
+    Real,
 }
 
 fn setup_temp_dir(git: Git) -> Result<TempDir> {
@@ -54,9 +61,81 @@ fn setup_temp_dir(git: Git) -> Result<TempDir> {
         Git::Fake => {
             temp_dir.child(".git").create_dir_all()?;
         }
+        #[cfg(not(feature = "unstable-pre-commit"))]
+        Git::Real => {
+            git_init(&temp_dir)?;
+            git_config_user(&temp_dir)?;
+            git_config_editor(&temp_dir)?;
+            git_config_nogpg(&temp_dir)?
+        }
     }
 
     Ok(temp_dir)
+}
+
+#[cfg(not(feature = "unstable-pre-commit"))]
+fn git_init(temp_dir: &TempDir) -> Result<()> {
+    let status = Command::new("git")
+        .current_dir(temp_dir)
+        .arg("init")
+        .status()?;
+
+    if !status.success() {
+        bail!("Failed to initialise the Git repository");
+    }
+
+    Ok(())
+}
+
+#[cfg(not(feature = "unstable-pre-commit"))]
+fn git_config_user(temp_dir: &TempDir) -> Result<(), eyre::Error> {
+    let status = Command::new("git")
+        .current_dir(temp_dir)
+        .args(["config", "user.name", "git-z"])
+        .status()?;
+
+    if !status.success() {
+        bail!("Failed to configure the Git user’s name");
+    }
+
+    let status = Command::new("git")
+        .current_dir(temp_dir)
+        .args(["config", "user.email", "git-z@test"])
+        .status()?;
+
+    if !status.success() {
+        bail!("Failed to configure the Git user’s email");
+    }
+
+    Ok(())
+}
+
+#[cfg(not(feature = "unstable-pre-commit"))]
+fn git_config_editor(temp_dir: &TempDir) -> Result<(), eyre::Error> {
+    let status = Command::new("git")
+        .current_dir(temp_dir)
+        .args(["config", "core.editor", "cat > .git/commit"])
+        .status()?;
+
+    if !status.success() {
+        bail!("Failed to configure the editor for Git");
+    }
+
+    Ok(())
+}
+
+#[cfg(not(feature = "unstable-pre-commit"))]
+fn git_config_nogpg(temp_dir: &TempDir) -> Result<()> {
+    let status = Command::new("git")
+        .current_dir(temp_dir)
+        .args(["config", "commit.gpgsign", "false"])
+        .status()?;
+
+    if !status.success() {
+        bail!("Failed to configure Git not to sign commits");
+    }
+
+    Ok(())
 }
 
 fn install_config(temp_dir: &TempDir, name: &str) -> Result<()> {
@@ -79,7 +158,6 @@ fn install_commit_cache(temp_dir: &TempDir, commit_cache: &str) -> Result<()> {
     Ok(())
 }
 
-#[cfg(feature = "unstable-pre-commit")]
 fn install_pre_commit_hook(temp_dir: &TempDir, exit_code: i32) -> Result<()> {
     install_hook(
         temp_dir,
@@ -108,7 +186,6 @@ fn install_pre_commit_hook(temp_dir: &TempDir, exit_code: i32) -> Result<()> {
 //     )
 // }
 
-#[cfg(feature = "unstable-pre-commit")]
 fn install_hook(temp_dir: &TempDir, name: &str, content: &str) -> Result<()> {
     let hook = &temp_dir.child(".git").child("hooks").child(name);
     hook.write_str(content)?;
@@ -139,6 +216,22 @@ fn set_git_commit_message(temp_dir: &TempDir, message: &str) -> Result<()> {
         .child(".git")
         .child("COMMIT_EDITMSG")
         .write_str(message)?;
+    Ok(())
+}
+
+#[cfg(not(feature = "unstable-pre-commit"))]
+fn new_tracked_file(temp_dir: &TempDir, file_name: &str) -> Result<()> {
+    temp_dir.child(file_name).touch()?;
+
+    let status = Command::new("git")
+        .current_dir(temp_dir)
+        .args(["add", "."])
+        .status()?;
+
+    if !status.success() {
+        bail!("Failed to run `git add .`");
+    }
+
     Ok(())
 }
 
@@ -2246,6 +2339,92 @@ mod usage_errors {
         assert!(process
             .exp_string("Operation was interrupted by the user")
             .is_err());
+
+        Ok(())
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                Integration                                 //
+////////////////////////////////////////////////////////////////////////////////
+
+mod integration {
+    #[cfg(not(feature = "unstable-pre-commit"))]
+    use super::*;
+
+    #[cfg(not(feature = "unstable-pre-commit"))]
+    #[test]
+    fn use_proper_commit_message_after_pre_commit_hook_failure() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Real)?;
+
+        enum PreCommit {
+            Success = 0,
+            Failure = 1,
+        }
+
+        let add_and_commit = |file, message, pre_commit| -> Result<()> {
+            install_pre_commit_hook(&temp_dir, pre_commit as i32)?;
+            new_tracked_file(&temp_dir, file)?;
+
+            let mut process =
+                spawn_command(gitz_commit(&temp_dir, Git::Real)?, TIMEOUT)?;
+
+            fill_type(&mut process)?;
+            fill_scope(&mut process)?;
+            process.exp_string("Short description")?;
+            process.send_line(message)?;
+            fill_breaking_change(&mut process)?;
+            process.exp_eof()?;
+
+            Ok(())
+        };
+
+        let fix_and_commit = || -> Result<()> {
+            install_pre_commit_hook(&temp_dir, 0)?;
+
+            let mut process =
+                spawn_command(gitz_commit(&temp_dir, Git::Real)?, TIMEOUT)?;
+
+            fill_do_reuse_message(&mut process, "y")?;
+            process.exp_eof()?;
+
+            Ok(())
+        };
+
+        // 1. Do a first successful commit. As it is successful, we expect no
+        //    cache file and the first commit message.
+        add_and_commit("a", "first commit", PreCommit::Success)?;
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+        temp_dir
+            .child(".git")
+            .child("commit")
+            .assert(predicate::str::contains("feat: first commit"));
+
+        // 2. Do a second commit for which the pre-commit hook fails. We then
+        //    expect a completed commit cache, and do not check about the commit
+        //    message since it has failed.
+        add_and_commit("b", "second commit", PreCommit::Failure)?;
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{COMMIT_CACHE_VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+                type = "feat"
+                description = "second commit"
+            "##},
+        );
+
+        // 3. Redo the second commit after “fixing” the pre-commit hook failure.
+        //    As it is successful, we expect no cache file, and the second
+        //    commit message.
+        fix_and_commit()?;
+        assert_commit_cache(&temp_dir, predicate::path::missing());
+        temp_dir
+            .child(".git")
+            .child("commit")
+            .assert(predicate::str::contains("feat: second commit"));
 
         Ok(())
     }
