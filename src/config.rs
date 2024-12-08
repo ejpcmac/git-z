@@ -127,7 +127,7 @@ impl Default for Config {
             "sec" => "patch a security issue (including updating a dependency for security)",
             "fix" => "patch a bug in the code",
             "perf" => "enhance the performance of the code",
-            "refactor" => "refactor the code",
+            "refactor" => "restructure the code without changing its external behaviour",
             "test" => "add, update (including refactoring) or remove tests only",
             "docs" => "update the documentation only (including README and alike)",
             "style" => "update the style, like running a code formatter or changing headers",
