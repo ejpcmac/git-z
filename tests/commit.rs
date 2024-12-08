@@ -352,6 +352,14 @@ where
         .assert(pred);
 }
 
+fn assert_commit_editmsg<I, P>(temp_dir: &TempDir, pred: I)
+where
+    I: IntoPathPredicate<P>,
+    P: Predicate<Path>,
+{
+    temp_dir.child(".git").child("COMMIT_EDITMSG").assert(pred);
+}
+
 fn assert_git_commit(temp_dir: &TempDir, content: &str) {
     temp_dir.child(".git").child("commit").assert(content);
 }
@@ -1109,6 +1117,38 @@ mod commit_cache {
                 description = "description"
             "##},
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn deletes_any_commit_editmsg_on_wizard_completion() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        set_git_commit_message(&temp_dir, "previous message")?;
+        set_git_return_code(&temp_dir, 1)?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+        process.exp_eof()?;
+
+        assert_commit_cache(
+            &temp_dir,
+            formatdoc! {r##"
+                version = "{COMMIT_CACHE_VERSION}"
+                wizard_state = "completed"
+
+                [wizard_answers]
+                type = "feat"
+                description = "description"
+            "##},
+        );
+
+        assert_commit_editmsg(&temp_dir, predicate::path::missing());
 
         Ok(())
     }
@@ -2385,7 +2425,12 @@ mod integration {
             let mut process =
                 spawn_command(gitz_commit(&temp_dir, Git::Real)?, TIMEOUT)?;
 
-            fill_do_reuse_message(&mut process, "y")?;
+            fill_do_reuse_answers(&mut process, "y")?;
+            fill_type(&mut process)?;
+            fill_scope(&mut process)?;
+            process.exp_string("Short description")?;
+            process.send_line("")?;
+            fill_breaking_change(&mut process)?;
             process.exp_eof()?;
 
             Ok(())
