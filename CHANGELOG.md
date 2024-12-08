@@ -8,7 +8,19 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.2] - 2024-12-08
 
-* No changes compared to the previous version.
+### Changed
+
+* [CLI] Use `git z` instead of `git-z` in usage massages (#39).
+* [Config] Improve the default description for the `refactor` commit type (#41).
+* [Cargo] Update the dependencies.
+* [Rust] Update from 1.81.0 to 1.83.0.
+
+### Fixed
+
+* [`git z commit`] Do not reuse an outdated commit message after the
+    `pre-commit` hook has failed (#47).
+* [CLI] Do not include the Git hash when running `git z -V` with a release
+    binary built by the CI (#38).
 
 ## [0.2.1] - 2024-09-25
 
