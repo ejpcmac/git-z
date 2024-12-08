@@ -36,24 +36,38 @@ debug = "commit used for debugging purposes, not to be integrated"
 <%- when AcceptScopes::Any -%>
 accept = "any"
 # list = [
-#     "changelog",
-#     "config",
-#     "contributing",
-#     "git-z",
+#     # App
 #     "lib",
+#     "config",
+#
+#     # General scopes
+#     "changelog",
+#     "contributing",
 #     "readme",
+#     "toolchain",
 #     "version",
+#
+#     # Tools
+#     "git",
+#     "git-z",
 # ]
 <%- when AcceptScopes::List -%>
 accept = "list"
 list = [
-    "changelog",
-    "config",
-    "contributing",
-    "git-z",
+    # App
     "lib",
+    "config",
+
+    # General scopes
+    "changelog",
+    "contributing",
     "readme",
+    "toolchain",
     "version",
+
+    # Tools
+    "git",
+    "git-z",
 ]
 <%- endmatch %>
 <%- when Scopes::DontAsk -%>
@@ -64,13 +78,20 @@ list = [
 # # of valid scopes is required.
 # accept = "any"
 # # list = [
-# #     "changelog",
-# #     "config",
-# #     "contributing",
-# #     "git-z",
+# #     # App
 # #     "lib",
+# #     "config",
+# #
+# #     # General scopes
+# #     "changelog",
+# #     "contributing",
 # #     "readme",
+# #     "toolchain",
 # #     "version",
+# #
+# #     # Tools
+# #     "git",
+# #     "git-z",
 # # ]
 <%- endmatch %>
 

@@ -48,6 +48,9 @@ list = [
     "tracing",
     "updater",
 
+    # Templates
+    "t:config",
+
     # Cargo xtasks
     "xt:check",
 
