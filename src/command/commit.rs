@@ -159,6 +159,12 @@ impl CommitMessage {
             ticket: ask_ticket(config, cache)?,
         };
 
+        // NOTE: Marking the wizard as completed allows to skip the wizard on
+        // next run if `git commit` has failed and there is a valid
+        // `COMMIT_EDITMSG` file. In order to ensure `git z commit` does not
+        // reuse an outdated message, let’s delete any existing `COMMIT_EDITMSG`
+        // before marking the wizard as completed.
+        delete_last_commit_message()?;
         cache.mark_wizard_as_completed()?;
 
         tracing::debug!(?commit_message);
@@ -649,6 +655,25 @@ fn last_commit_message() -> Result<Option<String>> {
         .filter(|s| !s.trim().is_empty());
 
     Ok(maybe_message)
+}
+
+/// Deletes the last commit message if it exists.
+#[tracing::instrument(level = "trace")]
+fn delete_last_commit_message() -> Result<()> {
+    let commit_editmsg = commit_editmsg()?;
+
+    commit_editmsg
+        .exists()
+        .then(|| {
+            tracing::debug!("deleting the previous COMMIT_EDITMSG");
+            fs::remove_file(&commit_editmsg)
+        })
+        .transpose()
+        .map(|_| ())
+        .wrap_err_with(|| {
+            format!("failed to delete {}", commit_editmsg.display())
+        })
+        .log_err()
 }
 
 /// Returns the path to the `COMMIT_EDITMSG` file.

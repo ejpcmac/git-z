@@ -7,5 +7,6 @@ set -x
 git flow init -d
 git config gitflow.prefix.versiontag "v"
 git config gitflow.feature.finish.no-ff true
+git config gitflow.bugfix.finish.no-ff true
 git config gitflow.release.finish.sign true
 git config gitflow.hotfix.finish.sign true
