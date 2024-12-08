@@ -27,13 +27,13 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 * [`git z commit`] Ask whether to reuse the previous answers or commit message
-    when the operation has been aborted or has failed.
+    when the operation has been aborted or has failed (#18).
 * [CLI] Add a new global `-v...` flag to control the log verbosity. By default,
-    no logs are emitted.
-* [CLI] Add tracing logs in all layers.
+    no logs are emitted (#20).
+* [CLI] Add tracing logs in all layers (#20).
 * *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
     feature enabled, run the `pre-commit` hook before the wizard if it exists. A
-    new `-n|--no-verify` option is added to prevent the hook from running.
+    new `-n|--no-verify` option is added to prevent the hook from running (#11).
 
 ### Changed
 
@@ -41,15 +41,15 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [`git z commit`] Pass the extra arguments to `git commit` before `-em
     <message>`.
 * [CLI] Provide more information in `git z --version`.
-* [CLI] Use standard exit codes as defined in `sysexits.h`.
-* [Config] Enhance the descriptions for the default types.
+* [CLI] Use standard exit codes as defined in `sysexits.h` (#22).
+* [Config] Enhance the descriptions for the default types (#23, #31).
 * [Config] Align error messages between the config and the updater.
 * [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.1 to 1.81.0.
 * *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
     feature enabled, passes `--no-verify` to `git commit`. This is to avoid
     running the `pre-commit` hook twice, but this also disables the `commit-msg`
-    hook as an unwanted side-effect.
+    hook as an unwanted side-effect (#11).
 
 ### Removed
 
@@ -96,24 +96,24 @@ in the current repository.
 ### Added
 
 * [`git z init`] Add a command to create a `git-z.toml` in the current
-    repository.
+    repository (#8).
 * [`git z update`] Add a command to update the configuration file without
     loosing comments and formatting.
 * [Config] Add a `ticket.required` field: when set to `true`, the ticket is
     required as in previous versions. When set to `false`, the ticket is still
-    asked for but optional.
+    asked for but optional (#2).
 
 ### Changed
 
 * **BREAKING** [Config] Update the configuration format to allow for more
-    options.
+    options (#4).
 * **BREAKING** [Config] Make the `ticket` key optional: when the ticket
-    configuration is not present, no ticket will be asked for.
-* **BREAKING** [Config] Allow scopes to be arbitrary.
+    configuration is not present, no ticket will be asked for (#2).
+* **BREAKING** [Config] Allow scopes to be arbitrary (#3).
 * **BREAKING** [CLI] Print errors, warnings and hints on `stderr`.
 * [Config] Make the default configuration more sensible. It now has much more
-    built-in types, accepts an optional arbitrary scope, and no ticket.
-* [CLI] Print better messages for many usage errors.
+    built-in types, accepts an optional arbitrary scope, and no ticket (#12).
+* [CLI] Print better messages for many usage errors (#14).
 * [CLI] Do not print an error on cancelled / interrupted operations.
 * [`git z commit`] Do not print an error on `git commit` failure.
 * [`git z commit`] Check the commit template early and pretty-print any error
@@ -122,7 +122,7 @@ in the current repository.
     branch name, `#` is omitted from the match so that branches like
     `feature/23-name` are valid, and `#` is then added to the matching ticket
     number. In this example it would extract `#23` as ticket number from the
-    branch name.
+    branch name (#7).
 * [`git z commit`] Enhance a bit the error message when failing to build a
     regex from the list of prefixes.
 * [Cargo] Exclude unneeded files from the package.
