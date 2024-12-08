@@ -56,6 +56,7 @@ const LONG_VERSION: &str = concat!(
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
 #[command(
+    bin_name = "git z",
     author,
     version = env!("VERSION_WITH_GIT"),
     long_version = LONG_VERSION,

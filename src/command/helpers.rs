@@ -32,7 +32,7 @@ use crate::{
 pub enum NotInGitWorktree {
     /// Git cannot be run.
     #[error("Failed to run the git command")]
-    CannotRunGit(io::Error),
+    CannotRunGit(#[source] io::Error),
     /// The command is not run from inside a Git repository.
     #[error("Not in a Git repository")]
     NotInRepo,

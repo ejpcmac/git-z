@@ -71,7 +71,7 @@ pub enum LoadError {
     CommitCacheFile(#[from] CommitCacheFileError),
     /// An error has occurred while reading the commit cache file.
     #[error("Failed to read the commit cache")]
-    Read(io::Error),
+    Read(#[source] io::Error),
 }
 
 /// Errors that can occur when saving the commit cache.
@@ -85,10 +85,10 @@ pub enum SaveError {
     CommitCacheFile(#[from] CommitCacheFileError),
     /// Error while writing the commit cache file.
     #[error("Failed to create the git-z directory")]
-    CreateDir(io::Error),
+    CreateDir(#[source] io::Error),
     /// Error while writing the commit cache file.
     #[error("Failed to write the commit cache")]
-    Write(io::Error),
+    Write(#[source] io::Error),
 }
 
 /// Errors that can occur when discarding the commit cache.
@@ -99,7 +99,7 @@ pub enum DiscardError {
     CommitCacheFile(#[from] CommitCacheFileError),
     /// Error while deleting the commit cache file.
     #[error("Failed to delete the commit cache file")]
-    Delete(io::Error),
+    Delete(#[source] io::Error),
 }
 
 /// Errors that can occur when parsing the TOML.
@@ -113,7 +113,7 @@ pub enum FromTomlError {
     },
     /// The commit cache file cannot be parsed.
     #[error("Failed to parse the commit cache file")]
-    ParseError(toml::de::Error),
+    ParseError(#[source] toml::de::Error),
 }
 
 /// Errors that can occur when building the path of the commit cache file.
@@ -137,13 +137,13 @@ pub enum GitZDirError {
 pub enum GitDirError {
     /// The `git` command cannot be run.
     #[error("Failed to run the git command")]
-    CannotRunGit(io::Error),
+    CannotRunGit(#[source] io::Error),
     /// Git has returned an error.
     #[error("{0}")]
     GitError(String),
     /// The output of the git command is not proper UTF-8.
     #[error("The output of the git command is not proper UTF-8")]
-    EncodingError(std::string::FromUtf8Error),
+    EncodingError(#[source] std::string::FromUtf8Error),
 }
 
 /// A minimal commit cache to get the version.

@@ -8,7 +8,7 @@ feat = "add a new feature in the code (including tests for the feature)"
 sec = "patch a security issue (including updating a dependency for security)"
 fix = "patch a bug in the code"
 perf = "enhance the performance of the code"
-refactor = "refactor the code"
+refactor = "restructure the code without changing its external behaviour"
 test = "add, update (including refactoring) or remove tests only"
 docs = "update the documentation only (including README and alike)"
 style = "update the style, like running a code formatter or changing headers"
@@ -32,54 +32,59 @@ debug = "commit used for debugging purposes, not to be integrated"
 # of valid scopes is required.
 accept = "list"
 list = [
-    # General scopes
-    "cargo",
-    "changelog",
-    "clippy",
-    "committed",
-    "contributing",
-    "deb",
-    "devshell",
-    "direnv",
-    "editorconfig",
-    "flake",
-    "git",
-    "git-z",
-    "github",
-    "nextest",
-    "readme",
-    "rustfmt",
-    "script",
-    "taplo",
-    "toolchain",
-    "version",
-    "vscode",
-    "wix",
-    "yamlfmt",
-
-    # Binary
-    "main",
-
-    # Lib
+    # CLI
     "cli",
     "command",
-    "commit_cache",
-    "config",
-    "helpers",
-    "lib",
-    "tracing",
-    "updater",
 
     # Commands
     "c:commit",
     "c:init",
     "c:update",
 
-    # Test helpers
-    "fake_git",
+    # Lib
+    "commit_cache",
+    "config",
+    "helpers",
+    "tracing",
+    "updater",
+
+    # Templates
+    "t:config",
 
     # Cargo xtasks
     "xt:check",
+
+    # Test helpers
+    "fake_git",
+
+    # Packaging
+    "deb",
+    "wix",
+
+    # General scopes
+    "changelog",
+    "contributing",
+    "devshell",
+    "flake",
+    "github",
+    "readme",
+    "script",
+    "toolchain",
+    "version",
+
+    # Tools
+    "cargo",
+    "clippy",
+    "committed",
+    "direnv",
+    "editorconfig",
+    "git",
+    "git-z",
+    "nextest",
+    "prettier",
+    "rustfmt",
+    "taplo",
+    "vscode",
 ]
 
 # The ticket / issue reference configuration.

@@ -69,14 +69,14 @@ pub enum CommitError {
     /// The pre-commit hook could not be run.
     #[cfg(feature = "unstable-pre-commit")]
     #[error("Failed to run the pre-commit hook")]
-    CannotRunPreCommit(io::Error),
+    CannotRunPreCommit(#[source] io::Error),
     /// The pre-commit hook has failed.
     #[cfg(feature = "unstable-pre-commit")]
     #[error("The pre-commit hook has failed")]
     PreCommitFailed,
     /// The commit template is invalid.
     #[error("Failed to parse the commit template")]
-    Template(tera::Error),
+    Template(#[source] tera::Error),
     /// Git has returned an error.
     #[error("Git has returned an error")]
     Git {
