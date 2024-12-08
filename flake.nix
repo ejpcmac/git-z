@@ -96,9 +96,9 @@
                 committed
                 eclint
                 nixpkgs-fmt
+                nodePackages.prettier
                 taplo
                 typos
-                yamlfmt
               ];
 
               ideToolchain = with pkgs; [
@@ -119,6 +119,13 @@
                 {
                   name = "TEST_PATH";
                   eval = "$PRJ_ROOT/tests/fake_bin:${pkgs.bash}/bin";
+                }
+              ];
+
+              devEnv = [
+                {
+                  name = "RUSTFLAGS";
+                  value = "-Clink-arg=-fuse-ld=${pkgs.mold}/bin/mold";
                 }
               ];
 
@@ -150,6 +157,7 @@
 
                 env =
                   testEnv
+                  ++ devEnv
                   ++ ideEnv;
 
                 commands = [
@@ -183,9 +191,8 @@
               };
 
               # NOTE: Use the musl target to build a statically-linked binary.
-              # We only add the target in a specialised devshell to avoid
-              # cluttering the toolchain defined in `rust-toolchain.toml` on all
-              # platforms.
+              # We add the target in a specialised devshell to avoid cluttering
+              # the toolchain defined in `rust-toolchain.toml` on all platforms.
               deb = {
                 name = "cargo-deb";
                 packages = with pkgs; [
@@ -201,7 +208,7 @@
               udeps = {
                 name = "cargo-udeps";
                 packages = with pkgs; [
-                  rust-bin.nightly."2024-09-24".minimal
+                  rust-bin.nightly."2024-12-05".minimal
                   clang
                   cargo-hack
                   cargo-udeps

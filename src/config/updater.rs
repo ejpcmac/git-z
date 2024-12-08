@@ -72,13 +72,13 @@ pub enum LoadError {
     NoConfigFile,
     /// An error has occurred while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
-    ReadError(io::Error),
+    ReadError(#[source] io::Error),
     /// The configuration is invalid.
     #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
     InvalidConfig(#[from] FromTomlError),
     /// The configuration is not a valid TOML document.
     #[error("Failed to parse {CONFIG_FILE_NAME} into a TOML document")]
-    TomlEditError(toml_edit::TomlError),
+    TomlEditError(#[source] toml_edit::TomlError),
 }
 
 /// Errors that can occur when updating the configuration.
@@ -104,7 +104,7 @@ pub enum SaveError {
     ConfigFileError(#[from] ConfigFileError),
     /// Error while writing the configuration file.
     #[error("Failed to write {CONFIG_FILE_NAME}")]
-    WriteError(io::Error),
+    WriteError(#[source] io::Error),
 }
 
 impl ConfigUpdater<Init> {

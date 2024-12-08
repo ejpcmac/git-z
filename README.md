@@ -4,6 +4,9 @@
   ![Crates.io](https://img.shields.io/crates/v/git-z)
 ](https://crates.io/crates/git-z)
 [![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
+[![Conventional
+Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)
+](https://conventionalcommits.org)
 
 A Git extension to go beyond.
 
@@ -83,9 +86,9 @@ up a `flake.nix` like this:
 If you are a **Debian** user—or of derivatives like **Ubuntu**—, you can install
 `git-z` by running:
 
-    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.1/git-z_0.2.1-1_amd64.deb
+    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.2/git-z_0.2.2-1_amd64.deb
     sudo apt update
-    sudo apt install ./git-z_0.2.1-1_amd64.deb
+    sudo apt install ./git-z_0.2.2-1_amd64.deb
 
 ### Installation from the MSI package
 

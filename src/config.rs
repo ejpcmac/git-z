@@ -50,7 +50,7 @@ pub enum LoadError {
     ConfigFileError(#[from] ConfigFileError),
     /// An error has occurred while reading the configuration file.
     #[error("Failed to read {CONFIG_FILE_NAME}")]
-    ReadError(io::Error),
+    ReadError(#[source] io::Error),
     /// The configuration is invalid.
     #[error("Invalid configuration in {CONFIG_FILE_NAME}")]
     InvalidConfig(#[from] FromTomlError),
@@ -75,7 +75,7 @@ pub enum FromTomlError {
     },
     /// The configuration file cannot be parsed.
     #[error("Failed to parse into a valid configuration")]
-    ParseError(toml::de::Error),
+    ParseError(#[source] toml::de::Error),
 }
 
 /// Errors that can occur when building the config file path.
@@ -91,13 +91,13 @@ pub enum ConfigFileError {
 pub enum RepoRootError {
     /// The `git` command cannot be run.
     #[error("Failed to run the git command")]
-    CannotRunGit(io::Error),
+    CannotRunGit(#[source] io::Error),
     /// Git has returned an error.
     #[error("{0}")]
     GitError(String),
     /// The output of the git command is not proper UTF-8.
     #[error("The output of the git command is not proper UTF-8")]
-    EncodingError(std::string::FromUtf8Error),
+    EncodingError(#[source] std::string::FromUtf8Error),
 }
 
 /// A minimal configuration to get the version.
@@ -127,7 +127,7 @@ impl Default for Config {
             "sec" => "patch a security issue (including updating a dependency for security)",
             "fix" => "patch a bug in the code",
             "perf" => "enhance the performance of the code",
-            "refactor" => "refactor the code",
+            "refactor" => "restructure the code without changing its external behaviour",
             "test" => "add, update (including refactoring) or remove tests only",
             "docs" => "update the documentation only (including README and alike)",
             "style" => "update the style, like running a code formatter or changing headers",

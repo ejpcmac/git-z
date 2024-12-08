@@ -21,7 +21,7 @@ use clap::Parser;
 use eyre::{eyre, Context as _, Result};
 use indexmap::IndexMap;
 use inquire::{validator::Validation, Confirm, CustomUserError, Select, Text};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use regex::Regex;
 use serde::Serialize;
 use tera::{Context, Tera};
@@ -40,7 +40,7 @@ use super::helpers::ensure_in_git_worktree;
 use std::{env, io};
 
 #[cfg(feature = "unstable-pre-commit")]
-use is_executable::IsExecutable;
+use is_executable::IsExecutable as _;
 
 #[cfg(feature = "unstable-pre-commit")]
 use crate::warning;
@@ -69,14 +69,14 @@ pub enum CommitError {
     /// The pre-commit hook could not be run.
     #[cfg(feature = "unstable-pre-commit")]
     #[error("Failed to run the pre-commit hook")]
-    CannotRunPreCommit(io::Error),
+    CannotRunPreCommit(#[source] io::Error),
     /// The pre-commit hook has failed.
     #[cfg(feature = "unstable-pre-commit")]
     #[error("The pre-commit hook has failed")]
     PreCommitFailed,
     /// The commit template is invalid.
     #[error("Failed to parse the commit template")]
-    Template(tera::Error),
+    Template(#[source] tera::Error),
     /// Git has returned an error.
     #[error("Git has returned an error")]
     Git {
@@ -159,6 +159,12 @@ impl CommitMessage {
             ticket: ask_ticket(config, cache)?,
         };
 
+        // NOTE: Marking the wizard as completed allows to skip the wizard on
+        // next run if `git commit` has failed and there is a valid
+        // `COMMIT_EDITMSG` file. In order to ensure `git z commit` does not
+        // reuse an outdated message, let’s delete any existing `COMMIT_EDITMSG`
+        // before marking the wizard as completed.
+        delete_last_commit_message()?;
         cache.mark_wizard_as_completed()?;
 
         tracing::debug!(?commit_message);
@@ -649,6 +655,25 @@ fn last_commit_message() -> Result<Option<String>> {
         .filter(|s| !s.trim().is_empty());
 
     Ok(maybe_message)
+}
+
+/// Deletes the last commit message if it exists.
+#[tracing::instrument(level = "trace")]
+fn delete_last_commit_message() -> Result<()> {
+    let commit_editmsg = commit_editmsg()?;
+
+    commit_editmsg
+        .exists()
+        .then(|| {
+            tracing::debug!("deleting the previous COMMIT_EDITMSG");
+            fs::remove_file(&commit_editmsg)
+        })
+        .transpose()
+        .map(|_| ())
+        .wrap_err_with(|| {
+            format!("failed to delete {}", commit_editmsg.display())
+        })
+        .log_err()
 }
 
 /// Returns the path to the `COMMIT_EDITMSG` file.

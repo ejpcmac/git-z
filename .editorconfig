@@ -23,4 +23,4 @@ trim_trailing_whitespace = false
 indent_size = 2
 # NOTE: The README.md contains some examples with URLs being too long to fit on
 # 80-character lines.
-max_line_length = 100
+max_line_length = 120
