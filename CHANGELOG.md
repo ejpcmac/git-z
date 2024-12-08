@@ -6,22 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic
 Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.2] - 2024-12-08
 
-* No changes compared to the previous version.
+### Changed
+
+* [CLI] Use `git z` instead of `git-z` in usage massages ([#39]).
+* [Config] Improve the default description for the `refactor` commit type
+    ([#41]).
+* [Cargo] Update the dependencies.
+* [Rust] Update from 1.81.0 to 1.83.0.
+
+### Fixed
+
+* [`git z commit`] Do not reuse an outdated commit message after the
+    `pre-commit` hook has failed ([#47]).
+* [CLI] Do not include the Git hash when running `git z -V` with a release
+    binary built by the CI ([#38]).
+
+[#38]: https://github.com/ejpcmac/git-z/issues/38
+[#39]: https://github.com/ejpcmac/git-z/issues/39
+[#41]: https://github.com/ejpcmac/git-z/issues/41
+[#47]: https://github.com/ejpcmac/git-z/issues/47
 
 ## [0.2.1] - 2024-09-25
 
 ### Added
 
 * [`git z commit`] Ask whether to reuse the previous answers or commit message
-    when the operation has been aborted or has failed.
+    when the operation has been aborted or has failed ([#18]).
 * [CLI] Add a new global `-v...` flag to control the log verbosity. By default,
-    no logs are emitted.
-* [CLI] Add tracing logs in all layers.
+    no logs are emitted ([#20]).
+* [CLI] Add tracing logs in all layers ([#20]).
 * *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
     feature enabled, run the `pre-commit` hook before the wizard if it exists. A
-    new `-n|--no-verify` option is added to prevent the hook from running.
+    new `-n|--no-verify` option is added to prevent the hook from running
+    ([#11]).
 
 ### Changed
 
@@ -29,15 +48,15 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [`git z commit`] Pass the extra arguments to `git commit` before `-em
     <message>`.
 * [CLI] Provide more information in `git z --version`.
-* [CLI] Use standard exit codes as defined in `sysexits.h`.
-* [Config] Enhance the descriptions for the default types.
+* [CLI] Use standard exit codes as defined in `sysexits.h` ([#22]).
+* [Config] Enhance the descriptions for the default types ([#23], [#31]).
 * [Config] Align error messages between the config and the updater.
 * [Cargo] Update the dependencies.
 * [Rust] Update from 1.74.1 to 1.81.0.
 * *(unstable)* [`git z commit`] When compiling with the `unstable-pre-commit`
     feature enabled, passes `--no-verify` to `git commit`. This is to avoid
     running the `pre-commit` hook twice, but this also disables the `commit-msg`
-    hook as an unwanted side-effect.
+    hook as an unwanted side-effect ([#11]).
 
 ### Removed
 
@@ -50,6 +69,12 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [Updater] Properly update the documentation for scopes. Previously, it was not
     updating the documentation above the `scopes` table, keeping the one form
     version 0.1.
+
+[#18]: https://github.com/ejpcmac/git-z/issues/18
+[#20]: https://github.com/ejpcmac/git-z/issues/20
+[#22]: https://github.com/ejpcmac/git-z/issues/22
+[#23]: https://github.com/ejpcmac/git-z/issues/23
+[#31]: https://github.com/ejpcmac/git-z/issues/31
 
 ## [0.2.0] - 2023-12-28
 
@@ -84,24 +109,24 @@ in the current repository.
 ### Added
 
 * [`git z init`] Add a command to create a `git-z.toml` in the current
-    repository.
+    repository ([#8]).
 * [`git z update`] Add a command to update the configuration file without
     loosing comments and formatting.
 * [Config] Add a `ticket.required` field: when set to `true`, the ticket is
     required as in previous versions. When set to `false`, the ticket is still
-    asked for but optional.
+    asked for but optional ([#2]).
 
 ### Changed
 
 * **BREAKING** [Config] Update the configuration format to allow for more
-    options.
+    options ([#4]).
 * **BREAKING** [Config] Make the `ticket` key optional: when the ticket
-    configuration is not present, no ticket will be asked for.
-* **BREAKING** [Config] Allow scopes to be arbitrary.
+    configuration is not present, no ticket will be asked for ([#2]).
+* **BREAKING** [Config] Allow scopes to be arbitrary ([#3]).
 * **BREAKING** [CLI] Print errors, warnings and hints on `stderr`.
 * [Config] Make the default configuration more sensible. It now has much more
-    built-in types, accepts an optional arbitrary scope, and no ticket.
-* [CLI] Print better messages for many usage errors.
+    built-in types, accepts an optional arbitrary scope, and no ticket ([#12]).
+* [CLI] Print better messages for many usage errors ([#14]).
 * [CLI] Do not print an error on cancelled / interrupted operations.
 * [`git z commit`] Do not print an error on `git commit` failure.
 * [`git z commit`] Check the commit template early and pretty-print any error
@@ -110,7 +135,7 @@ in the current repository.
     branch name, `#` is omitted from the match so that branches like
     `feature/23-name` are valid, and `#` is then added to the matching ticket
     number. In this example it would extract `#23` as ticket number from the
-    branch name.
+    branch name ([#7]).
 * [`git z commit`] Enhance a bit the error message when failing to build a
     regex from the list of prefixes.
 * [Cargo] Exclude unneeded files from the package.
@@ -123,6 +148,16 @@ in the current repository.
     configuration format. Previously, the configuration was parsed, then its
     `version` field was checked. This led to parsing errors instead of reporting
     an out of date configuration.
+
+[#2]: https://github.com/ejpcmac/git-z/issues/2
+[#3]: https://github.com/ejpcmac/git-z/issues/3
+[#4]: https://github.com/ejpcmac/git-z/issues/4
+[#7]: https://github.com/ejpcmac/git-z/issues/7
+[#8]: https://github.com/ejpcmac/git-z/issues/8
+[#11]: https://github.com/ejpcmac/git-z/issues/11
+[#11]: https://github.com/ejpcmac/git-z/issues/11
+[#12]: https://github.com/ejpcmac/git-z/issues/12
+[#14]: https://github.com/ejpcmac/git-z/issues/14
 
 ## [0.1.0] - 2023-12-01
 
@@ -142,7 +177,7 @@ in the current repository.
         * the valid ticket prefixes,
         * the commit template.
 
-[Unreleased]: https://github.com/ejpcmac/git-z/compare/main...develop
+[0.2.2]: https://github.com/ejpcmac/git-z/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/ejpcmac/git-z/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ejpcmac/git-z/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ejpcmac/git-z/releases/tag/v0.1.0
