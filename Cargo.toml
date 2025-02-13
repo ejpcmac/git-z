@@ -102,7 +102,6 @@ case_sensitive_file_extension_comparisons = "allow"
 inline_always = "allow"
 linkedlist = "allow"
 missing_errors_doc = "allow"
-module_name_repetitions = "allow"
 must_use_candidate = "allow"
 
 # Enable many restrictions.
