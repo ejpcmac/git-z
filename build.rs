@@ -94,14 +94,14 @@ fn maybe_revision_from_git(cargo_version: &str) -> io::Result<Option<String>> {
     }
 }
 
-/// Returns the result of `git describe --always --dirty=-modified`.
+/// Returns the result of `git describe --tags --always --dirty=-modified`.
 #[expect(
     clippy::missing_panics_doc,
     reason = "the unwrap in the function cannot actually panic on modern systems"
 )]
 fn git_describe() -> io::Result<Option<String>> {
     let output = Command::new("git")
-        .args(["describe", "--always", "--dirty=-modified"])
+        .args(["describe", "--tags", "--always", "--dirty=-modified"])
         .output()?;
 
     #[expect(clippy::unwrap_used, reason = "non-UTF-8 outputs are obsolete")]
