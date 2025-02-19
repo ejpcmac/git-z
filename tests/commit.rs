@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2024-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
