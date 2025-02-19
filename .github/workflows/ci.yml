@@ -97,6 +97,21 @@ jobs:
         if: matrix.system == 'x86_64-windows'
         run: cargo xtask check build
 
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+      - name: Check the documentation
+        run: nix develop .#ci -c cargo xtask check doc
+
   test:
     name: Tests
     runs-on: ${{ matrix.runner }}
