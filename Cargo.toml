@@ -42,7 +42,7 @@ unstable-pre-commit = ["dep:is_executable"]
 askama = "0.12"
 clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
-colored = "2"
+colored = "3"
 exitcode = "1"
 eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
