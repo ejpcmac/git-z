@@ -86,9 +86,9 @@ up a `flake.nix` like this:
 If you are a **Debian** user—or of derivatives like **Ubuntu**—, you can install
 `git-z` by running:
 
-    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.2/git-z_0.2.2-1_amd64.deb
+    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.3/git-z_0.2.3-1_amd64.deb
     sudo apt update
-    sudo apt install ./git-z_0.2.2-1_amd64.deb
+    sudo apt install ./git-z_0.2.3-1_amd64.deb
 
 ### Installation from the MSI package
 
