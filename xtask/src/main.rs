@@ -40,16 +40,11 @@ impl Context {
 }
 
 fn main() {
-    let mut args = env::args();
-    let _ = args.next();
+    let mut args = env::args().skip(1);
 
-    if let Some(command) = args.next().as_deref() {
-        match command {
-            "check" => check(args.next().as_deref()),
-            _ => usage(),
-        }
-    } else {
-        usage();
+    match args.next().as_deref() {
+        Some("check") => check(args.next().as_deref()),
+        _ => usage(),
     }
 }
 
@@ -66,23 +61,24 @@ fn usage() {
 fn check(subcommand: Option<&str>) {
     let mut ctx = Context::new();
 
-    if let Some(check) = subcommand {
-        match check {
-            "commits" => check_commits(&mut ctx),
-            "format" => check_format(&mut ctx),
-            "build" => build(&mut ctx),
-            "test" => test(&mut ctx),
-            "unused-deps" => check_unused_deps(&mut ctx),
-            "packages" => check_packages(&mut ctx),
-            _ => check_usage(),
+    match subcommand {
+        None => {
+            check_commits(&mut ctx);
+            check_format(&mut ctx);
+            build(&mut ctx);
+            check_doc(&mut ctx);
+            test(&mut ctx);
+            check_unused_deps(&mut ctx);
+            check_packages(&mut ctx);
         }
-    } else {
-        check_commits(&mut ctx);
-        check_format(&mut ctx);
-        build(&mut ctx);
-        test(&mut ctx);
-        check_unused_deps(&mut ctx);
-        check_packages(&mut ctx);
+        Some("commits") => check_commits(&mut ctx),
+        Some("format") => check_format(&mut ctx),
+        Some("build") => build(&mut ctx),
+        Some("doc") => check_doc(&mut ctx),
+        Some("test") => test(&mut ctx),
+        Some("unused-deps") => check_unused_deps(&mut ctx),
+        Some("packages") => check_packages(&mut ctx),
+        _ => check_usage(),
     }
 
     check_result(&ctx);
@@ -90,9 +86,7 @@ fn check(subcommand: Option<&str>) {
 
 fn check_usage() {
     let name = env::args().next().unwrap();
-    eprintln!(
-        "usage: {name} check [commits|format|build|test|unused-deps|packages]"
-    );
+    eprintln!("usage: {name} check [commits|format|build|doc|test|unused-deps|packages]");
     process::exit(1);
 }
 
@@ -196,6 +190,16 @@ fn build(ctx: &mut Context) {
     );
 }
 
+fn check_doc(ctx: &mut Context) {
+    ctx.sh.set_var("RUSTDOCFLAGS", "-D warnings");
+
+    action!(
+        ctx,
+        "Checking that the documentation builds without warnings",
+        "cargo hack doc --workspace  --exclude xtask --feature-powerset --keep-going --no-deps --document-private-items"
+    );
+}
+
 fn test(ctx: &mut Context) {
     action!(
         ctx,
@@ -205,7 +209,7 @@ fn test(ctx: &mut Context) {
         ),
         step!(
             "Running the tests for all packages with all feature combinations",
-            "cargo hack nextest run --workspace --exclude xtask --feature-powerset --keep-going",
+            "cargo hack nextest run --workspace --exclude xtask --feature-powerset --keep-going --no-tests=warn",
         ),
         // step!(
         //     "Running the doctests for all packages with all feature combinations",
