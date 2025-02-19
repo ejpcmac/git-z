@@ -8,7 +8,20 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.3] - 2025-02-19
 
-* No changes compared to the previous version.
+### Changed
+
+* [`git z commit`] Allow up to 60 characters in the description (was 50)
+    ([#49]).
+* [Cargo] Update the dependencies.
+* [Rust] Update from 1.83.0 to 1.84.1.
+
+### Fixed
+
+* [CLI] Do not include the Git hash when running `git z -V` with a release
+    binary built by the CI ([#38]).
+
+[#38]: https://github.com/ejpcmac/git-z/issues/38
+[#49]: https://github.com/ejpcmac/git-z/issues/49
 
 ## [0.2.2] - 2024-12-08
 
@@ -24,10 +37,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 * [`git z commit`] Do not reuse an outdated commit message after the
     `pre-commit` hook has failed ([#47]).
-* [CLI] Do not include the Git hash when running `git z -V` with a release
-    binary built by the CI ([#38]).
 
-[#38]: https://github.com/ejpcmac/git-z/issues/38
 [#39]: https://github.com/ejpcmac/git-z/issues/39
 [#41]: https://github.com/ejpcmac/git-z/issues/41
 [#47]: https://github.com/ejpcmac/git-z/issues/47
