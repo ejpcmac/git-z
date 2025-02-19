@@ -49,7 +49,7 @@ indexmap = { version = "2", features = ["serde"] }
 indoc = "2"
 inquire = "0.7"
 is_executable = { version = "1", optional = true }
-itertools = "0.13"
+itertools = "0.14"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
