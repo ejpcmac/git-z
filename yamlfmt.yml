@@ -1,9 +1,0 @@
-continue_on_error: true
-gitignore_excludes: true
-
-formatter:
-  indent: 2
-  line_ending: lf
-  retain_line_breaks_single: true
-  max_line_length: 80
-  trim_trailing_whitespace: true
