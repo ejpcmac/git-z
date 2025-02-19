@@ -392,10 +392,10 @@ mod wizard {
         process.exp_string("Press ESC or leave empty to omit the scope.")?;
         process.send_line("")?;
 
-        // Asks for a short description within the 5-50 characters limit.
+        // Asks for a short description within the 5-60 characters limit.
         process.exp_string("Short description")?;
         process.exp_string(
-            "describe your change with a short description (5-50 characters)",
+            "describe your change with a short description (5-60 characters)",
         )?;
         process.send_line("test description")?;
 
@@ -630,7 +630,7 @@ mod wizard {
 
         process.exp_string("Short description")?;
         process.exp_string(
-            "describe your change with a short description (5-50 characters)",
+            "describe your change with a short description (5-60 characters)",
         )?;
         process.exp_string(
             "You will be able to add a long description to your commit in an \
@@ -641,7 +641,7 @@ mod wizard {
     }
 
     #[test]
-    fn accepts_a_description_between_5_and_50_characters() -> Result<()> {
+    fn accepts_a_description_that_is_5_character_long() -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
 
         let mut process =
@@ -651,7 +651,27 @@ mod wizard {
         fill_scope(&mut process)?;
 
         process.exp_string("Short description")?;
-        process.send_line("test description")?;
+        process.send_line("*****")?;
+
+        process.exp_string("BREAKING CHANGE")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn accepts_a_description_that_is_60_character_long() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+
+        process.exp_string("Short description")?;
+        process.send_line(
+            "************************************************************",
+        )?;
 
         process.exp_string("BREAKING CHANGE")?;
 
@@ -679,7 +699,7 @@ mod wizard {
     }
 
     #[test]
-    fn refuses_a_description_longer_than_50_characters() -> Result<()> {
+    fn refuses_a_description_longer_than_60_characters() -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
 
         let mut process =
@@ -689,11 +709,12 @@ mod wizard {
         fill_scope(&mut process)?;
 
         process.exp_string("Short description")?;
-        process
-            .send_line("***************************************************")?;
+        process.send_line(
+            "*************************************************************",
+        )?;
 
         process.exp_string(
-            "The description must not be longer than 50 characters",
+            "The description must not be longer than 60 characters",
         )?;
         assert!(process.exp_string("BREAKING CHANGE").is_err());
 
