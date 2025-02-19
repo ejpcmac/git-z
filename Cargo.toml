@@ -1,6 +1,6 @@
 [package]
 name = "git-z"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
 categories = ["command-line-utilities", "development-tools"]
 edition = "2021"
@@ -42,14 +42,14 @@ unstable-pre-commit = ["dep:is_executable"]
 askama = "0.12"
 clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
-colored = "2"
+colored = "3"
 exitcode = "1"
 eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
 indoc = "2"
 inquire = "0.7"
 is_executable = { version = "1", optional = true }
-itertools = "0.13"
+itertools = "0.14"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 tera = "1"
@@ -102,7 +102,6 @@ case_sensitive_file_extension_comparisons = "allow"
 inline_always = "allow"
 linkedlist = "allow"
 missing_errors_doc = "allow"
-module_name_repetitions = "allow"
 must_use_candidate = "allow"
 
 # Enable many restrictions.

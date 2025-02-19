@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -397,7 +397,7 @@ fn ask_scope(
 /// Asks the user for a commit description.
 fn ask_description(cache: &mut CommitCache) -> Result<String> {
     let placeholder =
-        "describe your change with a short description (5-50 characters)";
+        "describe your change with a short description (5-60 characters)";
     let message = "You will be able to add a long description to your \
         commit in an editor later.";
 
@@ -578,9 +578,9 @@ fn validate_description(
         Ok(Validation::Invalid(
             "The description must be longer than 5 characters".into(),
         ))
-    } else if description.len() > 50 {
+    } else if description.len() > 60 {
         Ok(Validation::Invalid(
-            "The description must not be longer than 50 characters".into(),
+            "The description must not be longer than 60 characters".into(),
         ))
     } else if description.chars().next().unwrap().is_uppercase() {
         Ok(Validation::Invalid(
