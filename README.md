@@ -108,7 +108,7 @@ page](https://github.com/ejpcmac/git-z/releases/latest). Just rename it to
 <summary>Click here for a detailed walkthrough for <strong>Linux</strong> and <strong>macOS</strong></summary>
 
 1. Download the executable from [the release
- page](https://github.com/ejpcmac/git-z/releases/latest).
+    page](https://github.com/ejpcmac/git-z/releases/latest).
 
 2. Move the file to a folder of you choice, rename it and make it executable.
 
