@@ -104,6 +104,51 @@ you can download a statically-linked executable on [the release
 page](https://github.com/ejpcmac/git-z/releases/latest). Just rename it to
 `git-z`—or `git-z.exe` on Windows—and put it somewhere in your `PATH`.
 
+<details>
+<summary>
+  Click here for a detailed walkthrough for <strong>Linux</strong> and
+  <strong>macOS</strong>.
+</summary>
+
+1. Download the executable from [the release
+    page](https://github.com/ejpcmac/git-z/releases/latest).
+
+2. Move the file to a folder of you choice, rename it and make it executable.
+
+    ```sh
+    # Create a local directory for manually installed executable files.
+    mkdir -p ~/.local/bin
+
+    # Move the executable to the right directory and renane it to `git-z`.
+    cd downloads
+    mv git-z-0.2.3-aarch64-apple-darwin ~/.local/bin/git-z
+
+    # Don’t forget to make "git-z" executable.
+    chmod +x ~/.local/bin/git-z
+    ```
+
+3. Ensure the folder in which you moved the file is referenced in your PATH.
+
+    ```sh
+    # Inside .bashrc, .zshrc or whatever shell config.
+    PATH=$PATH:$HOME/.local/bin
+    ```
+
+4. On **macOS**, you may be facing a warning while trying to run git-z.
+
+    Then, you have to remove the quarantine attribute from `git-z` using the
+    `xattr` command in Terminal.
+
+    ```sh
+    # Remove the quarantine attribute from the `git-z` executable.
+    xattr -d com.apple.quarantine ~/.local/bin/git-z
+    ```
+
+    There is also a graphical way to do it: you can refer to your system
+    documentation.
+
+</details>
+
 ### Installation with Cargo
 
 If you are a **Rust programmer**, you can install `git-z` by running:
