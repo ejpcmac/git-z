@@ -8,7 +8,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-* No changes compared to the previous version.
+### Changed
+
+* [`git z commit`] Adapt the size of the page in selection prompts to the size
+    of the terminal.
 
 ## [0.2.3] - 2025-02-19
 

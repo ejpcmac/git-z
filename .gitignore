@@ -12,6 +12,12 @@
 /result
 
 ##
+## OS artifacts
+##
+
+.Trash-*/
+
+##
 ## Editor artifacts
 ##
 
