@@ -28,7 +28,7 @@ use tera::{Context, Tera};
 use thiserror::Error;
 
 use crate::{
-    command::helpers::load_config,
+    command::helpers::{load_config, page_size},
     commit_cache::{CommitCache, WizardState},
     config::{Config, Scopes, Ticket},
     tracing::LogResult as _,
@@ -44,9 +44,6 @@ use is_executable::IsExecutable as _;
 
 #[cfg(feature = "unstable-pre-commit")]
 use crate::warning;
-
-/// The size of a page in the terminal.
-const PAGE_SIZE: usize = 15;
 
 /// The commit command.
 #[derive(Debug, Parser)]
@@ -343,7 +340,7 @@ fn ask_type(config: &Config, cache: &mut CommitCache) -> Result<String> {
 
     let choice = Select::new("Commit type", format_types(&config.types))
         .with_starting_cursor(cursor)
-        .with_page_size(PAGE_SIZE)
+        .with_page_size(page_size(1))
         .with_formatter(&|choice| remove_type_description(choice.value))
         .prompt()
         .log_err()?;
@@ -382,7 +379,7 @@ fn ask_scope(
             Select::new("Scope", list.clone())
                 .with_starting_cursor(cursor)
                 .with_help_message(help_message)
-                .with_page_size(PAGE_SIZE)
+                .with_page_size(page_size(2))
                 .prompt_skippable()
                 .log_err()?
         }
