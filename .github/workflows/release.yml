@@ -136,7 +136,7 @@ jobs:
           name: package-msi
           path: target/wix/*.msi
 
-  publish:
+  cargo-publish:
     name: Publish on crates.io
     needs:
       - version
@@ -163,7 +163,7 @@ jobs:
       - build-bin
       - build-deb
       - build-msi
-      - publish
+      - cargo-publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
