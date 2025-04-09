@@ -7,10 +7,6 @@ on:
     tags:
       - v*
 
-# NOTE: This is needed to create releases.
-permissions:
-  contents: write
-
 env:
   CARGO_TERM_COLOR: always
   CLICOLOR_FORCE: 1
@@ -169,6 +165,8 @@ jobs:
       - build-msi
       - publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Clone the repository
         uses: actions/checkout@v4
