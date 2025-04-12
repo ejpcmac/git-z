@@ -80,6 +80,13 @@ up a `flake.nix` like this:
 
 </details>
 
+### Installation with Homebrew
+
+If you are a **brew** user on **Linux** or **macOS**, you can install
+`git-z` by running:
+
+    brew install ejpcmac/repo/git-z
+
 ### Installation from the Debian package
 
 If you are a **Debian** user—or of derivatives like **Ubuntu**—, you can install
