@@ -1,8 +1,7 @@
 # git-z
 
-[
-  ![Crates.io](https://img.shields.io/crates/v/git-z)
-](https://crates.io/crates/git-z)
+[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/ejpcmac/git-z/badge)](https://flakehub.com/flake/ejpcmac/git-z)
+[![Crates.io](https://img.shields.io/crates/v/git-z)](https://crates.io/crates/git-z)
 [![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
 [![Conventional
 Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)
@@ -53,7 +52,7 @@ up a `flake.nix` like this:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    git-z.url = "github:ejpcmac/git-z";
+    git-z.url = "https://flakehub.com/f/ejpcmac/git-z/*";
   };
 
   outputs = { flake-parts, ... }@inputs:
