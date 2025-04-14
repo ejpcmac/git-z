@@ -11,7 +11,9 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 * [`git z commit`] Adapt the size of the page in selection prompts to the size
-    of the terminal.
+    of the terminal ([#45]).
+
+[#45]: https://github.com/ejpcmac/git-z/issues/45
 
 ## [0.2.3] - 2025-02-19
 
