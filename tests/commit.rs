@@ -1007,6 +1007,88 @@ mod wizard {
 
         Ok(())
     }
+
+    #[test]
+    fn gets_the_ticket_number_from_topic_passed_in_cli() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.arg("--topic=42-test-topic");
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#42")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn gets_the_ticket_number_from_topic_passed_in_cli_before_the_branch(
+    ) -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        set_git_branch(&temp_dir, "feature/42-test-branch")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.arg("--topic=99-test-topic");
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#99")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn gets_the_ticket_number_from_cache_before_cli_and_branch() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_full.toml")?;
+        set_git_branch(&temp_dir, "feature/1-test-branch")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{COMMIT_CACHE_VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+                description = "flames everywhere"
+                breaking_change = "It ain't heaven anymore."
+                ticket = "#3"
+            "##},
+        )?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.arg("--topic=2-test-topic");
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_answers(&mut process, "y")?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#3")?; // Is from the cache.
+
+        Ok(())
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

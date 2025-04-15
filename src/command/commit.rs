@@ -48,6 +48,9 @@ use crate::warning;
 /// The commit command.
 #[derive(Debug, Parser)]
 pub struct Commit {
+    /// Set the topic to be used for the ticket number instead of the branch.
+    #[arg(long)]
+    topic: Option<String>,
     /// Print the commit message instead of calling `git commit`.
     #[arg(long)]
     print_only: bool,
@@ -82,6 +85,12 @@ pub enum CommitError {
     },
 }
 
+/// Wizard options from the CLI.
+struct WizardOptions<'a> {
+    /// The topic to use for the commit.
+    topic: Option<&'a str>,
+}
+
 /// A conventional commit message.
 #[derive(Debug, Serialize)]
 struct CommitMessage {
@@ -111,7 +120,12 @@ impl super::Command for Commit {
             run_pre_commit_hook()?;
         }
 
-        let commit_message = make_commit_message(&config)?;
+        let commit_message = make_commit_message(
+            &config,
+            &WizardOptions {
+                topic: self.topic.as_deref(),
+            },
+        )?;
 
         if self.print_only {
             tracing::debug!("printing the commit message");
@@ -147,13 +161,17 @@ impl super::Command for Commit {
 impl CommitMessage {
     /// Runs the wizard to build a commit message from user input.
     #[tracing::instrument(level = "trace", skip_all)]
-    fn run_wizard(config: &Config, cache: &mut CommitCache) -> Result<Self> {
+    fn run_wizard(
+        config: &Config,
+        options: &WizardOptions<'_>,
+        cache: &mut CommitCache,
+    ) -> Result<Self> {
         let commit_message = Self {
             r#type: ask_type(config, cache)?,
             scope: ask_scope(config, cache)?,
             description: ask_description(cache)?,
             breaking_change: ask_breaking_change(cache)?,
-            ticket: ask_ticket(config, cache)?,
+            ticket: ask_ticket(config, options.topic, cache)?,
         };
 
         // NOTE: Marking the wizard as completed allows to skip the wizard on
@@ -220,12 +238,15 @@ fn run_pre_commit_hook() -> Result<()> {
 
 /// Makes a commit message.
 #[tracing::instrument(level = "trace", skip_all)]
-fn make_commit_message(config: &Config) -> Result<String> {
+fn make_commit_message(
+    config: &Config,
+    options: &WizardOptions<'_>,
+) -> Result<String> {
     let mut cache = CommitCache::load()?;
 
     match cache.wizard_state {
         WizardState::NotStarted | WizardState::Ongoing => {
-            make_message_from_wizard(config, &mut cache)
+            make_message_from_wizard(config, options, &mut cache)
         }
         WizardState::Completed => {
             tracing::debug!(
@@ -245,12 +266,12 @@ fn make_commit_message(config: &Config) -> Result<String> {
                 } else {
                     tracing::debug!("not reusing the commit message");
                     cache.reset()?;
-                    make_message_from_wizard(config, &mut cache)
+                    make_message_from_wizard(config, options, &mut cache)
                 }
             } else {
                 tracing::debug!("no valid commit message, rerun the wizard");
                 cache.mark_wizard_as_ongoing()?;
-                make_message_from_wizard(config, &mut cache)
+                make_message_from_wizard(config, options, &mut cache)
             }
         }
     }
@@ -260,6 +281,7 @@ fn make_commit_message(config: &Config) -> Result<String> {
 #[tracing::instrument(level = "trace", skip_all)]
 fn make_message_from_wizard(
     config: &Config,
+    options: &WizardOptions<'_>,
     cache: &mut CommitCache,
 ) -> Result<String> {
     let tera = build_and_check_template(config)?;
@@ -278,7 +300,7 @@ fn make_message_from_wizard(
         }
     }
 
-    let commit_message = CommitMessage::run_wizard(config, cache)?;
+    let commit_message = CommitMessage::run_wizard(config, options, cache)?;
     let context = Context::from_serialize(commit_message).log_err()?;
     let message = tera.render("templates.commit", &context).log_err()?;
     tracing::debug!(rendered_message = ?message,);
@@ -433,6 +455,7 @@ fn ask_breaking_change(cache: &mut CommitCache) -> Result<Option<String>> {
 /// Optionally asks the user for a ticket reference.
 fn ask_ticket(
     config: &Config,
+    topic: Option<&str>,
     cache: &mut CommitCache,
 ) -> Result<Option<String>> {
     let ticket = match &config.ticket {
@@ -440,10 +463,13 @@ fn ask_ticket(
         Some(Ticket { required, prefixes }) => {
             let placeholder = ticket_placeholder(prefixes)?;
             let cached_answer = cache.ticket();
-            let ticket_from_branch = get_ticket_from_branch(prefixes)?;
+
+            let branch = get_current_branch()?;
+            let topic = topic.unwrap_or(&branch);
+            let ticket_from_topic = extract_ticket_from_topic(topic, prefixes)?;
 
             let initial_value = cached_answer.unwrap_or_else(|| {
-                ticket_from_branch.as_deref().unwrap_or_default()
+                ticket_from_topic.as_deref().unwrap_or_default()
             });
 
             let prompt = Text::new("Issue / ticket number")
@@ -470,9 +496,12 @@ fn ask_ticket(
     Ok(ticket)
 }
 
-/// Tries to extract a ticket number from the name of the current Git branch.
+/// Tries to extract a ticket number from the given topic.
 #[tracing::instrument(level = "trace")]
-fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
+fn extract_ticket_from_topic(
+    topic: &str,
+    prefixes: &[String],
+) -> Result<Option<String>> {
     // Replace `#` with an empty string in the regex, as we want to match
     // branches like `feature/23-name` when `#` is a valid prefix like for
     // GitHub or GitLab issues.
@@ -481,7 +510,7 @@ fn get_ticket_from_branch(prefixes: &[String]) -> Result<Option<String>> {
     let ticket = Regex::new(&regex)
         .wrap_err("Impossible to build a regex from the list of prefixes")
         .log_err()?
-        .captures(&get_current_branch()?)
+        .captures(topic)
         .map(|captures| captures[0].to_owned())
         .map(|ticket| {
             #[expect(
