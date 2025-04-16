@@ -23,6 +23,7 @@ mod update;
 use std::error::Error as _;
 
 use clap::{ArgAction, Parser, Subcommand};
+use commit::backend::CustomCommandBackendError;
 use eyre::{Report, Result};
 use inquire::InquireError;
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -153,6 +154,10 @@ fn handle_errors(error: Report) -> Result<()> {
         error.downcast_ref::<updater::LoadError>()
     {
         handle_from_toml_error(error)
+    } else if let Some(error) =
+        error.downcast_ref::<CustomCommandBackendError>()
+    {
+        handle_custom_command_backend_error(error)
     } else if let Some(error) = error.downcast_ref::<InitError>() {
         handle_init_error(error)
     } else if let Some(error) = error.downcast_ref::<CommitError>() {
@@ -234,6 +239,19 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     }
 
     ErrorHandling::Exit(exitcode::CONFIG)
+}
+
+/// Prints proper error messages for `git z commit` backend config errors.
+fn handle_custom_command_backend_error(
+    error: &CustomCommandBackendError,
+) -> ErrorHandling {
+    match error {
+        CustomCommandBackendError::Syntax { parse_error, .. } => {
+            error!("{error}.");
+            hint!("Hint: {parse_error}.");
+            ErrorHandling::Exit(exitcode::USAGE)
+        }
+    }
 }
 
 /// Prints proper error messages for `git z init` usage errors.

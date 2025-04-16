@@ -19,7 +19,7 @@ pub mod backend;
 
 use std::{fs, path::PathBuf, process::Command};
 
-use clap::Parser;
+use clap::{builder::NonEmptyStringValueParser, Parser};
 use eyre::{eyre, Context as _, Result};
 use indexmap::IndexMap;
 use inquire::{validator::Validation, Confirm, CustomUserError, Select, Text};
@@ -36,7 +36,9 @@ use crate::{
     tracing::LogResult as _,
 };
 
-use self::backend::{Backend, BackendError, GitBackend, PrintBackend};
+use self::backend::{
+    Backend, BackendError, CustomCommandBackend, GitBackend, PrintBackend,
+};
 use super::helpers::ensure_in_git_worktree;
 
 #[cfg(feature = "unstable-pre-commit")]
@@ -54,8 +56,15 @@ pub struct Commit {
     /// Set the topic to be used for the ticket number instead of the branch.
     #[arg(long)]
     topic: Option<String>,
+    /// Use a custom command instead of `git commit -em "$message"`.
+    #[arg(
+        long,
+        group = "backend",
+        value_parser = NonEmptyStringValueParser::new(),
+    )]
+    command: Option<String>,
     /// Print the commit message instead of calling `git commit`.
-    #[arg(long)]
+    #[arg(long, group = "backend")]
     print_only: bool,
     /// Do not run the pre-commit hook.
     #[cfg(feature = "unstable-pre-commit")]
@@ -118,6 +127,9 @@ impl super::Command for Commit {
         let backend: Box<dyn Backend> = if self.print_only {
             tracing::info!("selecting the Print backend");
             Box::new(PrintBackend)
+        } else if let Some(command) = &self.command {
+            tracing::info!("selecting the custom command backend");
+            Box::new(CustomCommandBackend::new(command)?)
         } else {
             tracing::info!("selecting the Git backend");
             Box::new(GitBackend::new(&self.extra_args))

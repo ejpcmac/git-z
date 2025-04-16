@@ -97,6 +97,102 @@ impl Backend for GitBackend {
     }
 }
 
+/// A backend using a user-provided custom command.
+pub struct CustomCommandBackend {
+    /// The command to run.
+    command: String,
+    /// Arguments to the command.
+    args: Vec<String>,
+}
+
+#[derive(Debug, Error)]
+/// Errors that can occur when building a custom command backend.
+pub enum CustomCommandBackendError {
+    /// The backend command contains a syntax error.
+    #[error("Failed to parse `{command}`")]
+    Syntax {
+        /// The command that cannot be parsed.
+        command: String,
+        /// The parsing error.
+        parse_error: shell_words::ParseError,
+    },
+}
+
+impl CustomCommandBackend {
+    /// Creates a custom command backend.
+    #[expect(
+        clippy::unwrap_in_result,
+        reason = "The expect in the function cannot actually panic."
+    )]
+    #[tracing::instrument(
+        name = "new_custom_command_backend",
+        level = "trace",
+        skip_all
+    )]
+    pub fn new(command: &str) -> Result<Self, CustomCommandBackendError> {
+        let command_line: Vec<_> = shell_words::split(command)
+            .map_err(|parse_error| CustomCommandBackendError::Syntax {
+                command: command.to_owned(),
+                parse_error,
+            })
+            .log_err()?;
+
+        #[expect(
+            clippy::expect_used,
+            reason = "clap ensures `command` is non empty"
+        )]
+        let (command, args) =
+            command_line.split_first().expect("the command is empty");
+
+        Ok(Self {
+            command: command.to_owned(),
+            args: args.to_owned(),
+        })
+    }
+}
+
+impl Backend for CustomCommandBackend {
+    #[tracing::instrument(
+        name = "custom_command_backend",
+        level = "trace",
+        skip_all
+    )]
+    fn call(&self, commit_message: &str) -> Result<(), BackendError> {
+        let mut custom_command = Command::new(&self.command);
+        custom_command.args(embed_message_in_args(&self.args, commit_message));
+
+        tracing::info!(?custom_command, "calling a custom command");
+
+        let status = custom_command
+            .status()
+            .map_err(|os_error| BackendError::CannotRun {
+                command: format!("{} {}", &self.command, self.args.join(" "))
+                    .trim()
+                    .to_owned(),
+                os_error,
+            })
+            .log_err()?;
+
+        tracing::debug!(?status);
+
+        if !status.success() {
+            Err(BackendError::ExecutionError {
+                status_code: status.code(),
+            })
+            .log_err()?;
+        }
+
+        Ok(())
+    }
+}
+
+/// Replaces `$message` with the actual commit message in `args`.
+fn embed_message_in_args(args: &[String], commit_message: &str) -> Vec<String> {
+    args.iter()
+        .map(|arg| arg.replace("$message", commit_message))
+        .collect()
+}
+
 /// A backend printing the message to the terminal.
 pub struct PrintBackend;
 

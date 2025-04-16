@@ -2153,6 +2153,47 @@ mod commit {
     }
 
     #[test]
+    fn calls_custom_command_when_specified_on_the_cli() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"echo 'message: $message'\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("message: dummy template message")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_call_git_when_using_a_custom_command() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"echo 'message: $message'\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        assert!(process.exp_string("fake commit").is_err());
+
+        Ok(())
+    }
+
+    #[test]
     fn prints_commit_message_when_print_only() -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_config(&temp_dir, "latest_template-dummy.toml")?;
@@ -2401,6 +2442,99 @@ mod usage_errors {
 
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 21)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn prints_an_error_if_the_custom_command_is_empty() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", ""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string(
+            "error: a value is required for '--command <COMMAND>'",
+        )?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prints_an_error_if_the_custom_command_has_invalid_syntax() -> Result<()>
+    {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "'"]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string("Error: failed to parse `'`.")?;
+        process.exp_string("Hint: missing closing quote.")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prints_an_error_if_the_custom_command_cannot_be_run() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "unknown-command"]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Error: failed to run `unknown-command`")?;
+        process.exp_string("The OS reports: No such file or directory")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_print_an_error_if_the_custom_command_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"exit 21\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        assert!(process.exp_string("Git has returned an error").is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn propagates_the_status_code_if_the_custom_command_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"exit 21\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;

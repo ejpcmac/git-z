@@ -13,6 +13,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 * [`git z commit`] Add a `--topic <TOPIC>` option to pass the name of the
     current topic via the command line. This can be used to integrate `git-z`
     with other Version Control Systems such as Jujutsu. ([#56]).
+* [`git z commit`] Add a `--command <COMMAND>` option to pass a custom command
+    to call instead of `git commit -em "$message"`. This can be used to
+    integrate `git-z` with other Version Control Systems such as Jujutsu.
+    ([#56]).
 
 ### Changed
 
