@@ -15,6 +15,8 @@
 
 //! The `commit` subcommand.
 
+pub mod backend;
+
 use std::{fs, path::PathBuf, process::Command};
 
 use clap::Parser;
@@ -34,6 +36,7 @@ use crate::{
     tracing::LogResult as _,
 };
 
+use self::backend::{Backend, BackendError, GitBackend, PrintBackend};
 use super::helpers::ensure_in_git_worktree;
 
 #[cfg(feature = "unstable-pre-commit")]
@@ -77,12 +80,9 @@ pub enum CommitError {
     /// The commit template is invalid.
     #[error("Failed to parse the commit template")]
     Template(#[source] tera::Error),
-    /// Git has returned an error.
-    #[error("Git has returned an error")]
-    Git {
-        /// The status code returned by Git.
-        status_code: Option<i32>,
-    },
+    /// The backend has returned an error.
+    #[error("Failed to run the backend")]
+    Backend(#[from] BackendError),
 }
 
 /// Wizard options from the CLI.
@@ -115,6 +115,14 @@ impl super::Command for Commit {
 
         let config = load_config()?;
 
+        let backend: Box<dyn Backend> = if self.print_only {
+            tracing::info!("selecting the Print backend");
+            Box::new(PrintBackend)
+        } else {
+            tracing::info!("selecting the Git backend");
+            Box::new(GitBackend::new(&self.extra_args))
+        };
+
         #[cfg(feature = "unstable-pre-commit")]
         if !self.no_verify {
             run_pre_commit_hook()?;
@@ -127,30 +135,9 @@ impl super::Command for Commit {
             },
         )?;
 
-        if self.print_only {
-            tracing::debug!("printing the commit message");
-            println!("{commit_message}");
-        } else {
-            let mut git_commit = Command::new("git");
-
-            git_commit.arg("commit");
-            #[cfg(feature = "unstable-pre-commit")]
-            git_commit.arg("--no-verify");
-            git_commit
-                .args(&self.extra_args)
-                .args(["-em", &commit_message]);
-
-            tracing::debug!(?git_commit, "calling git commit");
-            let status = git_commit.status().log_err()?;
-            tracing::debug!(?status);
-
-            if !status.success() {
-                Err(CommitError::Git {
-                    status_code: status.code(),
-                })
-                .log_err()?;
-            }
-        }
+        backend
+            .call(&commit_message)
+            .map_err(CommitError::Backend)?;
 
         tracing::info!("commit success!");
         CommitCache::discard()?;

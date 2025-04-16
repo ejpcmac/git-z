@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ use inquire::InquireError;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use self::{
-    commit::{Commit, CommitError},
+    commit::{backend::BackendError, Commit, CommitError},
     helpers::NotInGitWorktree,
     init::{Init, InitError},
     update::{Update, UpdateError},
@@ -263,8 +263,8 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
             // NOTE: Use 1 as exit code to maintain the same behaviour as Git.
             ErrorHandling::Exit(1)
         }
-        CommitError::Git { status_code } => {
-            ErrorHandling::Exit(status_code.unwrap_or(1_i32))
+        CommitError::Backend(backend_error) => {
+            handle_commit_backend_error(backend_error)
         }
         CommitError::Template(tera_error) => {
             error!("{tera_error} from the configuration.");
@@ -274,6 +274,22 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
             }
 
             ErrorHandling::Exit(exitcode::CONFIG)
+        }
+    }
+}
+
+/// Prints proper error messages for `git z commit` backend errors.
+fn handle_commit_backend_error(error: &BackendError) -> ErrorHandling {
+    match error {
+        BackendError::CannotRun {
+            os_error: source, ..
+        } => {
+            error!("{error}.");
+            hint!("The OS reports: {source}.");
+            ErrorHandling::Exit(exitcode::UNAVAILABLE)
+        }
+        BackendError::ExecutionError { status_code } => {
+            ErrorHandling::Exit(status_code.unwrap_or(1_i32))
         }
     }
 }
