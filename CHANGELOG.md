@@ -22,6 +22,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 * [`git z commit`] Adapt the size of the page in selection prompts to the size
     of the terminal ([#45]).
+* [`git z commit`] Ensure there are no more than two consecutive newlines in
+    commit messages.
 
 [#45]: https://github.com/ejpcmac/git-z/issues/45
 [#56]: https://github.com/ejpcmac/git-z/issues/56

@@ -243,9 +243,9 @@ fn make_commit_message(
 ) -> Result<String> {
     let mut cache = CommitCache::load()?;
 
-    match cache.wizard_state {
+    let message = match cache.wizard_state {
         WizardState::NotStarted | WizardState::Ongoing => {
-            make_message_from_wizard(config, options, &mut cache)
+            make_message_from_wizard(config, options, &mut cache)?
         }
         WizardState::Completed => {
             tracing::debug!(
@@ -261,19 +261,21 @@ fn make_commit_message(
 
                 if do_reuse_message {
                     tracing::debug!("reusing the commit message");
-                    Ok(message)
+                    message
                 } else {
                     tracing::debug!("not reusing the commit message");
                     cache.reset()?;
-                    make_message_from_wizard(config, options, &mut cache)
+                    make_message_from_wizard(config, options, &mut cache)?
                 }
             } else {
                 tracing::debug!("no valid commit message, rerun the wizard");
                 cache.mark_wizard_as_ongoing()?;
-                make_message_from_wizard(config, options, &mut cache)
+                make_message_from_wizard(config, options, &mut cache)?
             }
         }
-    }
+    };
+
+    Ok(format_message(&message))
 }
 
 /// Makes a commit message by running the wizard.
@@ -726,4 +728,15 @@ fn git_dir() -> Result<PathBuf> {
 
     let git_dir = String::from_utf8(git_rev_parse.stdout).log_err()?;
     Ok(PathBuf::from(git_dir.trim()))
+}
+
+/// Formats the commit message.
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic."
+)]
+fn format_message(message: &str) -> String {
+    #[expect(clippy::unwrap_used, reason = "This regex is known to be valid.")]
+    let regex = Regex::new(r"\n{3,}").unwrap();
+    regex.replace_all(message, "\n\n").trim().to_owned()
 }

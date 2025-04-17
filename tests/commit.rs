@@ -1671,7 +1671,6 @@ mod commit_cache {
                 on multiple lines.
 
                 Footer: something.
-
             "},
         )?;
         install_commit_cache(
@@ -1700,8 +1699,8 @@ mod commit_cache {
                 This is a long description
                 on multiple lines.
 
-                Footer: something.
-            "},
+                Footer: something."
+            },
         );
 
         #[cfg(feature = "unstable-pre-commit")]
@@ -1713,8 +1712,8 @@ mod commit_cache {
                 This is a long description
                 on multiple lines.
 
-                Footer: something.
-            "},
+                Footer: something."
+            },
         );
 
         Ok(())
@@ -2050,12 +2049,12 @@ mod commit {
         process.exp_eof()?;
 
         #[cfg(not(feature = "unstable-pre-commit"))]
-        assert_git_commit(&temp_dir, "commit -em dummy template message\n");
+        assert_git_commit(&temp_dir, "commit -em dummy template message");
 
         #[cfg(feature = "unstable-pre-commit")]
         assert_git_commit(
             &temp_dir,
-            "commit --no-verify -em dummy template message\n",
+            "commit --no-verify -em dummy template message",
         );
 
         Ok(())
@@ -2098,8 +2097,8 @@ mod commit {
 
                 Refs: #21
 
-                BREAKING CHANGE: Nothing is like before.
-            "},
+                BREAKING CHANGE: Nothing is like before."
+            },
         );
 
         #[cfg(feature = "unstable-pre-commit")]
@@ -2112,8 +2111,8 @@ mod commit {
 
                 Refs: #21
 
-                BREAKING CHANGE: Nothing is like before.
-            "},
+                BREAKING CHANGE: Nothing is like before."
+            },
         );
 
         Ok(())
@@ -2140,13 +2139,13 @@ mod commit {
         #[cfg(not(feature = "unstable-pre-commit"))]
         assert_git_commit(
             &temp_dir,
-            "commit --extra --args -em dummy template message\n",
+            "commit --extra --args -em dummy template message",
         );
 
         #[cfg(feature = "unstable-pre-commit")]
         assert_git_commit(
             &temp_dir,
-            "commit --no-verify --extra --args -em dummy template message\n",
+            "commit --no-verify --extra --args -em dummy template message",
         );
 
         Ok(())
