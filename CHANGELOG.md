@@ -8,12 +8,25 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+* [`git z commit`] Add a `--topic <TOPIC>` option to pass the name of the
+    current topic via the command line. This can be used to integrate `git-z`
+    with other Version Control Systems such as Jujutsu. ([#56]).
+* [`git z commit`] Add a `--command <COMMAND>` option to pass a custom command
+    to call instead of `git commit -em "$message"`. This can be used to
+    integrate `git-z` with other Version Control Systems such as Jujutsu.
+    ([#56]).
+
 ### Changed
 
 * [`git z commit`] Adapt the size of the page in selection prompts to the size
     of the terminal ([#45]).
+* [`git z commit`] Ensure there are no more than two consecutive newlines in
+    commit messages.
 
 [#45]: https://github.com/ejpcmac/git-z/issues/45
+[#56]: https://github.com/ejpcmac/git-z/issues/56
 
 ## [0.2.3] - 2025-02-19
 

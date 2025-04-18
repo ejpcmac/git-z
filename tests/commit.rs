@@ -1007,6 +1007,88 @@ mod wizard {
 
         Ok(())
     }
+
+    #[test]
+    fn gets_the_ticket_number_from_topic_passed_in_cli() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.arg("--topic=42-test-topic");
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#42")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn gets_the_ticket_number_from_topic_passed_in_cli_before_the_branch(
+    ) -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_ticket-optional.toml")?;
+        set_git_branch(&temp_dir, "feature/42-test-branch")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.arg("--topic=99-test-topic");
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#99")?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn gets_the_ticket_number_from_cache_before_cli_and_branch() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_full.toml")?;
+        set_git_branch(&temp_dir, "feature/1-test-branch")?;
+        install_commit_cache(
+            &temp_dir,
+            &formatdoc! {r##"
+                version = "{COMMIT_CACHE_VERSION}"
+                wizard_state = "ongoing"
+
+                [wizard_answers]
+                type = "chore"
+                scope = "hell"
+                description = "flames everywhere"
+                breaking_change = "It ain't heaven anymore."
+                ticket = "#3"
+            "##},
+        )?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.arg("--topic=2-test-topic");
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_do_reuse_answers(&mut process, "y")?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("#3")?; // Is from the cache.
+
+        Ok(())
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1589,7 +1671,6 @@ mod commit_cache {
                 on multiple lines.
 
                 Footer: something.
-
             "},
         )?;
         install_commit_cache(
@@ -1618,8 +1699,8 @@ mod commit_cache {
                 This is a long description
                 on multiple lines.
 
-                Footer: something.
-            "},
+                Footer: something."
+            },
         );
 
         #[cfg(feature = "unstable-pre-commit")]
@@ -1631,8 +1712,8 @@ mod commit_cache {
                 This is a long description
                 on multiple lines.
 
-                Footer: something.
-            "},
+                Footer: something."
+            },
         );
 
         Ok(())
@@ -1968,12 +2049,12 @@ mod commit {
         process.exp_eof()?;
 
         #[cfg(not(feature = "unstable-pre-commit"))]
-        assert_git_commit(&temp_dir, "commit -em dummy template message\n");
+        assert_git_commit(&temp_dir, "commit -em dummy template message");
 
         #[cfg(feature = "unstable-pre-commit")]
         assert_git_commit(
             &temp_dir,
-            "commit --no-verify -em dummy template message\n",
+            "commit --no-verify -em dummy template message",
         );
 
         Ok(())
@@ -2016,8 +2097,8 @@ mod commit {
 
                 Refs: #21
 
-                BREAKING CHANGE: Nothing is like before.
-            "},
+                BREAKING CHANGE: Nothing is like before."
+            },
         );
 
         #[cfg(feature = "unstable-pre-commit")]
@@ -2030,8 +2111,8 @@ mod commit {
 
                 Refs: #21
 
-                BREAKING CHANGE: Nothing is like before.
-            "},
+                BREAKING CHANGE: Nothing is like before."
+            },
         );
 
         Ok(())
@@ -2058,14 +2139,55 @@ mod commit {
         #[cfg(not(feature = "unstable-pre-commit"))]
         assert_git_commit(
             &temp_dir,
-            "commit --extra --args -em dummy template message\n",
+            "commit --extra --args -em dummy template message",
         );
 
         #[cfg(feature = "unstable-pre-commit")]
         assert_git_commit(
             &temp_dir,
-            "commit --no-verify --extra --args -em dummy template message\n",
+            "commit --no-verify --extra --args -em dummy template message",
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn calls_custom_command_when_specified_on_the_cli() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"echo 'message: $message'\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("message: dummy template message")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_call_git_when_using_a_custom_command() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_template-dummy.toml")?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"echo 'message: $message'\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        assert!(process.exp_string("fake commit").is_err());
 
         Ok(())
     }
@@ -2319,6 +2441,99 @@ mod usage_errors {
 
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 21)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn prints_an_error_if_the_custom_command_is_empty() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", ""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string(
+            "error: a value is required for '--command <COMMAND>'",
+        )?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prints_an_error_if_the_custom_command_has_invalid_syntax() -> Result<()>
+    {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "'"]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        process.exp_string("Error: failed to parse `'`.")?;
+        process.exp_string("Hint: missing closing quote.")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn prints_an_error_if_the_custom_command_cannot_be_run() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "unknown-command"]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        process.exp_string("Error: failed to run `unknown-command`")?;
+        process.exp_string("The OS reports: No such file or directory")?;
+        process.exp_eof()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_print_an_error_if_the_custom_command_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"exit 21\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+        fill_scope(&mut process)?;
+        fill_description(&mut process)?;
+        fill_breaking_change(&mut process)?;
+
+        assert!(process.exp_string("Git has returned an error").is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn propagates_the_status_code_if_the_custom_command_fails() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+
+        let mut cmd = gitz_commit(&temp_dir, Git::Fake)?;
+        cmd.args(["--command", "sh -c \"exit 21\""]);
+
+        let mut process = spawn_command(cmd, TIMEOUT)?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;

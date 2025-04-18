@@ -52,6 +52,7 @@ is_executable = { version = "1", optional = true }
 itertools = "0.14"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
+shell-words = "1"
 tera = "1"
 terminal_size = "0.4"
 thiserror = "2"

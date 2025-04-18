@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,12 +23,13 @@ mod update;
 use std::error::Error as _;
 
 use clap::{ArgAction, Parser, Subcommand};
+use commit::backend::CustomCommandBackendError;
 use eyre::{Report, Result};
 use inquire::InquireError;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use self::{
-    commit::{Commit, CommitError},
+    commit::{backend::BackendError, Commit, CommitError},
     helpers::NotInGitWorktree,
     init::{Init, InitError},
     update::{Update, UpdateError},
@@ -153,6 +154,10 @@ fn handle_errors(error: Report) -> Result<()> {
         error.downcast_ref::<updater::LoadError>()
     {
         handle_from_toml_error(error)
+    } else if let Some(error) =
+        error.downcast_ref::<CustomCommandBackendError>()
+    {
+        handle_custom_command_backend_error(error)
     } else if let Some(error) = error.downcast_ref::<InitError>() {
         handle_init_error(error)
     } else if let Some(error) = error.downcast_ref::<CommitError>() {
@@ -236,6 +241,19 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     ErrorHandling::Exit(exitcode::CONFIG)
 }
 
+/// Prints proper error messages for `git z commit` backend config errors.
+fn handle_custom_command_backend_error(
+    error: &CustomCommandBackendError,
+) -> ErrorHandling {
+    match error {
+        CustomCommandBackendError::Syntax { parse_error, .. } => {
+            error!("{error}.");
+            hint!("Hint: {parse_error}.");
+            ErrorHandling::Exit(exitcode::USAGE)
+        }
+    }
+}
+
 /// Prints proper error messages for `git z init` usage errors.
 fn handle_init_error(error: &InitError) -> ErrorHandling {
     match error {
@@ -263,8 +281,8 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
             // NOTE: Use 1 as exit code to maintain the same behaviour as Git.
             ErrorHandling::Exit(1)
         }
-        CommitError::Git { status_code } => {
-            ErrorHandling::Exit(status_code.unwrap_or(1_i32))
+        CommitError::Backend(backend_error) => {
+            handle_commit_backend_error(backend_error)
         }
         CommitError::Template(tera_error) => {
             error!("{tera_error} from the configuration.");
@@ -274,6 +292,22 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
             }
 
             ErrorHandling::Exit(exitcode::CONFIG)
+        }
+    }
+}
+
+/// Prints proper error messages for `git z commit` backend errors.
+fn handle_commit_backend_error(error: &BackendError) -> ErrorHandling {
+    match error {
+        BackendError::CannotRun {
+            os_error: source, ..
+        } => {
+            error!("{error}.");
+            hint!("The OS reports: {source}.");
+            ErrorHandling::Exit(exitcode::UNAVAILABLE)
+        }
+        BackendError::ExecutionError { status_code } => {
+            ErrorHandling::Exit(status_code.unwrap_or(1_i32))
         }
     }
 }
