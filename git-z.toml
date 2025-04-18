@@ -80,6 +80,7 @@ list = [
     "editorconfig",
     "git",
     "git-z",
+    "jujutsu",
     "nextest",
     "prettier",
     "rustfmt",
