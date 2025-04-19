@@ -26,6 +26,8 @@ Currently available:
 
 On the roadmap:
 
+* Support for other VCS such as [Jujutsu](https://github.com/jj-vcs/jj).
+* Workflow commands _à la_ `git-flow`.
 * A validator to ensure commit messages follow [Conventional
     Commits](https://www.conventionalcommits.org/en/v1.0.0/), optionally
     including a valid ticket reference.
@@ -92,9 +94,9 @@ If you are a **brew** user on **Linux** or **macOS**, you can install
 If you are a **Debian** user—or of derivatives like **Ubuntu**—, you can install
 `git-z` by running:
 
-    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.3/git-z_0.2.3-1_amd64.deb
+    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.4/git-z_0.2.4-1_amd64.deb
     sudo apt update
-    sudo apt install ./git-z_0.2.3-1_amd64.deb
+    sudo apt install ./git-z_0.2.4-1_amd64.deb
 
 ### Installation from the MSI package
 
@@ -127,7 +129,7 @@ page](https://github.com/ejpcmac/git-z/releases/latest). Just rename it to
 
     # Move the executable to the right directory and renane it to `git-z`.
     cd downloads
-    mv git-z-0.2.3-aarch64-apple-darwin ~/.local/bin/git-z
+    mv git-z-0.2.4-aarch64-apple-darwin ~/.local/bin/git-z
 
     # Don’t forget to make "git-z" executable.
     chmod +x ~/.local/bin/git-z

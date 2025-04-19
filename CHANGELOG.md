@@ -6,17 +6,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic
 Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.4] - 2025-04-19
+
+### Highlights
+
+#### Adaptation to the size of the terminal
+
+Before this version, selection prompts had a fixed size of 15 elements,
+regardless of the size of the terminal. This was a bit annoying in small
+terminals, as the rendering was likely to break.
+
+Selection prompts now adapt their page size to the size of the terminal.
+
+#### Experimental support for other VCS
+
+This release introduces two new command line options to `git z commit`:
+
+* `--topic <TOPIC>` allows to set the topic from which a ticket number is
+    extracted, instead of the current Git branch,
+* `--command <COMMAND>` enables to use a custom command instead of `git commit
+    -em "$message"`.
+
+The `<COMMAND>` argument value should contain a `$message` variable, which is
+replaced by `git z commit` to the actual commit message.
+
+These options can be used to integrate `git-z` with other VCS such as Jujutsu.
+For instance, we can define a `jj-z-describe` shell function like this:
+
+```sh
+jj-z-describe() {
+    # First, get the closest bookmarks on top of which we are working.
+    local bookmarks="$(
+        jj log --no-graph -r 'heads(::@ & bookmarks())' -T 'self.bookmarks()'
+    )"
+
+    # Then, call `git z commit` with the `--topic` and `--command` options. Note
+    # that we are piping the message through `sed` to change any `#` Git comment
+    # marker to `JJ:`.
+    git z commit \
+        --topic "$bookmarks" \
+        --command "sh -c \"\
+            echo -n '\$message' \
+            | sed 's/^#\(.*\)/JJ:\1/' \
+            | jj describe $@ --edit --stdin\" \
+            "
+}
+```
+
+Please note that this support is experimental, and that `git-z` still has to be
+run from inside a Git repository. For using with Jujutsu, the repository must be
+configured in colocated mode.
 
 ### Added
 
 * [`git z commit`] Add a `--topic <TOPIC>` option to pass the name of the
-    current topic via the command line. This can be used to integrate `git-z`
-    with other Version Control Systems such as Jujutsu. ([#56]).
+    current topic via the command line ([#56]).
 * [`git z commit`] Add a `--command <COMMAND>` option to pass a custom command
-    to call instead of `git commit -em "$message"`. This can be used to
-    integrate `git-z` with other Version Control Systems such as Jujutsu.
-    ([#56]).
+    to call instead of `git commit -em "$message"` ([#56]).
 
 ### Changed
 
@@ -215,7 +261,7 @@ in the current repository.
         * the valid ticket prefixes,
         * the commit template.
 
-[Unreleased]: https://github.com/ejpcmac/git-z/compare/main...develop
+[0.2.4]: https://github.com/ejpcmac/git-z/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/ejpcmac/git-z/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/ejpcmac/git-z/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/ejpcmac/git-z/compare/v0.2.0...v0.2.1
