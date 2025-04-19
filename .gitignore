@@ -10,9 +10,3 @@
 
 # Nix build output.
 /result
-
-##
-## Editor artifacts
-##
-
-/.history/
