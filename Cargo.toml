@@ -1,14 +1,14 @@
 [package]
 name = "git-z"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
 categories = ["command-line-utilities", "development-tools"]
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/ejpcmac/git-z"
 keywords = ["conventional-commits", "git"]
 license = "GPL-3.0-only"
 repository = "https://github.com/ejpcmac/git-z"
-resolver = "2"
+resolver = "3"
 description = "A Git extension to go beyond."
 
 # NOTE: Run `cargo package --list` before releasing a new version to ensure no
@@ -26,7 +26,6 @@ exclude = [
     "/rustfmt.toml",
     "/taplo.toml",
     "/wix/",
-    "/yamlfmt.yml",
 ]
 
 [package.metadata.deb]
@@ -39,7 +38,7 @@ license = "wix/gpl-3.0.rtf"
 unstable-pre-commit = ["dep:is_executable"]
 
 [dependencies]
-askama = "0.12"
+askama = "0.13"
 clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
 colored = "3"
@@ -52,7 +51,9 @@ is_executable = { version = "1", optional = true }
 itertools = "0.14"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
+shell-words = "1"
 tera = "1"
+terminal_size = "0.4"
 thiserror = "2"
 toml = "0.8"
 toml_edit = "0.22"
@@ -109,6 +110,7 @@ alloc_instead_of_core = "warn"
 allow_attributes = "warn"
 allow_attributes_without_reason = "warn"
 as_conversions = "warn"
+as_pointer_underscore = "warn"
 as_underscore = "warn"
 assertions_on_result_states = "warn"
 cfg_not_test = "warn"
@@ -142,10 +144,12 @@ missing_docs_in_private_items = "warn"
 mod_module_files = "warn"
 multiple_inherent_impl = "warn"
 mutex_atomic = "warn"
+mutex_integer = "warn"
 non_zero_suggestions = "warn"
 panic = "warn"
 panic_in_result_fn = "warn"
 partial_pub_fields = "warn"
+precedence_bits = "warn"
 pub_without_shorthand = "warn"
 rc_buffer = "warn"
 rc_mutex = "warn"

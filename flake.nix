@@ -208,7 +208,7 @@
               udeps = {
                 name = "cargo-udeps";
                 packages = with pkgs; [
-                  rust-bin.nightly."2025-02-18".minimal
+                  rust-bin.nightly."2025-04-19".minimal
                   clang
                   cargo-hack
                   cargo-udeps

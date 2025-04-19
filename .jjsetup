@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+set -x
+
+# Configure immutable heads.
+jj config set --repo 'revset-aliases."trunk()"' 'main@origin'
+jj config set --repo \
+    'revset-aliases."immutable_heads()"' \
+    'builtin_immutable_heads() | develop@origin'

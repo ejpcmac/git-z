@@ -1,8 +1,7 @@
 # git-z
 
-[
-  ![Crates.io](https://img.shields.io/crates/v/git-z)
-](https://crates.io/crates/git-z)
+[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/ejpcmac/git-z/badge)](https://flakehub.com/flake/ejpcmac/git-z)
+[![Crates.io](https://img.shields.io/crates/v/git-z)](https://crates.io/crates/git-z)
 [![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
 [![Conventional
 Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)
@@ -27,6 +26,8 @@ Currently available:
 
 On the roadmap:
 
+* Support for other VCS such as [Jujutsu](https://github.com/jj-vcs/jj).
+* Workflow commands _à la_ `git-flow`.
 * A validator to ensure commit messages follow [Conventional
     Commits](https://www.conventionalcommits.org/en/v1.0.0/), optionally
     including a valid ticket reference.
@@ -53,7 +54,7 @@ up a `flake.nix` like this:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    git-z.url = "github:ejpcmac/git-z";
+    git-z.url = "https://flakehub.com/f/ejpcmac/git-z/*";
   };
 
   outputs = { flake-parts, ... }@inputs:
@@ -81,14 +82,21 @@ up a `flake.nix` like this:
 
 </details>
 
+### Installation with Homebrew
+
+If you are a **brew** user on **Linux** or **macOS**, you can install
+`git-z` by running:
+
+    brew install ejpcmac/repo/git-z
+
 ### Installation from the Debian package
 
 If you are a **Debian** user—or of derivatives like **Ubuntu**—, you can install
 `git-z` by running:
 
-    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.3/git-z_0.2.3-1_amd64.deb
+    curl -OL https://github.com/ejpcmac/git-z/releases/download/v0.2.4/git-z_0.2.4-1_amd64.deb
     sudo apt update
-    sudo apt install ./git-z_0.2.3-1_amd64.deb
+    sudo apt install ./git-z_0.2.4-1_amd64.deb
 
 ### Installation from the MSI package
 
@@ -121,7 +129,7 @@ page](https://github.com/ejpcmac/git-z/releases/latest). Just rename it to
 
     # Move the executable to the right directory and renane it to `git-z`.
     cd downloads
-    mv git-z-0.2.3-aarch64-apple-darwin ~/.local/bin/git-z
+    mv git-z-0.2.4-aarch64-apple-darwin ~/.local/bin/git-z
 
     # Don’t forget to make "git-z" executable.
     chmod +x ~/.local/bin/git-z

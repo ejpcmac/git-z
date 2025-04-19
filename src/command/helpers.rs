@@ -18,10 +18,11 @@
 use std::{io, process::Command};
 
 use eyre::Result;
+use terminal_size::{Height, Width, terminal_size};
 use thiserror::Error;
 
 use crate::{
-    config::{Config, CONFIG_FILE_NAME, VERSION},
+    config::{CONFIG_FILE_NAME, Config, VERSION},
     hint,
     tracing::LogResult as _,
     warning,
@@ -72,6 +73,15 @@ pub fn load_config() -> Result<Config> {
     }
 
     Ok(config)
+}
+
+/// Returns the page size for select prompts.
+pub fn page_size(previous_questions: usize) -> usize {
+    if let Some((Width(_), Height(term_height))) = terminal_size() {
+        usize::from(term_height) - 4 - previous_questions
+    } else {
+        15
+    }
 }
 
 /// Prints a success.

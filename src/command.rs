@@ -1,5 +1,5 @@
 // git-z - A Git extension to go beyond.
-// Copyright (C) 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// Copyright (C) 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,18 +23,19 @@ mod update;
 use std::error::Error as _;
 
 use clap::{ArgAction, Parser, Subcommand};
+use commit::backend::CustomCommandBackendError;
 use eyre::{Report, Result};
 use inquire::InquireError;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use self::{
-    commit::{Commit, CommitError},
+    commit::{Commit, CommitError, backend::BackendError},
     helpers::NotInGitWorktree,
     init::{Init, InitError},
     update::{Update, UpdateError},
 };
 use crate::{
-    config::{self, updater, FromTomlError, CONFIG_FILE_NAME},
+    config::{self, CONFIG_FILE_NAME, FromTomlError, updater},
     error, hint,
 };
 
@@ -153,6 +154,10 @@ fn handle_errors(error: Report) -> Result<()> {
         error.downcast_ref::<updater::LoadError>()
     {
         handle_from_toml_error(error)
+    } else if let Some(error) =
+        error.downcast_ref::<CustomCommandBackendError>()
+    {
+        handle_custom_command_backend_error(error)
     } else if let Some(error) = error.downcast_ref::<InitError>() {
         handle_init_error(error)
     } else if let Some(error) = error.downcast_ref::<CommitError>() {
@@ -200,7 +205,9 @@ fn handle_not_in_git_worktree(error: &NotInGitWorktree) -> ErrorHandling {
         }
         NotInGitWorktree::NotInWorktree => {
             error!("{error}.");
-            hint!("You seem to be inside a Git repository, but not in a worktree.");
+            hint!(
+                "You seem to be inside a Git repository, but not in a worktree."
+            );
             ErrorHandling::Exit(exitcode::USAGE)
         }
     }
@@ -211,7 +218,9 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     match error {
         FromTomlError::UnsupportedVersion { .. } => {
             error!("{error}.");
-            hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
+            hint!(
+                "Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z."
+            );
         }
         FromTomlError::UnsupportedDevelopmentVersion {
             gitz_version, ..
@@ -234,6 +243,19 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     }
 
     ErrorHandling::Exit(exitcode::CONFIG)
+}
+
+/// Prints proper error messages for `git z commit` backend config errors.
+fn handle_custom_command_backend_error(
+    error: &CustomCommandBackendError,
+) -> ErrorHandling {
+    match error {
+        CustomCommandBackendError::Syntax { parse_error, .. } => {
+            error!("{error}.");
+            hint!("Hint: {parse_error}.");
+            ErrorHandling::Exit(exitcode::USAGE)
+        }
+    }
 }
 
 /// Prints proper error messages for `git z init` usage errors.
@@ -263,8 +285,8 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
             // NOTE: Use 1 as exit code to maintain the same behaviour as Git.
             ErrorHandling::Exit(1)
         }
-        CommitError::Git { status_code } => {
-            ErrorHandling::Exit(status_code.unwrap_or(1_i32))
+        CommitError::Backend(backend_error) => {
+            handle_commit_backend_error(backend_error)
         }
         CommitError::Template(tera_error) => {
             error!("{tera_error} from the configuration.");
@@ -278,12 +300,30 @@ fn handle_commit_error(error: &CommitError) -> ErrorHandling {
     }
 }
 
+/// Prints proper error messages for `git z commit` backend errors.
+fn handle_commit_backend_error(error: &BackendError) -> ErrorHandling {
+    match error {
+        BackendError::CannotRun {
+            os_error: source, ..
+        } => {
+            error!("{error}.");
+            hint!("The OS reports: {source}.");
+            ErrorHandling::Exit(exitcode::UNAVAILABLE)
+        }
+        BackendError::ExecutionError { status_code } => {
+            ErrorHandling::Exit(status_code.unwrap_or(1_i32))
+        }
+    }
+}
+
 /// Prints proper error messages for `git z update` usage errors.
 fn handle_update_error(error: &UpdateError) -> ErrorHandling {
     match error {
         UpdateError::UnsupportedVersion { .. } => {
             error!("{error}.");
-            hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
+            hint!(
+                "Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z."
+            );
         }
         UpdateError::UnsupportedDevelopmentVersion { gitz_version, .. } => {
             error!("{error}.");

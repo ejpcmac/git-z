@@ -21,7 +21,7 @@ use std::{
 };
 
 use colored::Colorize;
-use xshell::{cmd, Shell};
+use xshell::{Shell, cmd};
 
 struct Context {
     pub sh: Shell,
@@ -86,7 +86,9 @@ fn check(subcommand: Option<&str>) {
 
 fn check_usage() {
     let name = env::args().next().unwrap();
-    eprintln!("usage: {name} check [commits|format|build|doc|test|unused-deps|packages]");
+    eprintln!(
+        "usage: {name} check [commits|format|build|doc|test|unused-deps|packages]"
+    );
     process::exit(1);
 }
 
