@@ -26,7 +26,7 @@ use toml_edit::DocumentMut;
 use crate::tracing::LogResult as _;
 
 use super::{
-    config_file, Config, ConfigFileError, FromTomlError, CONFIG_FILE_NAME,
+    CONFIG_FILE_NAME, Config, ConfigFileError, FromTomlError, config_file,
 };
 
 /// A configuration updater.

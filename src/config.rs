@@ -36,7 +36,7 @@ pub use v0_2::{Config, Scopes, Templates, Ticket};
 
 use std::{fs, io, path::PathBuf, process::Command};
 
-use indexmap::{indexmap, IndexMap};
+use indexmap::{IndexMap, indexmap};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

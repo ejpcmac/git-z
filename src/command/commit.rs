@@ -19,10 +19,10 @@ pub mod backend;
 
 use std::{fs, path::PathBuf, process::Command};
 
-use clap::{builder::NonEmptyStringValueParser, Parser};
-use eyre::{eyre, Context as _, Result};
+use clap::{Parser, builder::NonEmptyStringValueParser};
+use eyre::{Context as _, Result, eyre};
 use indexmap::IndexMap;
-use inquire::{validator::Validation, Confirm, CustomUserError, Select, Text};
+use inquire::{Confirm, CustomUserError, Select, Text, validator::Validation};
 use itertools::Itertools as _;
 use regex::Regex;
 use serde::Serialize;

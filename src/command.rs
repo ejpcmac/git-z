@@ -29,13 +29,13 @@ use inquire::InquireError;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use self::{
-    commit::{backend::BackendError, Commit, CommitError},
+    commit::{Commit, CommitError, backend::BackendError},
     helpers::NotInGitWorktree,
     init::{Init, InitError},
     update::{Update, UpdateError},
 };
 use crate::{
-    config::{self, updater, FromTomlError, CONFIG_FILE_NAME},
+    config::{self, CONFIG_FILE_NAME, FromTomlError, updater},
     error, hint,
 };
 
@@ -205,7 +205,9 @@ fn handle_not_in_git_worktree(error: &NotInGitWorktree) -> ErrorHandling {
         }
         NotInGitWorktree::NotInWorktree => {
             error!("{error}.");
-            hint!("You seem to be inside a Git repository, but not in a worktree.");
+            hint!(
+                "You seem to be inside a Git repository, but not in a worktree."
+            );
             ErrorHandling::Exit(exitcode::USAGE)
         }
     }
@@ -216,7 +218,9 @@ fn handle_from_toml_error(error: &FromTomlError) -> ErrorHandling {
     match error {
         FromTomlError::UnsupportedVersion { .. } => {
             error!("{error}.");
-            hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
+            hint!(
+                "Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z."
+            );
         }
         FromTomlError::UnsupportedDevelopmentVersion {
             gitz_version, ..
@@ -317,7 +321,9 @@ fn handle_update_error(error: &UpdateError) -> ErrorHandling {
     match error {
         UpdateError::UnsupportedVersion { .. } => {
             error!("{error}.");
-            hint!("Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z.");
+            hint!(
+                "Your {CONFIG_FILE_NAME} may have been created by a newer version of git-z."
+            );
         }
         UpdateError::UnsupportedDevelopmentVersion { gitz_version, .. } => {
             error!("{error}.");

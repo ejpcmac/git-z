@@ -28,13 +28,13 @@ use std::{
 };
 
 use assert_cmd::cargo::cargo_bin;
-use assert_fs::{assert::IntoPathPredicate, prelude::*, TempDir};
+use assert_fs::{TempDir, assert::IntoPathPredicate, prelude::*};
 use eyre::Result;
 use indoc::{formatdoc, indoc};
 use predicates::prelude::*;
 use rexpect::{
     process::wait::WaitStatus,
-    session::{spawn_command, PtySession},
+    session::{PtySession, spawn_command},
 };
 
 #[cfg(not(feature = "unstable-pre-commit"))]
@@ -1030,8 +1030,8 @@ mod wizard {
     }
 
     #[test]
-    fn gets_the_ticket_number_from_topic_passed_in_cli_before_the_branch(
-    ) -> Result<()> {
+    fn gets_the_ticket_number_from_topic_passed_in_cli_before_the_branch()
+    -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_config(&temp_dir, "latest_ticket-optional.toml")?;
         set_git_branch(&temp_dir, "feature/42-test-branch")?;
@@ -1511,8 +1511,8 @@ mod commit_cache {
     }
 
     #[test]
-    fn asks_whether_to_reuse_message_if_wizard_is_complete_and_message_exists(
-    ) -> Result<()> {
+    fn asks_whether_to_reuse_message_if_wizard_is_complete_and_message_exists()
+    -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         set_git_commit_message(&temp_dir, "previous message")?;
         install_commit_cache(
@@ -1540,8 +1540,8 @@ mod commit_cache {
     }
 
     #[test]
-    fn asks_whether_to_prefill_answers_if_wizard_is_complete_but_message_missing(
-    ) -> Result<()> {
+    fn asks_whether_to_prefill_answers_if_wizard_is_complete_but_message_missing()
+    -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
@@ -1568,8 +1568,8 @@ mod commit_cache {
     }
 
     #[test]
-    fn asks_whether_to_prefill_answers_if_wizard_is_complete_but_message_empty(
-    ) -> Result<()> {
+    fn asks_whether_to_prefill_answers_if_wizard_is_complete_but_message_empty()
+    -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         set_git_commit_message(
             &temp_dir,
@@ -1744,8 +1744,8 @@ mod commit_cache {
     }
 
     #[test]
-    fn deletes_the_commit_cache_if_the_user_declines_previous_message(
-    ) -> Result<()> {
+    fn deletes_the_commit_cache_if_the_user_declines_previous_message()
+    -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         set_git_commit_message(&temp_dir, "previous message")?;
         install_commit_cache(
@@ -2563,8 +2563,8 @@ mod usage_errors {
     }
 
     #[test]
-    fn prints_an_error_if_the_template_contains_an_unknown_variable(
-    ) -> Result<()> {
+    fn prints_an_error_if_the_template_contains_an_unknown_variable()
+    -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_config(&temp_dir, "latest_template-unknown-variable.toml")?;
 
@@ -2595,9 +2595,11 @@ mod usage_errors {
         process.exp_string("Commit type")?;
         process.send_control('[')?;
 
-        assert!(process
-            .exp_string("Operation was canceled by the user")
-            .is_err());
+        assert!(
+            process
+                .exp_string("Operation was canceled by the user")
+                .is_err()
+        );
 
         Ok(())
     }
@@ -2612,9 +2614,11 @@ mod usage_errors {
         process.exp_string("Commit type")?;
         process.send_control('c')?;
 
-        assert!(process
-            .exp_string("Operation was interrupted by the user")
-            .is_err());
+        assert!(
+            process
+                .exp_string("Operation was interrupted by the user")
+                .is_err()
+        );
 
         Ok(())
     }
