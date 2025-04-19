@@ -26,7 +26,6 @@ exclude = [
     "/rustfmt.toml",
     "/taplo.toml",
     "/wix/",
-    "/yamlfmt.yml",
 ]
 
 [package.metadata.deb]
