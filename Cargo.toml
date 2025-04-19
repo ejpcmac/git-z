@@ -39,7 +39,7 @@ license = "wix/gpl-3.0.rtf"
 unstable-pre-commit = ["dep:is_executable"]
 
 [dependencies]
-askama = "0.12"
+askama = "0.13"
 clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
 colored = "3"
