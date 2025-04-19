@@ -22,8 +22,8 @@ use thiserror::Error;
 
 use crate::{
     config::{
-        updater::{AskForTicket, ConfigUpdater, Init},
         VERSION,
+        updater::{AskForTicket, ConfigUpdater, Init},
     },
     error, hint, success,
     tracing::LogResult as _,

@@ -28,7 +28,7 @@ use indoc::indoc;
 use regex::Regex;
 use toml_edit::{DocumentMut, Item, Table};
 
-use super::{super::split_type_and_doc, common, AskForTicket};
+use super::{super::split_type_and_doc, AskForTicket, common};
 
 /// The old configuration for `types`.
 const OLD_TYPES_DOC: &str = indoc! {"

@@ -18,11 +18,11 @@
 use std::{io, process::Command};
 
 use eyre::Result;
-use terminal_size::{terminal_size, Height, Width};
+use terminal_size::{Height, Width, terminal_size};
 use thiserror::Error;
 
 use crate::{
-    config::{Config, CONFIG_FILE_NAME, VERSION},
+    config::{CONFIG_FILE_NAME, Config, VERSION},
     hint,
     tracing::LogResult as _,
     warning,
