@@ -26,6 +26,8 @@ Currently available:
 
 On the roadmap:
 
+* Support for other VCS such as [Jujutsu](https://github.com/jj-vcs/jj).
+* Workflow commands _à la_ `git-flow`.
 * A validator to ensure commit messages follow [Conventional
     Commits](https://www.conventionalcommits.org/en/v1.0.0/), optionally
     including a valid ticket reference.
