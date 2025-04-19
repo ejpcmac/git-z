@@ -209,7 +209,11 @@ jobs:
         run: |
           echo 'Release name: ${{ needs.version.outputs.version }}'
           echo 'Release body:'
-          echo '${{ steps.extract-changelog.outputs.markdown }}'
+
+          cat <<'EOF'
+          ${{ steps.extract-changelog.outputs.markdown }}
+          EOF
+
           echo 'Artifacts:'
           echo
           for f in binary-*/*; do
