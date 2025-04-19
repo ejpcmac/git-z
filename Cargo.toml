@@ -1,6 +1,6 @@
 [package]
 name = "git-z"
-version = "0.2.4"
+version = "0.2.5-dev.0"
 authors = ["Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"]
 categories = ["command-line-utilities", "development-tools"]
 edition = "2024"
