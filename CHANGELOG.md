@@ -24,6 +24,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
     of the terminal ([#45]).
 * [`git z commit`] Ensure there are no more than two consecutive newlines in
     commit messages.
+* [Cargo] Update the dependencies.
 * [Rust] Update from 1.84.1 to 1.86.0.
 
 [#45]: https://github.com/ejpcmac/git-z/issues/45
