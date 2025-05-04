@@ -146,8 +146,8 @@
 
                 motd = ''
 
-                {202}🔨 Welcome to the git-z devshell!{reset}
-              '';
+                  {202}🔨 Welcome to the git-z devshell!{reset}
+                '';
 
                 packages =
                   buildToolchain
