@@ -15,6 +15,7 @@ allowed-duplicate-crates = [
     "windows_x86_64_msvc",
 ]
 
+allow-unwrap-in-tests = true
 allowed-idents-below-min-chars = ["c", "i", "j", "n", "s"]
 check-private-items = true
 # NOTE: ".." indicates that default values should be included.
