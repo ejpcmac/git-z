@@ -198,8 +198,8 @@ in the current repository.
 
 * [`git z init`] Add a command to create a `git-z.toml` in the current
     repository ([#8]).
-* [`git z update`] Add a command to update the configuration file without
-    loosing comments and formatting.
+* [`git z update`] Add a command to update the configuration file without losing
+    comments and formatting.
 * [Config] Add a `ticket.required` field: when set to `true`, the ticket is
     required as in previous versions. When set to `false`, the ticket is still
     asked for but optional ([#2]).
