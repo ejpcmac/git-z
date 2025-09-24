@@ -8,7 +8,9 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-* No changes since the latest release.
+### Changed
+
+* [Rust] Update from 1.86.0 to 1.90.0.
 
 ## [0.2.4] - 2025-04-19
 
