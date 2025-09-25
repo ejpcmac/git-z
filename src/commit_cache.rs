@@ -344,6 +344,7 @@ impl CommitCache {
 
     /// Saves the commit cache to the repo.
     #[expect(
+        clippy::missing_panics_doc,
         clippy::unwrap_in_result,
         reason = "The expect in this function should not actually panic."
     )]

@@ -498,6 +498,10 @@ fn ask_ticket(
 }
 
 /// Tries to extract a ticket number from the given topic.
+#[expect(
+    clippy::missing_panics_doc,
+    reason = "The unwrap in the function cannot actually panic."
+)]
 #[tracing::instrument(level = "trace")]
 fn extract_ticket_from_topic(
     topic: &str,
