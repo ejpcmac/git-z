@@ -401,7 +401,8 @@ mod wizard {
         // Asks for a short description within the 5-60 characters limit.
         process.exp_string("Short description")?;
         process.exp_string(
-            "describe your change with a short description (5-60 characters)",
+            // spellchecker:ignore-next-line
+            "describe your change with a short description (5-60 characte\r\nrs)",
         )?;
         process.send_line("test description")?;
 
@@ -524,7 +525,7 @@ mod wizard {
         process.exp_string("scope2")?;
         process.exp_string(
             "to move, enter to select, type to filter, ESC to leave empty, \
-                update `git-z.toml` to add new scopes",
+                update `git-z.\r\ntoml` to add new scopes",
         )?;
 
         Ok(())
@@ -636,7 +637,8 @@ mod wizard {
 
         process.exp_string("Short description")?;
         process.exp_string(
-            "describe your change with a short description (5-60 characters)",
+            // spellchecker:ignore-next-line
+            "describe your change with a short description (5-60 characte\r\nrs)",
         )?;
         process.exp_string(
             "You will be able to add a long description to your commit in an \

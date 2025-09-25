@@ -46,7 +46,7 @@ exitcode = "1"
 eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
 indoc = "2"
-inquire = "0.7"
+inquire = "0.9"
 is_executable = { version = "1", optional = true }
 itertools = "0.14"
 regex = "1"
