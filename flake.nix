@@ -107,6 +107,7 @@
               ];
 
               developmentTools = with pkgs; with self'.packages; [
+                bacon
                 cargo-bloat
                 cargo-outdated
                 cargo-watch
@@ -222,6 +223,7 @@
                   (rust-bin.nightly."2025-09-24".minimal.override {
                     extensions = [ "llvm-tools" ];
                   })
+                  bacon
                   clang
                   cargo-llvm-cov
                 ];
