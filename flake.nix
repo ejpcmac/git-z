@@ -188,6 +188,12 @@
                         cargo llvm-cov nextest --branch --open
                     '';
                   }
+                  {
+                    name = "live-coverage";
+                    command = ''
+                      nix develop -L .#llvm-cov -c bacon coverage
+                    '';
+                  }
                 ];
               };
 
