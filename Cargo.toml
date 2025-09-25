@@ -55,8 +55,10 @@ shell-words = "1"
 tera = "1"
 terminal_size = "0.4"
 thiserror = "2"
-toml = "0.8"
-toml_edit = "0.22"
+# TODO: Review the features when https://github.com/toml-rs/toml/issues/1044 is
+# solved.
+toml = { version = "0.9", features = ["preserve_order"] }
+toml_edit = "0.23"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
