@@ -173,6 +173,10 @@
                     command = "nix develop -L .#deb -c cargo $@";
                   }
                   {
+                    name = "cargo-llvm-cov";
+                    command = "nix develop -L .#llvm-cov -c cargo $@";
+                  }
+                  {
                     name = "cargo-udeps";
                     command = "nix develop -L .#udeps -c cargo $@";
                   }
@@ -201,6 +205,18 @@
                   })
                   clang
                   cargo-deb
+                ];
+              };
+
+              # NOTE: cargo-llvm-cov needs Rust nightly for branch coverage.
+              llvm-cov = {
+                name = "cargo-llvm-cov";
+                packages = with pkgs; [
+                  (rust-bin.nightly."2025-09-24".minimal.override {
+                    extensions = [ "llvm-tools" ];
+                  })
+                  clang
+                  cargo-llvm-cov
                 ];
               };
 
