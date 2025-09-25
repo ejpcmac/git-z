@@ -38,7 +38,7 @@ license = "wix/gpl-3.0.rtf"
 unstable-pre-commit = ["dep:is_executable"]
 
 [dependencies]
-askama = "0.13"
+askama = "0.14"
 clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
 colored = "3"
@@ -46,7 +46,7 @@ exitcode = "1"
 eyre = "0.6"
 indexmap = { version = "2", features = ["serde"] }
 indoc = "2"
-inquire = "0.7"
+inquire = "0.9"
 is_executable = { version = "1", optional = true }
 itertools = "0.14"
 regex = "1"
@@ -55,8 +55,10 @@ shell-words = "1"
 tera = "1"
 terminal_size = "0.4"
 thiserror = "2"
-toml = "0.8"
-toml_edit = "0.22"
+# TODO: Review the features when https://github.com/toml-rs/toml/issues/1044 is
+# solved.
+toml = { version = "0.9", features = ["preserve_order"] }
+toml_edit = "0.23"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -153,6 +155,7 @@ precedence_bits = "warn"
 pub_without_shorthand = "warn"
 rc_buffer = "warn"
 rc_mutex = "warn"
+redundant_test_prefix = "warn"
 redundant_type_annotations = "warn"
 renamed_function_params = "warn"
 rest_pat_in_fully_bound_structs = "warn"

@@ -344,6 +344,7 @@ impl CommitCache {
 
     /// Saves the commit cache to the repo.
     #[expect(
+        clippy::missing_panics_doc,
         clippy::unwrap_in_result,
         reason = "The expect in this function should not actually panic."
     )]
@@ -428,7 +429,7 @@ fn git_dir() -> Result<PathBuf, GitDirError> {
 
 #[cfg(test)]
 mod test {
-    #![allow(clippy::pedantic, clippy::restriction)]
+    #![expect(clippy::missing_panics_doc, reason = "tests")]
 
     use indoc::formatdoc;
 
@@ -440,12 +441,12 @@ mod test {
 
         assert_eq!(
             toml::to_string(&commit_cache).unwrap(),
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{VERSION}"
                 wizard_state = "not_started"
 
                 [wizard_answers]
-            "##}
+            "#}
         );
     }
 
@@ -487,12 +488,12 @@ mod test {
 
         assert_eq!(
             toml::to_string(&commit_cache).unwrap(),
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##}
+            "#}
         );
     }
 }

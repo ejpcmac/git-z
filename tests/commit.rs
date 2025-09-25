@@ -18,11 +18,17 @@
 // NOTE: rexpect is only compatible with Unix-like systems, so let’s just not
 // compile the CLI tests on Windows.
 #![cfg(not(target_os = "windows"))]
-#![allow(clippy::pedantic, clippy::restriction)]
+#![expect(
+    clippy::assertions_on_result_states,
+    clippy::missing_panics_doc,
+    clippy::panic_in_result_fn,
+    clippy::tests_outside_test_module,
+    reason = "tests"
+)]
 
 use std::{
     fs::{self, Permissions},
-    os::unix::fs::PermissionsExt,
+    os::unix::fs::PermissionsExt as _,
     path::Path,
     process::Command,
 };
@@ -66,7 +72,7 @@ fn setup_temp_dir(git: Git) -> Result<TempDir> {
             git_init(&temp_dir)?;
             git_config_user(&temp_dir)?;
             git_config_editor(&temp_dir)?;
-            git_config_nogpg(&temp_dir)?
+            git_config_nogpg(&temp_dir)?;
         }
     }
 
@@ -162,11 +168,11 @@ fn install_pre_commit_hook(temp_dir: &TempDir, exit_code: i32) -> Result<()> {
     install_hook(
         temp_dir,
         "pre-commit",
-        &formatdoc! {r##"
+        &formatdoc! {r#"
             #!/bin/sh
             echo "pre-commit"
             exit {exit_code}
-        "##},
+        "#},
     )
 }
 
@@ -244,7 +250,7 @@ fn gitz_commit(temp_dir: impl AsRef<Path>, git: Git) -> Result<Command> {
     if git == Git::Fake {
         let test_path = std::env::var("TEST_PATH")?;
         cmd.env("PATH", test_path);
-    };
+    }
 
     Ok(cmd)
 }
@@ -395,7 +401,8 @@ mod wizard {
         // Asks for a short description within the 5-60 characters limit.
         process.exp_string("Short description")?;
         process.exp_string(
-            "describe your change with a short description (5-60 characters)",
+            // spellchecker:ignore-next-line
+            "describe your change with a short description (5-60 characte\r\nrs)",
         )?;
         process.send_line("test description")?;
 
@@ -518,7 +525,7 @@ mod wizard {
         process.exp_string("scope2")?;
         process.exp_string(
             "to move, enter to select, type to filter, ESC to leave empty, \
-                update `git-z.toml` to add new scopes",
+                update `git-z.\r\ntoml` to add new scopes",
         )?;
 
         Ok(())
@@ -630,7 +637,8 @@ mod wizard {
 
         process.exp_string("Short description")?;
         process.exp_string(
-            "describe your change with a short description (5-60 characters)",
+            // spellchecker:ignore-next-line
+            "describe your change with a short description (5-60 characte\r\nrs)",
         )?;
         process.exp_string(
             "You will be able to add a long description to your commit in an \
@@ -1115,26 +1123,26 @@ mod commit_cache {
         fill_type_and_wait_scope(&mut process, "chore")?;
         assert_commit_cache(
             &temp_dir,
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
                 type = "chore"
-            "##},
+            "#},
         );
 
         fill_scope_and_wait_description(&mut process, "hell")?;
         assert_commit_cache(
             &temp_dir,
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
                 type = "chore"
                 scope = "hell"
-            "##},
+            "#},
         );
 
         fill_description_and_wait_breaking_change(
@@ -1143,7 +1151,7 @@ mod commit_cache {
         )?;
         assert_commit_cache(
             &temp_dir,
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
@@ -1151,7 +1159,7 @@ mod commit_cache {
                 type = "chore"
                 scope = "hell"
                 description = "flames everywhere"
-            "##},
+            "#},
         );
 
         fill_breaking_change_and_wait_ticket(
@@ -1160,7 +1168,7 @@ mod commit_cache {
         )?;
         assert_commit_cache(
             &temp_dir,
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
@@ -1169,7 +1177,7 @@ mod commit_cache {
                 scope = "hell"
                 description = "flames everywhere"
                 breaking_change = "It ain’t heaven anymore."
-            "##},
+            "#},
         );
 
         fill_ticket_and_wait_eof(&mut process, "#666")?;
@@ -1211,14 +1219,14 @@ mod commit_cache {
 
         assert_commit_cache(
             &temp_dir,
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
                 type = "feat"
                 description = "description"
-            "##},
+            "#},
         );
 
         Ok(())
@@ -1241,14 +1249,14 @@ mod commit_cache {
 
         assert_commit_cache(
             &temp_dir,
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
                 type = "feat"
                 description = "description"
-            "##},
+            "#},
         );
 
         assert_commit_editmsg(&temp_dir, predicate::path::missing());
@@ -1280,13 +1288,13 @@ mod commit_cache {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
                 type = "feat"
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1358,13 +1366,13 @@ mod commit_cache {
         install_config(&temp_dir, "latest_full.toml")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
                 type = "chore"
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1386,14 +1394,14 @@ mod commit_cache {
         install_config(&temp_dir, "latest_minimal.toml")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
                 type = "type"
                 scope = "everything"
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1414,14 +1422,14 @@ mod commit_cache {
         install_config(&temp_dir, "latest_scopes-list.toml")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
                 type = "type"
                 scope = "scope2"
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1490,13 +1498,13 @@ mod commit_cache {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "ongoing"
 
                 [wizard_answers]
                 type = "feat"
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1517,12 +1525,12 @@ mod commit_cache {
         set_git_commit_message(&temp_dir, "previous message")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1545,12 +1553,12 @@ mod commit_cache {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1584,12 +1592,12 @@ mod commit_cache {
         )?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1612,12 +1620,12 @@ mod commit_cache {
         set_git_commit_message(&temp_dir, "previous message")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1638,12 +1646,12 @@ mod commit_cache {
         set_git_commit_message(&temp_dir, "previous message")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1675,12 +1683,12 @@ mod commit_cache {
         )?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1725,12 +1733,12 @@ mod commit_cache {
         set_git_commit_message(&temp_dir, "previous message")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1750,12 +1758,12 @@ mod commit_cache {
         set_git_commit_message(&temp_dir, "previous message")?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1800,12 +1808,12 @@ mod commit_cache {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "0.0"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1821,12 +1829,12 @@ mod commit_cache {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r#"
                 version = "0.0"
                 wizard_state = "completed"
 
                 [wizard_answers]
-            "##},
+            "#},
         )?;
 
         let mut process =
@@ -1843,9 +1851,9 @@ mod commit_cache {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r"
                 invalid
-            "##},
+            "},
         )?;
 
         let mut process =
@@ -1861,9 +1869,9 @@ mod commit_cache {
         let temp_dir = setup_temp_dir(Git::Fake)?;
         install_commit_cache(
             &temp_dir,
-            &formatdoc! {r##"
+            &formatdoc! {r"
                 invalid
-            "##},
+            "},
         )?;
 
         let mut process =
@@ -1950,7 +1958,10 @@ mod pre_commit {
 
         process.exp_string("pre-commit")?;
         process.exp_eof()?;
-        assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 1)));
+        assert!(matches!(
+            process.process.wait()?,
+            WaitStatus::Exited(_, 1_i32)
+        ));
 
         Ok(())
     }
@@ -2385,10 +2396,10 @@ mod usage_errors {
         install_hook(
             &temp_dir,
             "pre-commit",
-            &formatdoc! {r##"
+            &formatdoc! {r"
                 #!/invalid
                 invalid
-            "##},
+            "},
         )?;
 
         let mut process =
@@ -2447,7 +2458,10 @@ mod usage_errors {
         fill_description(&mut process)?;
         fill_breaking_change(&mut process)?;
 
-        assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 21)));
+        assert!(matches!(
+            process.process.wait()?,
+            WaitStatus::Exited(_, 21_i32)
+        ));
 
         Ok(())
     }
@@ -2540,7 +2554,10 @@ mod usage_errors {
         fill_description(&mut process)?;
         fill_breaking_change(&mut process)?;
 
-        assert!(matches!(process.process.wait()?, WaitStatus::Exited(_, 21)));
+        assert!(matches!(
+            process.process.wait()?,
+            WaitStatus::Exited(_, 21_i32)
+        ));
 
         Ok(())
     }
@@ -2635,14 +2652,18 @@ mod integration {
     #[cfg(not(feature = "unstable-pre-commit"))]
     #[test]
     fn use_proper_commit_message_after_pre_commit_hook_failure() -> Result<()> {
-        let temp_dir = setup_temp_dir(Git::Real)?;
-
         enum PreCommit {
             Success = 0,
             Failure = 1,
         }
 
+        let temp_dir = setup_temp_dir(Git::Real)?;
+
         let add_and_commit = |file, message, pre_commit| -> Result<()> {
+            #[expect(
+                clippy::as_conversions,
+                reason = "safe to convert an enum to i32"
+            )]
             install_pre_commit_hook(&temp_dir, pre_commit as i32)?;
             new_tracked_file(&temp_dir, file)?;
 
@@ -2691,14 +2712,14 @@ mod integration {
         add_and_commit("b", "second commit", PreCommit::Failure)?;
         assert_commit_cache(
             &temp_dir,
-            formatdoc! {r##"
+            formatdoc! {r#"
                 version = "{COMMIT_CACHE_VERSION}"
                 wizard_state = "completed"
 
                 [wizard_answers]
                 type = "feat"
                 description = "second commit"
-            "##},
+            "#},
         );
 
         // 3. Redo the second commit after “fixing” the pre-commit hook failure.

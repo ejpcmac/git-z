@@ -146,8 +146,8 @@
 
                 motd = ''
 
-                {202}🔨 Welcome to the git-z devshell!{reset}
-              '';
+                  {202}🔨 Welcome to the git-z devshell!{reset}
+                '';
 
                 packages =
                   buildToolchain
@@ -208,7 +208,7 @@
               udeps = {
                 name = "cargo-udeps";
                 packages = with pkgs; [
-                  rust-bin.nightly."2025-04-19".minimal
+                  rust-bin.nightly."2025-09-24".minimal
                   clang
                   cargo-hack
                   cargo-udeps

@@ -279,8 +279,6 @@ fn remove_hash_ticket_prefix_from_commit_template(template: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::pedantic, clippy::restriction)]
-
     use super::*;
 
     const V0_1_STANDARD: &str =

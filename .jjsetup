@@ -3,6 +3,10 @@
 set -e
 set -x
 
+# Track integration bookmarks.
+jj bookmark track main@origin
+jj bookmark track develop@origin
+
 # Configure immutable heads.
 jj config set --repo 'revset-aliases."trunk()"' 'main@origin'
 jj config set --repo \

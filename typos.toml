@@ -1,0 +1,7 @@
+[default]
+# Enable magic comments to ignore typos inline.
+extend-ignore-re = [
+    "(#|//)\\s*spellchecker:ignore-next-line\\n.*",
+    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on",
+]
