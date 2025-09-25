@@ -8,6 +8,7 @@ include = [
 
 exclude = [
     ".cargo/config.toml",
+    "bacon.toml",
     "tests/res/config/v0_1_doc-and-user-comments.toml",
     "tests/res/config/v0_1_standard.toml",
     "tests/res/config/v0_1_user-comments.toml",
