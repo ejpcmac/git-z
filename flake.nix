@@ -180,6 +180,13 @@
                     name = "cargo-udeps";
                     command = "nix develop -L .#udeps -c cargo $@";
                   }
+                  {
+                    name = "coverage-report";
+                    command = ''
+                      nix develop -L .#llvm-cov -c \
+                        cargo llvm-cov nextest --branch --open
+                    '';
+                  }
                 ];
               };
 
