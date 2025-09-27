@@ -128,6 +128,7 @@ fn check_commits(ctx: &mut Context) {
 
 fn check_format(ctx: &mut Context) {
     let editorconfig_excluded_files = [
+        "**.json",
         "**.lock",
         "**.rs",
         "**.toml",
