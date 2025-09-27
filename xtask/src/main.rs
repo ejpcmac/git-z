@@ -68,6 +68,7 @@ fn check(subcommand: Option<&str>) {
             build(&mut ctx);
             check_doc(&mut ctx);
             test(&mut ctx);
+            coverage(&mut ctx);
             check_unused_deps(&mut ctx);
             check_packages(&mut ctx);
         }
@@ -76,6 +77,7 @@ fn check(subcommand: Option<&str>) {
         Some("build") => build(&mut ctx),
         Some("doc") => check_doc(&mut ctx),
         Some("test") => test(&mut ctx),
+        Some("coverage") => coverage(&mut ctx),
         Some("unused-deps") => check_unused_deps(&mut ctx),
         Some("packages") => check_packages(&mut ctx),
         _ => check_usage(),
@@ -87,7 +89,7 @@ fn check(subcommand: Option<&str>) {
 fn check_usage() {
     let name = env::args().next().unwrap();
     eprintln!(
-        "usage: {name} check [commits|format|build|doc|test|unused-deps|packages]"
+        "usage: {name} check [commits|format|build|doc|test|coverage|unused-deps|packages]"
     );
     process::exit(1);
 }
@@ -218,6 +220,28 @@ fn test(ctx: &mut Context) {
         //     "Running the doctests for all packages with all feature combinations",
         //     "cargo hack test --doc --workspace --exclude xtask --feature-powerset --keep-going",
         // ),
+    );
+}
+
+fn coverage(ctx: &mut Context) {
+    action!(
+        ctx,
+        step!(
+            "Cleaning any previous coverage report",
+            "nix develop -L .#llvm-cov -c cargo llvm-cov clean --workspace"
+        ),
+        step!(
+            "Running the tests with coverage for all packages with all feature combinations",
+            "nix develop -L .#llvm-cov -c cargo hack llvm-cov nextest --branch --no-report --workspace --exclude xtask --feature-powerset --keep-going --no-tests=warn",
+        ),
+        // step!(
+        //     "Running the doctests with coverage for all packages with all feature combinations",
+        //     "nix develop -L .#llvm-cov -c cargo hack llvm-cov test --branch --no-report --doc --workspace --exclude xtask --feature-powerset --keep-going",
+        // ),
+        step!(
+            "Generating the coverage report",
+            "nix develop -L .#llvm-cov -c cargo llvm-cov report --doctests --lcov --output-path ./target/lcov.info"
+        ),
     );
 }
 
