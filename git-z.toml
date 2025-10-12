@@ -76,6 +76,7 @@ list = [
     "bacon",
     "cargo",
     "clippy",
+    "codecov",
     "committed",
     "direnv",
     "editorconfig",
