@@ -170,7 +170,7 @@ fn install_pre_commit_hook(temp_dir: &TempDir, exit_code: i32) -> Result<()> {
         "pre-commit",
         &formatdoc! {r#"
             #!/bin/sh
-            echo "pre-commit"
+            echo "dummy pre-commit hook"
             exit {exit_code}
         "#},
     )
@@ -1899,7 +1899,7 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        assert!(process.exp_string("pre-commit").is_err());
+        assert!(process.exp_string("dummy pre-commit hook").is_err());
         process.exp_string("Commit type")?;
 
         Ok(())
@@ -1913,7 +1913,7 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
 
         Ok(())
     }
@@ -1928,7 +1928,7 @@ mod pre_commit {
 
         let mut process = spawn_command(cmd, TIMEOUT)?;
 
-        assert!(process.exp_string("pre-commit").is_err());
+        assert!(process.exp_string("dummy pre-commit hook").is_err());
         process.exp_string("Commit type")?;
 
         Ok(())
@@ -1942,7 +1942,7 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
         process.exp_string("Commit type")?;
 
         Ok(())
@@ -1956,7 +1956,7 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
         process.exp_eof()?;
         assert!(matches!(
             process.process.wait()?,
@@ -1995,14 +1995,14 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
         fill_description(&mut process)?;
         fill_breaking_change(&mut process)?;
 
-        assert!(process.exp_string("pre-commit").is_err());
+        assert!(process.exp_string("dummy pre-commit hook").is_err());
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
@@ -2021,7 +2021,7 @@ mod pre_commit {
     //     let mut process =
     //         spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-    //     process.exp_string("pre-commit")?;
+    //     process.exp_string("dummy pre-commit hook")?;
 
     //     fill_type(&mut process)?;
     //     fill_scope(&mut process)?;
