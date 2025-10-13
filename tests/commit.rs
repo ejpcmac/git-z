@@ -245,6 +245,8 @@ fn gitz_commit(temp_dir: impl AsRef<Path>, git: Git) -> Result<Command> {
     let mut cmd = Command::new(cargo_bin("git-z"));
     cmd.current_dir(&temp_dir)
         .env("NO_COLOR", "true")
+        // NOTE: Enable tracing to avoid missing coverage noise.
+        .arg("-vvvv")
         .arg("commit");
 
     if git == Git::Fake {
