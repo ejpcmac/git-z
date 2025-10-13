@@ -1,0 +1,80 @@
+# This is a configuration file for the bacon tool
+#
+# Complete help on configuration: https://dystroy.org/bacon/config/
+#
+# You may check the current default at
+#   https://github.com/Canop/bacon/blob/main/defaults/default-bacon.toml
+
+default_job = "clippy-all"
+env.CARGO_TERM_COLOR = "always"
+
+[jobs.check]
+command = ["cargo", "check"]
+need_stdout = false
+
+[jobs.check-all]
+command = ["cargo", "check", "--all-targets"]
+need_stdout = false
+
+[jobs.clippy]
+command = ["cargo", "clippy"]
+need_stdout = false
+
+[jobs.clippy-all]
+command = ["cargo", "clippy", "--all-targets"]
+need_stdout = false
+
+[jobs.test]
+command = ["cargo", "test"]
+need_stdout = true
+background = false
+
+[jobs.nextest]
+command = [
+    "cargo", "nextest", "run",
+    "--hide-progress-bar", "--failure-output", "final"
+]
+need_stdout = true
+background = false
+analyzer = "nextest"
+
+[jobs.coverage]
+command = [
+    "cargo", "llvm-cov", "nextest", "--branch",
+    "--lcov", "--output-path", "./target/lcov.info",
+    "--hide-progress-bar", "--failure-output", "final"
+]
+need_stdout = true
+background = false
+analyzer = "nextest"
+ignored_lines = [
+    "info: cargo-llvm-cov currently setting",
+    "warning: --branch option is unstable",
+]
+
+[jobs.coverage-report]
+command = [
+    "cargo", "llvm-cov", "nextest", "--branch", "--html",
+    "--hide-progress-bar", "--failure-output", "final"
+]
+need_stdout = true
+background = false
+analyzer = "nextest"
+ignored_lines = [
+    "info: cargo-llvm-cov currently setting",
+    "warning: --branch option is unstable",
+]
+
+[jobs.doc]
+command = ["cargo", "doc", "--no-deps"]
+need_stdout = false
+
+[jobs.doc-open]
+command = ["cargo", "doc", "--no-deps", "--open"]
+need_stdout = false
+on_success = "back"
+
+[keybindings]
+r = "job:coverage-report"
+ctrl-d = "scroll-pages(0.5)"
+ctrl-u = "scroll-pages(-0.5)"

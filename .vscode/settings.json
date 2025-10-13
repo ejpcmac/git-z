@@ -1,4 +1,7 @@
 {
+    "coverage-gutters.coverageBaseDir": "target",
+    "coverage-gutters.coverageReportFileName": "target/llvm-cov/html/index.html",
+    "coverage-gutters.watchOnActivate": true,
     "editor.formatOnSave": true,
     "editor.rulers": [80],
     "evenBetterToml.taplo.bundled": false,

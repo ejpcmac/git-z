@@ -73,8 +73,10 @@ list = [
     "version",
 
     # Tools
+    "bacon",
     "cargo",
     "clippy",
+    "codecov",
     "committed",
     "direnv",
     "editorconfig",
