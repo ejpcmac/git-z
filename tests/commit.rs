@@ -642,6 +642,23 @@ mod wizard {
         Ok(())
     }
 
+    #[test]
+    fn does_not_ask_for_a_scope_when_not_specified_in_config() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_no-scopes.toml")?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+
+        assert!(process.exp_string("Scope").is_err());
+        process.exp_string("Short description")?;
+
+        cancel(&mut process)?;
+        Ok(())
+    }
+
     /////////////////////////////// Description ////////////////////////////////
 
     #[test]
@@ -1134,6 +1151,77 @@ mod wizard {
         process.exp_string("#3")?; // Is from the cache.
 
         cancel(&mut process)?;
+        Ok(())
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                   Config                                   //
+////////////////////////////////////////////////////////////////////////////////
+
+mod config {
+    use super::*;
+
+    #[test]
+    fn prints_a_warning_when_using_v0_1_configuration() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "v0_1_standard.toml")?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        process.exp_string("The configuration in git-z.toml is out of date")?;
+        process.exp_string("You can update it by running `git z update`.")?;
+
+        cancel(&mut process)?;
+        Ok(())
+    }
+
+    #[test]
+    fn takes_into_account_a_v0_1_configuration() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "v0_1_standard.toml")?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        // Asks for commit type listed in the configuration.
+        process.exp_string("Commit type")?;
+        process.exp_string("type")?;
+        process.exp_string("second_type")?;
+        process.exp_string("enter to select, type to filter")?;
+        process.send_line("type")?;
+
+        // Asks for a scope listed in the configuration.
+        process.exp_string("Scope")?;
+        process.exp_string("a")?;
+        process.exp_string("b")?;
+        process.exp_string("c")?;
+        process.exp_string(
+            "to move, enter to select, type to filter, ESC to leave empty, \
+                update `git-z.\r\ntoml` to add new scopes",
+        )?;
+        process.send_line("")?;
+
+        // Asks for a short description within the 5-60 characters limit.
+        process.exp_string("Short description")?;
+        process.exp_string(
+            // spellchecker:ignore-next-line
+            "describe your change with a short description (5-60 characte\r\nrs)",
+        )?;
+        process.send_line("test description")?;
+
+        // Asks for a optional breaking change.
+        process.exp_string("BREAKING CHANGE")?;
+        process.send_line("")?;
+
+        // Asks for a mandatory ticket specified in the configuration.
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("XXX or GH-XXX")?;
+        process.send_line("GH-42")?;
+
+        process.exp_eof()?;
+
         Ok(())
     }
 }
@@ -2433,6 +2521,21 @@ mod usage_errors {
 
         Ok(())
     }
+
+    // #[test]
+    // fn prints_an_error_if_the_type_list_is_empty() -> Result<()> {
+    //     let temp_dir = setup_temp_dir(Git::Fake)?;
+    //     install_config(&temp_dir, "latest_no-types.toml")?;
+
+    //     let mut process =
+    //         spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+    //     process.exp_string("Error: invalid configuration in git-z.toml")?;
+    //     process.exp_string("`types` cannot be empty")?;
+    //     process.exp_eof()?;
+
+    //     Ok(())
+    // }
 
     #[test]
     fn prints_an_error_if_the_config_is_not_toml() -> Result<()> {
