@@ -23,3 +23,20 @@ pub fn uncapitalise(s: &str) -> String {
         Some(c) => c.to_lowercase().collect::<String>() + chars.as_str(),
     }
 }
+
+#[cfg(test)]
+mod test {
+    #![expect(clippy::missing_panics_doc, reason = "tests")]
+
+    use super::*;
+
+    #[test]
+    fn uncapitalise_sets_the_first_char_to_lowercase() {
+        assert_eq!(uncapitalise("Hello"), "hello");
+    }
+
+    #[test]
+    fn uncapitalise_returns_an_empty_string_on_empty_string() {
+        assert_eq!(uncapitalise(""), "");
+    }
+}

@@ -170,7 +170,7 @@ fn install_pre_commit_hook(temp_dir: &TempDir, exit_code: i32) -> Result<()> {
         "pre-commit",
         &formatdoc! {r#"
             #!/bin/sh
-            echo "pre-commit"
+            echo "dummy pre-commit hook"
             exit {exit_code}
         "#},
     )
@@ -245,6 +245,8 @@ fn gitz_commit(temp_dir: impl AsRef<Path>, git: Git) -> Result<Command> {
     let mut cmd = Command::new(cargo_bin("git-z"));
     cmd.current_dir(&temp_dir)
         .env("NO_COLOR", "true")
+        // NOTE: Enable tracing to avoid missing coverage noise.
+        .arg("-vvvv")
         .arg("commit");
 
     if git == Git::Fake {
@@ -253,6 +255,12 @@ fn gitz_commit(temp_dir: impl AsRef<Path>, git: Git) -> Result<Command> {
     }
 
     Ok(cmd)
+}
+
+fn cancel(process: &mut PtySession) -> Result<()> {
+    process.send_control('c')?;
+    process.exp_eof()?;
+    Ok(())
 }
 
 fn fill_type(process: &mut PtySession) -> Result<()> {
@@ -428,6 +436,7 @@ mod wizard {
         process.exp_string("Commit type")?;
         process.exp_string("to move, enter to select, type to filter")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -446,6 +455,7 @@ mod wizard {
         process.exp_string("another description")?;
         process.exp_string("to move, enter to select, type to filter")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -461,6 +471,7 @@ mod wizard {
 
         process.exp_string("Scope")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -476,6 +487,7 @@ mod wizard {
 
         assert!(process.exp_string("Scope").is_err());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -507,6 +519,7 @@ mod wizard {
         process.exp_string("Scope")?;
         process.exp_string("Press ESC or leave empty to omit the scope.")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -528,6 +541,7 @@ mod wizard {
                 update `git-z.\r\ntoml` to add new scopes",
         )?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -546,6 +560,7 @@ mod wizard {
 
         process.exp_string("Short description")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -565,6 +580,7 @@ mod wizard {
 
         process.exp_string("Short description")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -583,6 +599,7 @@ mod wizard {
 
         process.exp_string("Short description")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -601,6 +618,7 @@ mod wizard {
 
         assert!(process.exp_string("Short description").is_err());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -620,6 +638,24 @@ mod wizard {
 
         process.exp_string("Short description")?;
 
+        cancel(&mut process)?;
+        Ok(())
+    }
+
+    #[test]
+    fn does_not_ask_for_a_scope_when_not_specified_in_config() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "latest_no-scopes.toml")?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        fill_type(&mut process)?;
+
+        assert!(process.exp_string("Scope").is_err());
+        process.exp_string("Short description")?;
+
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -645,6 +681,7 @@ mod wizard {
                 editor later.",
         )?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -663,6 +700,7 @@ mod wizard {
 
         process.exp_string("BREAKING CHANGE")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -683,6 +721,7 @@ mod wizard {
 
         process.exp_string("BREAKING CHANGE")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -703,6 +742,7 @@ mod wizard {
             .exp_string("The description must be longer than 5 characters")?;
         assert!(process.exp_string("BREAKING CHANGE").is_err());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -726,6 +766,7 @@ mod wizard {
         )?;
         assert!(process.exp_string("BREAKING CHANGE").is_err());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -745,6 +786,7 @@ mod wizard {
         process.exp_string("The description must start in lowercase")?;
         assert!(process.exp_string("BREAKING CHANGE").is_err());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -783,6 +825,7 @@ mod wizard {
             "Press ESC or leave empty if there are no breaking changes.",
         )?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -801,6 +844,7 @@ mod wizard {
         process.send_line("")?;
 
         process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -821,6 +865,7 @@ mod wizard {
         process.exp_string("<canceled>")?;
 
         process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -841,6 +886,7 @@ mod wizard {
         fill_breaking_change(&mut process)?;
 
         process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -862,6 +908,7 @@ mod wizard {
         process.exp_string("#XXX or GH-XXX")?;
         process.exp_string("Press ESC to omit the ticket reference.")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -882,6 +929,7 @@ mod wizard {
         process.send_line("#42")?;
 
         process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -903,6 +951,7 @@ mod wizard {
         process.send_line("GH-42")?;
 
         process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -928,6 +977,7 @@ mod wizard {
         )?;
         assert!(process.exp_string("fake commit").is_err());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -949,6 +999,7 @@ mod wizard {
         process.exp_string("<canceled>")?;
 
         process.exp_string("fake commit")?;
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -993,6 +1044,7 @@ mod wizard {
         process.exp_string("Issue / ticket number")?;
         process.exp_string("GH-42")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1013,6 +1065,7 @@ mod wizard {
         process.exp_string("Issue / ticket number")?;
         process.exp_string("#42")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1034,6 +1087,7 @@ mod wizard {
         process.exp_string("Issue / ticket number")?;
         process.exp_string("#42")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1057,6 +1111,7 @@ mod wizard {
         process.exp_string("Issue / ticket number")?;
         process.exp_string("#99")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1094,6 +1149,78 @@ mod wizard {
 
         process.exp_string("Issue / ticket number")?;
         process.exp_string("#3")?; // Is from the cache.
+
+        cancel(&mut process)?;
+        Ok(())
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                   Config                                   //
+////////////////////////////////////////////////////////////////////////////////
+
+mod config {
+    use super::*;
+
+    #[test]
+    fn prints_a_warning_when_using_v0_1_configuration() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "v0_1_standard.toml")?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        process.exp_string("The configuration in git-z.toml is out of date")?;
+        process.exp_string("You can update it by running `git z update`.")?;
+
+        cancel(&mut process)?;
+        Ok(())
+    }
+
+    #[test]
+    fn takes_into_account_a_v0_1_configuration() -> Result<()> {
+        let temp_dir = setup_temp_dir(Git::Fake)?;
+        install_config(&temp_dir, "v0_1_standard.toml")?;
+
+        let mut process =
+            spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+        // Asks for commit type listed in the configuration.
+        process.exp_string("Commit type")?;
+        process.exp_string("type")?;
+        process.exp_string("second_type")?;
+        process.exp_string("enter to select, type to filter")?;
+        process.send_line("type")?;
+
+        // Asks for a scope listed in the configuration.
+        process.exp_string("Scope")?;
+        process.exp_string("a")?;
+        process.exp_string("b")?;
+        process.exp_string("c")?;
+        process.exp_string(
+            "to move, enter to select, type to filter, ESC to leave empty, \
+                update `git-z.\r\ntoml` to add new scopes",
+        )?;
+        process.send_line("")?;
+
+        // Asks for a short description within the 5-60 characters limit.
+        process.exp_string("Short description")?;
+        process.exp_string(
+            // spellchecker:ignore-next-line
+            "describe your change with a short description (5-60 characte\r\nrs)",
+        )?;
+        process.send_line("test description")?;
+
+        // Asks for a optional breaking change.
+        process.exp_string("BREAKING CHANGE")?;
+        process.send_line("")?;
+
+        // Asks for a mandatory ticket specified in the configuration.
+        process.exp_string("Issue / ticket number")?;
+        process.exp_string("XXX or GH-XXX")?;
+        process.send_line("GH-42")?;
+
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -1308,6 +1435,7 @@ mod commit_cache {
             "The wizard will be run as usual with your answers pre-selected.",
         )?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1356,6 +1484,7 @@ mod commit_cache {
         process.exp_string("Issue / ticket number")?;
         process.exp_string("#666")?;
         process.send_line("")?;
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -1385,6 +1514,7 @@ mod commit_cache {
         // Ensure this is pre-selected.
         process.exp_string("> chore")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1413,6 +1543,7 @@ mod commit_cache {
         process.exp_string("Scope")?;
         process.exp_string("everything")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1441,6 +1572,7 @@ mod commit_cache {
         process.exp_string("Scope")?;
         process.exp_string("> scope2")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1488,8 +1620,8 @@ mod commit_cache {
 
         process.exp_string("Issue / ticket number")?;
         assert!(process.exp_string("#666").is_err());
-        process.send_line("")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1515,6 +1647,7 @@ mod commit_cache {
 
         assert_commit_cache(&temp_dir, predicate::path::missing());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1544,6 +1677,7 @@ mod commit_cache {
             "This will use your last commit message without running the wizard."
         )?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1572,6 +1706,7 @@ mod commit_cache {
             "The wizard will be run as usual with your answers pre-selected.",
         )?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1611,6 +1746,7 @@ mod commit_cache {
             "The wizard will be run as usual with your answers pre-selected.",
         )?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1748,6 +1884,7 @@ mod commit_cache {
 
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1774,6 +1911,7 @@ mod commit_cache {
 
         assert_commit_cache(&temp_dir, predicate::path::missing());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1800,6 +1938,7 @@ mod commit_cache {
 
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1821,6 +1960,7 @@ mod commit_cache {
 
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1843,6 +1983,7 @@ mod commit_cache {
         process.exp_string("Commit type")?;
         assert_commit_cache(&temp_dir, predicate::path::missing());
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1861,6 +2002,7 @@ mod commit_cache {
 
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1880,6 +2022,7 @@ mod commit_cache {
         process.exp_string("Commit type")?;
         assert_commit_cache(&temp_dir, predicate::path::missing());
 
+        cancel(&mut process)?;
         Ok(())
     }
 }
@@ -1899,9 +2042,10 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        assert!(process.exp_string("pre-commit").is_err());
+        assert!(process.exp_string("dummy pre-commit hook").is_err());
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1913,8 +2057,9 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1928,9 +2073,10 @@ mod pre_commit {
 
         let mut process = spawn_command(cmd, TIMEOUT)?;
 
-        assert!(process.exp_string("pre-commit").is_err());
+        assert!(process.exp_string("dummy pre-commit hook").is_err());
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1942,9 +2088,10 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1956,7 +2103,7 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
         process.exp_eof()?;
         assert!(matches!(
             process.process.wait()?,
@@ -1984,6 +2131,7 @@ mod pre_commit {
         )?;
         process.exp_string("Commit type")?;
 
+        cancel(&mut process)?;
         Ok(())
     }
 
@@ -1995,14 +2143,14 @@ mod pre_commit {
         let mut process =
             spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-        process.exp_string("pre-commit")?;
+        process.exp_string("dummy pre-commit hook")?;
 
         fill_type(&mut process)?;
         fill_scope(&mut process)?;
         fill_description(&mut process)?;
         fill_breaking_change(&mut process)?;
 
-        assert!(process.exp_string("pre-commit").is_err());
+        assert!(process.exp_string("dummy pre-commit hook").is_err());
         process.exp_string("fake commit")?;
         process.exp_eof()?;
 
@@ -2021,7 +2169,7 @@ mod pre_commit {
     //     let mut process =
     //         spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
 
-    //     process.exp_string("pre-commit")?;
+    //     process.exp_string("dummy pre-commit hook")?;
 
     //     fill_type(&mut process)?;
     //     fill_scope(&mut process)?;
@@ -2199,6 +2347,7 @@ mod commit {
         fill_breaking_change(&mut process)?;
 
         assert!(process.exp_string("fake commit").is_err());
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -2240,6 +2389,7 @@ mod commit {
         fill_breaking_change(&mut process)?;
 
         assert!(process.exp_string("fake commit").is_err());
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -2372,6 +2522,21 @@ mod usage_errors {
         Ok(())
     }
 
+    // #[test]
+    // fn prints_an_error_if_the_type_list_is_empty() -> Result<()> {
+    //     let temp_dir = setup_temp_dir(Git::Fake)?;
+    //     install_config(&temp_dir, "latest_no-types.toml")?;
+
+    //     let mut process =
+    //         spawn_command(gitz_commit(&temp_dir, Git::Fake)?, TIMEOUT)?;
+
+    //     process.exp_string("Error: invalid configuration in git-z.toml")?;
+    //     process.exp_string("`types` cannot be empty")?;
+    //     process.exp_eof()?;
+
+    //     Ok(())
+    // }
+
     #[test]
     fn prints_an_error_if_the_config_is_not_toml() -> Result<()> {
         let temp_dir = setup_temp_dir(Git::Fake)?;
@@ -2441,6 +2606,7 @@ mod usage_errors {
         fill_breaking_change(&mut process)?;
 
         assert!(process.exp_string("Git has returned an error").is_err());
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -2536,6 +2702,7 @@ mod usage_errors {
         fill_breaking_change(&mut process)?;
 
         assert!(process.exp_string("Git has returned an error").is_err());
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -2617,6 +2784,7 @@ mod usage_errors {
                 .exp_string("Operation was canceled by the user")
                 .is_err()
         );
+        process.exp_eof()?;
 
         Ok(())
     }
@@ -2636,6 +2804,7 @@ mod usage_errors {
                 .exp_string("Operation was interrupted by the user")
                 .is_err()
         );
+        process.exp_eof()?;
 
         Ok(())
     }
