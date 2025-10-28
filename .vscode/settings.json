@@ -27,7 +27,8 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "[markdown]": {
-        "editor.formatOnSave": false
+        "editor.formatOnSave": false,
+        "files.trimTrailingWhitespace": false
     },
     "[yaml]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
