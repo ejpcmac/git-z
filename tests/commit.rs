@@ -33,7 +33,7 @@ use std::{
     process::Command,
 };
 
-use assert_cmd::cargo::cargo_bin;
+use assert_cmd::cargo_bin;
 use assert_fs::{TempDir, assert::IntoPathPredicate, prelude::*};
 use eyre::Result;
 use indoc::{formatdoc, indoc};
@@ -242,7 +242,7 @@ fn new_tracked_file(temp_dir: &TempDir, file_name: &str) -> Result<()> {
 }
 
 fn gitz_commit(temp_dir: impl AsRef<Path>, git: Git) -> Result<Command> {
-    let mut cmd = Command::new(cargo_bin("git-z"));
+    let mut cmd = Command::new(cargo_bin!());
     cmd.current_dir(&temp_dir)
         .env("NO_COLOR", "true")
         // NOTE: Enable tracing to avoid missing coverage noise.
