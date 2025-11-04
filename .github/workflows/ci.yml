@@ -10,6 +10,7 @@ on:
       - bugfix/*
       - hotfix/*
       - docs/*
+      - chore/*
   pull_request:
     branches:
       - main
