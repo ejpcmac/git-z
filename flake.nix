@@ -113,7 +113,7 @@
                 cargo-watch
                 git
                 git-z
-                gitAndTools.gitflow
+                gitflow
               ];
 
               testEnv = [
