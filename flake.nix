@@ -55,7 +55,7 @@
                 naersk.buildPackage {
                   src = ./.;
                   cargoBuildOptions = opts: opts ++ extraCargoBuildOptions;
-                  RUSTFLAGS = "-Amissing_docs";
+                  RUSTFLAGS = "-A missing_docs";
                   FLAKE_REVISION = self.shortRev or
                     (builtins.replaceStrings [ "dirty" ] [ "modified" ]
                       self.dirtyShortRev);

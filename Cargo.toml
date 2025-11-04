@@ -35,6 +35,11 @@ depends = "git"
 license = "wix/gpl-3.0.rtf"
 
 [features]
+# NOTE: This feature is enabled in `.vscode/settings.json` and can be used to
+# enable some features when editing the code without impacting the default
+# features.
+rust-analyzer = []
+# Application features
 unstable-pre-commit = ["dep:is_executable"]
 
 [dependencies]
@@ -74,6 +79,9 @@ rexpect = "0.6"
 
 [workspace]
 members = ["xtask"]
+
+[profile.dev]
+debug = "line-tables-only"
 
 [lints.rust]
 # Forbidden

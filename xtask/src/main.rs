@@ -178,20 +178,20 @@ fn check_format(ctx: &mut Context) {
 fn build(ctx: &mut Context) {
     action!(
         ctx,
-        "Building all packages with all feature combinations",
-        "cargo hack build --no-dev-deps --workspace --feature-powerset --keep-going",
+        "Building all packages for all feature combinations",
+        "cargo hack build --no-dev-deps --workspace --feature-powerset --skip rust-analyzer --keep-going",
     );
 
     action!(
         ctx,
-        "Checking for clippy warnings in all packages with all feature combinations",
-        "cargo hack clippy --no-dev-deps --workspace --feature-powerset --keep-going -- -D warnings",
+        "Checking for clippy warnings in all packages for all feature combinations",
+        "cargo hack clippy --no-dev-deps --workspace --feature-powerset --skip rust-analyzer --keep-going -- -D warnings",
     );
 
     action!(
         ctx,
-        "Checking for clippy warnings in all packages for all targets with all feature combinations",
-        "cargo hack clippy --workspace --all-targets --feature-powerset --keep-going -- -D warnings",
+        "Checking for clippy warnings in all packages for all targets and all feature combinations",
+        "cargo hack clippy --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going -- -D warnings",
     );
 }
 
@@ -201,7 +201,7 @@ fn check_doc(ctx: &mut Context) {
     action!(
         ctx,
         "Checking that the documentation builds without warnings",
-        "cargo hack doc --workspace  --exclude xtask --feature-powerset --keep-going --no-deps --document-private-items"
+        "cargo hack doc --no-deps --document-private-items --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going"
     );
 }
 
@@ -209,16 +209,16 @@ fn test(ctx: &mut Context) {
     action!(
         ctx,
         step!(
-            "Building the tests for all packages with all feature combinations",
-            "cargo hack nextest run --workspace --exclude xtask --feature-powerset --keep-going --no-run",
+            "Building the tests for all packages for all feature combinations",
+            "cargo hack nextest run --no-run --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
         ),
         step!(
-            "Running the tests for all packages with all feature combinations",
-            "cargo hack nextest run --workspace --exclude xtask --feature-powerset --keep-going --no-tests=warn",
+            "Running the tests for all packages for all feature combinations",
+            "cargo hack nextest run --no-tests=warn --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
         ),
         // step!(
-        //     "Running the doctests for all packages with all feature combinations",
-        //     "cargo hack test --doc --workspace --exclude xtask --feature-powerset --keep-going",
+        //     "Running the doctests for all packages for all feature combinations",
+        //     "cargo hack test --doc --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
         // ),
     );
 }
@@ -232,11 +232,11 @@ fn coverage(ctx: &mut Context) {
         ),
         step!(
             "Running the tests with coverage for all packages with all feature combinations",
-            "nix develop -L .#llvm-cov -c cargo hack llvm-cov nextest --branch --no-report --workspace --exclude xtask --feature-powerset --keep-going --no-tests=warn",
+            "nix develop -L .#llvm-cov -c cargo hack llvm-cov nextest --branch --no-report --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going --no-tests=warn",
         ),
         // step!(
         //     "Running the doctests with coverage for all packages with all feature combinations",
-        //     "nix develop -L .#llvm-cov -c cargo hack llvm-cov test --branch --no-report --doc --workspace --exclude xtask --feature-powerset --keep-going",
+        //     "nix develop -L .#llvm-cov -c cargo hack llvm-cov test --branch --no-report --doc --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
         // ),
         step!(
             "Generating the coverage report",
@@ -251,13 +251,13 @@ fn check_unused_deps(ctx: &mut Context) {
         action!(
             ctx,
             "Looking for unused dependencies",
-            "nix develop -L .#udeps -c cargo hack udeps --workspace --feature-powerset --keep-going",
+            "nix develop -L .#udeps -c cargo hack udeps --workspace --feature-powerset --skip rust-analyzer --keep-going",
         );
 
         action!(
             ctx,
             "Looking for unused dev-dependencies",
-            "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --keep-going",
+            "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going",
         );
     }
 
@@ -266,13 +266,13 @@ fn check_unused_deps(ctx: &mut Context) {
         action!(
             ctx,
             "Looking for unused dependencies",
-            "cargo +nightly hack udeps --workspace --feature-powerset --keep-going",
+            "cargo +nightly hack udeps --workspace --feature-powerset --skip rust-analyzer --keep-going",
         );
 
         action!(
             ctx,
             "Looking for unused dev-dependencies",
-            "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --keep-going",
+            "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going",
         );
     }
 }
