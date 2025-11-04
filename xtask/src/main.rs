@@ -224,56 +224,120 @@ fn test(ctx: &mut Context) {
 }
 
 fn coverage(ctx: &mut Context) {
-    action!(
-        ctx,
-        step!(
-            "Cleaning any previous coverage report",
-            "nix develop -L .#llvm-cov -c cargo llvm-cov clean --workspace"
+    match NightlyCallMethod::from_env() {
+        NightlyCallMethod::Cargo => action!(
+            ctx,
+            step!(
+                "Cleaning any previous coverage report",
+                "cargo +nightly llvm-cov clean --workspace"
+            ),
+            step!(
+                "Running the tests with coverage for all packages with all feature combinations",
+                "cargo +nightly hack llvm-cov nextest --branch --no-report --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going --no-tests=warn",
+            ),
+            // step!(
+            //     "Running the doctests with coverage for all packages with all feature combinations",
+            //     "cargo +nightly hack llvm-cov test --branch --no-report --doc --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
+            // ),
+            step!(
+                "Generating the coverage report",
+                "cargo +nightly llvm-cov report --doctests --cobertura --output-path ./target/cobertura.xml"
+            ),
+            step!(
+                "Printing coverage results",
+                "cargo +nightly llvm-cov report --doctests"
+            ),
         ),
-        step!(
-            "Running the tests with coverage for all packages with all feature combinations",
-            "nix develop -L .#llvm-cov -c cargo hack llvm-cov nextest --branch --no-report --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going --no-tests=warn",
+        NightlyCallMethod::Nix => action!(
+            ctx,
+            step!(
+                "Cleaning any previous coverage report",
+                "nix develop -L .#rust-nightly -c cargo llvm-cov clean --workspace"
+            ),
+            step!(
+                "Running the tests with coverage for all packages with all feature combinations",
+                "nix develop -L .#rust-nightly -c cargo hack llvm-cov nextest --branch --no-report --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going --no-tests=warn",
+            ),
+            // step!(
+            //     "Running the doctests with coverage for all packages with all feature combinations",
+            //     "nix develop -L .#rust-nightly -c cargo hack llvm-cov test --branch --no-report --doc --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
+            // ),
+            step!(
+                "Generating the coverage report",
+                "nix develop -L .#rust-nightly -c cargo llvm-cov report --doctests --cobertura --output-path ./target/cobertura.xml"
+            ),
+            step!(
+                "Printing coverage results",
+                "nix develop -L .#rust-nightly -c cargo llvm-cov report --doctests"
+            ),
         ),
-        // step!(
-        //     "Running the doctests with coverage for all packages with all feature combinations",
-        //     "nix develop -L .#llvm-cov -c cargo hack llvm-cov test --branch --no-report --doc --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
-        // ),
-        step!(
-            "Generating the coverage report",
-            "nix develop -L .#llvm-cov -c cargo llvm-cov report --doctests --lcov --output-path ./target/lcov.info"
+        NightlyCallMethod::AlreadyNightly => action!(
+            ctx,
+            step!(
+                "Cleaning any previous coverage report",
+                "cargo llvm-cov clean --workspace"
+            ),
+            step!(
+                "Running the tests with coverage for all packages with all feature combinations",
+                "cargo hack llvm-cov nextest --branch --no-report --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going --no-tests=warn",
+            ),
+            // step!(
+            //     "Running the doctests with coverage for all packages with all feature combinations",
+            //     "cargo hack llvm-cov test --branch --no-report --doc --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
+            // ),
+            step!(
+                "Generating the coverage report",
+                "cargo llvm-cov report --doctests --cobertura --output-path ./target/cobertura.xml"
+            ),
+            step!(
+                "Printing coverage results",
+                "cargo llvm-cov report --doctests"
+            ),
         ),
-    );
+    }
 }
 
 fn check_unused_deps(ctx: &mut Context) {
-    #[cfg(not(target_os = "windows"))]
-    {
-        action!(
-            ctx,
-            "Looking for unused dependencies",
-            "nix develop -L .#udeps -c cargo hack udeps --workspace --feature-powerset --skip rust-analyzer --keep-going",
-        );
+    match NightlyCallMethod::from_env() {
+        NightlyCallMethod::Cargo => {
+            action!(
+                ctx,
+                "Looking for unused dependencies",
+                "cargo +nightly hack udeps --workspace --feature-powerset --skip rust-analyzer --keep-going",
+            );
 
-        action!(
-            ctx,
-            "Looking for unused dev-dependencies",
-            "nix develop -L .#udeps -c cargo hack udeps --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going",
-        );
-    }
+            action!(
+                ctx,
+                "Looking for unused dev-dependencies",
+                "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going",
+            );
+        }
+        NightlyCallMethod::Nix => {
+            action!(
+                ctx,
+                "Looking for unused dependencies",
+                "nix develop -L .#rust-nightly -c cargo hack udeps --workspace --feature-powerset --skip rust-analyzer --keep-going",
+            );
 
-    #[cfg(target_os = "windows")]
-    {
-        action!(
-            ctx,
-            "Looking for unused dependencies",
-            "cargo +nightly hack udeps --workspace --feature-powerset --skip rust-analyzer --keep-going",
-        );
+            action!(
+                ctx,
+                "Looking for unused dev-dependencies",
+                "nix develop -L .#rust-nightly -c cargo hack udeps --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going",
+            );
+        }
+        NightlyCallMethod::AlreadyNightly => {
+            action!(
+                ctx,
+                "Looking for unused dependencies",
+                "cargo hack udeps --workspace --feature-powerset --skip rust-analyzer --keep-going",
+            );
 
-        action!(
-            ctx,
-            "Looking for unused dev-dependencies",
-            "cargo +nightly hack udeps --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going",
-        );
+            action!(
+                ctx,
+                "Looking for unused dev-dependencies",
+                "cargo hack udeps --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going",
+            );
+        }
     }
 }
 
@@ -465,4 +529,28 @@ fn get_merge_base(into: &str) -> String {
         .unwrap()
         .trim()
         .to_owned()
+}
+
+enum NightlyCallMethod {
+    Cargo,
+    Nix,
+    AlreadyNightly,
+}
+
+impl NightlyCallMethod {
+    pub fn from_env() -> Self {
+        match (in_nix_shell(), has_rust_nightly()) {
+            (false, _) => Self::Cargo,
+            (true, false) => Self::Nix,
+            (true, true) => Self::AlreadyNightly,
+        }
+    }
+}
+
+fn in_nix_shell() -> bool {
+    env::var_os("IN_NIX_SHELL").is_some()
+}
+
+fn has_rust_nightly() -> bool {
+    env::var_os("HAS_RUST_NIGHTLY").is_some_and(|val| val == "true")
 }
