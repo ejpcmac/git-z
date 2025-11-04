@@ -122,7 +122,6 @@ impl CustomCommandBackend {
     /// Creates a custom command backend.
     #[expect(
         clippy::missing_panics_doc,
-        clippy::unwrap_in_result,
         reason = "The expect in the function cannot actually panic."
     )]
     #[tracing::instrument(
