@@ -226,7 +226,7 @@
               llvm-cov = {
                 name = "cargo-llvm-cov";
                 packages = with pkgs; [
-                  (rust-bin.nightly."2025-09-24".minimal.override {
+                  (rust-bin.nightly."2025-11-04".minimal.override {
                     extensions = [ "llvm-tools" ];
                   })
                   bacon
@@ -239,7 +239,7 @@
               udeps = {
                 name = "cargo-udeps";
                 packages = with pkgs; [
-                  rust-bin.nightly."2025-09-24".minimal
+                  rust-bin.nightly."2025-11-04".minimal
                   clang
                   cargo-hack
                   cargo-udeps
