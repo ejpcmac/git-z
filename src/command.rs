@@ -57,7 +57,7 @@ const LONG_VERSION: &str = concat!(
 /// A Git extension to go beyond.
 #[derive(Debug, Parser)]
 #[command(
-    bin_name = "git z",
+bin_name = "git z",
     author,
     version = env!("VERSION_WITH_GIT"),
     long_version = LONG_VERSION,
@@ -94,15 +94,20 @@ impl GitZ {
         let args = Self::parse();
         setup_tracing(args.verbosity);
 
-        let result = match args.command {
-            GitZCommand::Init(init) => init.run(),
-            GitZCommand::Commit(commit) => commit.run(),
-            GitZCommand::Update(update) => update.run(),
-        };
-
-        match result {
+        match args.command.run() {
             Err(error) => handle_errors(error),
             Ok(()) => Ok(()),
+        }
+    }
+}
+
+impl GitZCommand {
+    /// Runs the given command.
+    pub fn run(&self) -> Result<()> {
+        match self {
+            Self::Init(init) => init.run(),
+            Self::Commit(commit) => commit.run(),
+            Self::Update(update) => update.run(),
         }
     }
 }

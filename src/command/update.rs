@@ -25,7 +25,7 @@ use crate::{
         VERSION,
         updater::{AskForTicket, ConfigUpdater, Init},
     },
-    error, hint, success,
+    hint, success,
     tracing::LogResult as _,
 };
 

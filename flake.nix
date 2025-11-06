@@ -55,7 +55,7 @@
                 naersk.buildPackage {
                   src = ./.;
                   cargoBuildOptions = opts: opts ++ extraCargoBuildOptions;
-                  RUSTFLAGS = "-Amissing_docs";
+                  RUSTFLAGS = "-A missing_docs";
                   FLAKE_REVISION = self.shortRev or
                     (builtins.replaceStrings [ "dirty" ] [ "modified" ]
                       self.dirtyShortRev);
@@ -84,8 +84,17 @@
 
           devshells =
             let
-              buildToolchain = with pkgs; [
-                rust-toolchain
+              rustToolchain = version:
+                if version == "stable" then
+                  rust-toolchain
+                else if version == "nightly" then
+                  (pkgs.rust-bin.nightly."2025-10-20".minimal.override {
+                    extensions = [ "llvm-tools" ];
+                  })
+                else throw "the Rust version must be `stable` or `nightly`";
+
+              buildToolchain = version: with pkgs; [
+                (rustToolchain version)
               ] ++ lib.optionals (!stdenv.isDarwin) [
                 clang
               ];
@@ -101,19 +110,24 @@
                 typos
               ];
 
+              nightlyCheckToolchain = with pkgs; [
+                cargo-udeps
+              ] ++ lib.optionals (!stdenv.isDarwin) [
+                cargo-llvm-cov
+              ];
+
               ideToolchain = with pkgs; [
                 nixd
                 rust-analyzer
               ];
 
-              developmentTools = with pkgs; with self'.packages; [
+              devTools = with pkgs; with self'.packages; [
                 bacon
                 cargo-bloat
                 cargo-outdated
-                cargo-watch
                 git
                 git-z
-                gitAndTools.gitflow
+                gitflow
               ];
 
               testEnv = [
@@ -140,6 +154,13 @@
                   value = "${pkgs.typos-lsp}/bin/typos-lsp";
                 }
               ];
+
+              nightlyEnv = [
+                {
+                  name = "HAS_RUST_NIGHTLY";
+                  value = "true";
+                }
+              ];
             in
             {
               default = {
@@ -151,10 +172,10 @@
                 '';
 
                 packages =
-                  buildToolchain
+                  buildToolchain "stable"
                   ++ checkToolchain
                   ++ ideToolchain
-                  ++ developmentTools;
+                  ++ devTools;
 
                 env =
                   testEnv
@@ -167,45 +188,34 @@
                     command = "cargo deb --target=x86_64-unknown-linux-musl";
                   }
 
-                  # Pass-through commands to make some cargo extensions run in
-                  # their own devshell.
+                  # Pass-through commands to make some cargo extensions run with
+                  # a different toolchain.
                   {
                     name = "cargo-deb";
                     command = "nix develop -L .#deb -c cargo $@";
                   }
                   {
                     name = "cargo-llvm-cov";
-                    command = "nix develop -L .#llvm-cov -c cargo $@";
+                    command = "nix develop -L .#rust-nightly -c cargo $@";
                   }
                   {
                     name = "cargo-udeps";
-                    command = "nix develop -L .#udeps -c cargo $@";
+                    command = "nix develop -L .#rust-nightly -c cargo $@";
                   }
                   {
                     name = "coverage-report";
                     command = ''
-                      nix develop -L .#llvm-cov -c \
+                      nix develop -L .#rust-nightly -c \
                         cargo llvm-cov nextest --branch --open
                     '';
                   }
                   {
                     name = "live-coverage";
                     command = ''
-                      nix develop -L .#llvm-cov -c bacon coverage
+                      nix develop -L .#rust-nightly -c bacon coverage
                     '';
                   }
                 ];
-              };
-
-              ci = {
-                name = "git-z CI";
-
-                packages =
-                  buildToolchain
-                  ++ checkToolchain;
-
-                env =
-                  testEnv;
               };
 
               # NOTE: Use the musl target to build a statically-linked binary.
@@ -222,28 +232,40 @@
                 ];
               };
 
-              # NOTE: cargo-llvm-cov needs Rust nightly for branch coverage.
-              llvm-cov = {
-                name = "cargo-llvm-cov";
-                packages = with pkgs; [
-                  (rust-bin.nightly."2025-09-24".minimal.override {
-                    extensions = [ "llvm-tools" ];
-                  })
-                  bacon
-                  clang
-                  cargo-llvm-cov
-                ];
+              # Devshell to run tools with a nightly toolchain.
+              rust-nightly = {
+                name = "Rust Nightly";
+
+                packages =
+                  buildToolchain "nightly"
+                  ++ nightlyCheckToolchain;
+
+                env =
+                  nightlyEnv;
               };
 
-              # NOTE: cargo-udeps needs Rust nightly to run.
-              udeps = {
-                name = "cargo-udeps";
-                packages = with pkgs; [
-                  rust-bin.nightly."2025-09-24".minimal
-                  clang
-                  cargo-hack
-                  cargo-udeps
-                ];
+              ci = {
+                name = "git-z CI";
+
+                packages =
+                  buildToolchain "stable"
+                  ++ checkToolchain;
+
+                env =
+                  testEnv;
+              };
+
+              ci-nightly = {
+                name = "git-z CI (Rust Nightly)";
+
+                packages =
+                  buildToolchain "nightly"
+                  ++ checkToolchain
+                  ++ nightlyCheckToolchain;
+
+                env =
+                  testEnv
+                  ++ nightlyEnv;
               };
             };
         };

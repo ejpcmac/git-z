@@ -75,7 +75,9 @@ Install:
 * a Rust toolchain,
 * the following cargo extensions:
     * `cargo-hack`,
+    * `cargo-llvm-cov`,
     * `cargo-nextest`,
+    * `cargo-udeps`,
     * `cargo-deb` (only on Linux),
     * `cargo-wix` (only on Windows),
 * the following linters and formatters:
@@ -161,7 +163,7 @@ Please format your code with the following tools:
 * Rust with `rustfmt`,
 * Nix with `nixpkgs-fmt`,
 * TOML with `taplo`,
-* YAML and JSON with `prettier`.
+* JSON and YAML with `prettier`.
 
 All contributed code must be documented. In general, take your inspiration from
 the existing code.

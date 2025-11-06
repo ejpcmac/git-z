@@ -18,6 +18,7 @@
         }
     },
     "rewrap.autoWrap.enabled": true,
+    "rust-analyzer.cargo.features": ["rust-analyzer"],
     "rust-analyzer.check.command": "clippy",
     "rust-analyzer.server.path": "rust-analyzer",
     "[json]": {
@@ -27,7 +28,8 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "[markdown]": {
-        "editor.formatOnSave": false
+        "editor.formatOnSave": false,
+        "files.trimTrailingWhitespace": false
     },
     "[yaml]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"

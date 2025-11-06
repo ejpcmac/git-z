@@ -4,6 +4,12 @@ version = "0.0.0"
 edition = "2024"
 publish = false
 
+[features]
+# NOTE: This feature is enabled in `.vscode/settings.json` and can be used to
+# enable some features when editing the code without impacting the default
+# features.
+rust-analyzer = []
+
 [dependencies]
 colored = "3"
 xshell = "0.2"

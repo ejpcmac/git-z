@@ -5,10 +5,12 @@
 [![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
 [![Conventional
 Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)
-](https://conventionalcommits.org)<br>
+](https://conventionalcommits.org)  
 [![codecov](https://codecov.io/github/ejpcmac/git-z/graph/badge.svg?token=KH0AWKOBCK)](https://codecov.io/github/ejpcmac/git-z)
 [![Test Status](https://github.com/ejpcmac/git-z/actions/workflows/ci.yml/badge.svg)
 ](https://github.com/ejpcmac/git-z/actions/workflows/ci.yml)
+[![Built with
+Nix](https://img.shields.io/badge/Built_With-Nix-5277C3.svg?logo=nixos&labelColor=73C3D5)](https://nixos.org)
 
 A Git extension to go beyond.
 

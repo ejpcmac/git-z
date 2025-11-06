@@ -41,7 +41,7 @@ analyzer = "nextest"
 [jobs.coverage]
 command = [
     "cargo", "llvm-cov", "nextest", "--branch",
-    "--lcov", "--output-path", "./target/lcov.info",
+    "--cobertura", "--output-path", "./target/cobertura.xml",
     "--hide-progress-bar", "--failure-output", "final"
 ]
 need_stdout = true
