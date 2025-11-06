@@ -22,10 +22,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    crane.url = "github:ipetkov/crane";
   };
 
   outputs = { self, flake-parts, ... }@inputs:
@@ -49,16 +46,30 @@
             let
               packageName = "git-z";
 
-              naersk = pkgs.callPackage inputs.naersk {
-                cargo = rust-toolchain;
-                rustc = rust-toolchain;
+              craneLib = (inputs.crane.mkLib pkgs).overrideToolchain (
+                p: p.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml
+              );
+
+              buildArgs = {
+                src = pkgs.lib.fileset.toSource {
+                  root = ./.;
+                  fileset = pkgs.lib.fileset.unions [
+                    (craneLib.fileset.commonCargoSources ./.)
+                    (pkgs.lib.fileset.maybeMissing ./templates)
+                  ];
+                };
+                strictDeps = true;
+                doCheck = false;
               };
 
-              mkPackage = { extraCargoBuildOptions ? [ ] }:
-                naersk.buildPackage {
-                  src = ./.;
-                  cargoBuildOptions = opts: opts ++ extraCargoBuildOptions;
-                  RUSTFLAGS = "-A missing_docs";
+              cargoArtifacts = craneLib.buildDepsOnly (buildArgs // {
+                buildPhaseCargoCommand = "cargo build --release";
+              });
+
+              mkPackage = { cargoExtraArgs ? "" }:
+                craneLib.buildPackage (buildArgs // {
+                  inherit cargoArtifacts cargoExtraArgs;
+
                   FLAKE_REVISION = self.shortRev or
                     (builtins.replaceStrings [ "dirty" ] [ "modified" ]
                       self.dirtyShortRev);
@@ -69,7 +80,7 @@
                     wrapProgram $out/bin/${packageName} \
                       --prefix PATH : ${lib.makeBinPath [ git ]}
                   '';
-                };
+                });
             in
             {
               default = self'.packages.${packageName};
@@ -77,7 +88,7 @@
               ${packageName} = mkPackage { };
 
               "${packageName}-unstable" = mkPackage {
-                extraCargoBuildOptions = [ "--features unstable-pre-commit" ];
+                cargoExtraArgs = "--features unstable-pre-commit";
               };
             };
 
