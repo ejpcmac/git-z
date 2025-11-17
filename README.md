@@ -228,7 +228,7 @@ Before contributing to this project, please read the
 
 Copyright © 2023-2025 Jean-Philippe Cugnet
 
-This project is licensed under the [GNU General Public License
+The code of this project is licensed under the [GNU General Public License
 3.0](./LICENSES/GPL-3.0-only.txt).
 
 Its documentation is licensed under the [Creative Commons Attribution Share
@@ -238,7 +238,9 @@ The configuration and commit templates are dual-licensed under the [CC0 1.0
 Universal](./LICENSES/CC0-1.0.txt) license OR the [GNU General Public License
 3.0](./LICENSES/GPL-3.0-only.txt).
 
-Some configuration files are licensed under other licenses.
+The development environment, including CI scripts and configuration files, is
+licensed under the [European Union Public License v.
+1.2](./LICENSES/EUPL-1.2.txt), with some exceptions.
 
 This repository follows the [REUSE](https://reuse.software/) specification.
 Please check the individual files for their exact licensing.
