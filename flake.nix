@@ -106,6 +106,7 @@
                 eclint
                 nixpkgs-fmt
                 nodePackages.prettier
+                reuse
                 taplo
                 typos
               ];
