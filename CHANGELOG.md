@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+SPDX-License-Identifier: GPL-3.0-only
+-->
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

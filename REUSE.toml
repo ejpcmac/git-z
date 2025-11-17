@@ -1,0 +1,13 @@
+version = 1
+
+# NOTE: These files are resources to test the updater, so they need to be
+# specifically crafted and cannot include actual licensing information.
+[[annotations]]
+path = "tests/res/config/v0_1_*"
+SPDX-FileCopyrightText = "2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"
+SPDX-License-Identifier = "CC0-1.0 OR GPL-3.0-only"
+
+[[annotations]]
+path = "tests/res/config/v0_2_*"
+SPDX-FileCopyrightText = "2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>"
+SPDX-License-Identifier = "CC0-1.0 OR GPL-3.0-only"

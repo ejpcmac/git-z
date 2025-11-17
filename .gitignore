@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: NONE
+# SPDX-License-Identifier: CC0-1.0
+
 ##
 ## Application artifacts
 ##
@@ -8,5 +11,5 @@
 # Rust build directory
 /target/
 
-# Nix build output.
+# Nix build output
 /result
