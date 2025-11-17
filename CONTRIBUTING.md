@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2018-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
-SPDX-License-Identifier: GPL-3.0-only
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 # Contributing to git-z
@@ -185,7 +185,9 @@ the commit message.
 By contributing to `git-z`, you agree that, unless stated otherwise (e.g. by a
 different `SPDX-License-Identifier` header in the contributed file), your
 contributions will be licensed under the [GNU General Public License
-3.0](./LICENSES/GPL-3.0-only.txt).
+3.0](./LICENSES/GPL-3.0-only.txt) for code and the [Creative Commons Attribution
+Share Alike 4.0 International](./LICENSES/CC-BY-SA-4.0.txt) license for
+documentation.
 
 This project follows the [REUSE](https://reuse.software/) specification to keep
 track of copyright and license information. Each file must contain SPDX license

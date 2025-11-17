@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
 SPDX-FileCopyrightText: 2025 Guillaume Cugnet <jean-philippe@cugnet.eu>
 
-SPDX-License-Identifier: GPL-3.0-only
+SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
 # git-z
@@ -230,6 +230,9 @@ Copyright © 2023-2025 Jean-Philippe Cugnet
 
 This project is licensed under the [GNU General Public License
 3.0](./LICENSES/GPL-3.0-only.txt).
+
+Its documentation is licensed under the [Creative Commons Attribution Share
+Alike 4.0 International](./LICENSES/CC-BY-SA-4.0.txt) license.
 
 The configuration and commit templates are dual-licensed under the [CC0 1.0
 Universal](./LICENSES/CC0-1.0.txt) license OR the [GNU General Public License
