@@ -364,6 +364,18 @@ fn check_deps(ctx: &mut Context) {
 }
 
 fn check_packages(ctx: &mut Context) {
+    action!(
+        ctx,
+        step!(
+            "Listing the cargo package contents",
+            "cargo package --list --allow-dirty"
+        ),
+        step!(
+            "Checking that the cargo package builds properly",
+            "cargo package --allow-dirty"
+        ),
+    );
+
     #[cfg(not(target_os = "windows"))]
     action!(
         ctx,
