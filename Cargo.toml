@@ -192,3 +192,6 @@ verbose_file_reads = "warn"
 cargo = { level = "warn", priority = -1 }
 redundant_pub_crate = "warn"
 use_self = "warn"
+
+# NOTE: This is checked by cargo-deny.
+multiple_crate_versions = "allow"
