@@ -81,6 +81,7 @@ list = [
     "clippy",
     "codecov",
     "committed",
+    "deny",
     "direnv",
     "editorconfig",
     "git",
