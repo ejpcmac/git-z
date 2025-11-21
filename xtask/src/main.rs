@@ -58,7 +58,7 @@ fn check(subcommand: Option<&str>) {
             check_doc(&mut ctx);
             test(&mut ctx);
             coverage(&mut ctx);
-            check_unused_deps(&mut ctx);
+            check_deps(&mut ctx);
             check_packages(&mut ctx);
         }
         Some("commits") => check_commits(&mut ctx),
@@ -68,7 +68,7 @@ fn check(subcommand: Option<&str>) {
         Some("doc") => check_doc(&mut ctx),
         Some("test") => test(&mut ctx),
         Some("coverage") => coverage(&mut ctx),
-        Some("unused-deps") => check_unused_deps(&mut ctx),
+        Some("deps") => check_deps(&mut ctx),
         Some("packages") => check_packages(&mut ctx),
         _ => check_usage(),
     }
@@ -79,7 +79,7 @@ fn check(subcommand: Option<&str>) {
 fn check_usage() {
     let name = env::args().next().unwrap();
     eprintln!(
-        "usage: {name} check [commits|licenses|format|build|doc|test|coverage|unused-deps|packages]"
+        "usage: {name} check [commits|licenses|format|build|doc|test|coverage|deps|packages]"
     );
     process::exit(1);
 }
@@ -297,7 +297,19 @@ fn coverage(ctx: &mut Context) {
     }
 }
 
-fn check_unused_deps(ctx: &mut Context) {
+fn check_deps(ctx: &mut Context) {
+    action!(
+        ctx,
+        "Checking that all dependency sources are allowed",
+        "cargo deny --workspace --all-features check sources"
+    );
+
+    action!(
+        ctx,
+        "Checking that all dependencies are allowed",
+        "cargo deny --workspace --all-features check bans"
+    );
+
     match NightlyCallMethod::from_env() {
         NightlyCallMethod::Cargo => {
             action!(
