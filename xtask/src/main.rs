@@ -52,6 +52,7 @@ fn check(subcommand: Option<&str>) {
     match subcommand {
         None => {
             check_commits(&mut ctx);
+            check_licenses(&mut ctx);
             check_format(&mut ctx);
             build(&mut ctx);
             check_doc(&mut ctx);
@@ -61,6 +62,7 @@ fn check(subcommand: Option<&str>) {
             check_packages(&mut ctx);
         }
         Some("commits") => check_commits(&mut ctx),
+        Some("licenses") => check_licenses(&mut ctx),
         Some("format") => check_format(&mut ctx),
         Some("build") => build(&mut ctx),
         Some("doc") => check_doc(&mut ctx),
@@ -77,7 +79,7 @@ fn check(subcommand: Option<&str>) {
 fn check_usage() {
     let name = env::args().next().unwrap();
     eprintln!(
-        "usage: {name} check [commits|format|build|doc|test|coverage|unused-deps|packages]"
+        "usage: {name} check [commits|licenses|format|build|doc|test|coverage|unused-deps|packages]"
     );
     process::exit(1);
 }
@@ -114,6 +116,16 @@ fn check_commits(ctx: &mut Context) {
             ),
         );
     }
+}
+
+fn check_licenses(ctx: &mut Context) {
+    action!(ctx, "Checking for compliance with REUSE", "reuse lint");
+
+    action!(
+        ctx,
+        "Checking that all dependencies use an authorised license",
+        "cargo deny --workspace --all-features check licenses --deny warnings"
+    );
 }
 
 fn check_format(ctx: &mut Context) {
