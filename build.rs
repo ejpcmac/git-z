@@ -16,6 +16,10 @@ fn main() {
     define_built_by();
 }
 
+// SPDX-SnippetBegin
+// SPDX-SnippetCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// SPDX-License-Identifier: EUPL-1.2
+
 /// Defines a variable containing the version with the Git revision.
 ///
 /// `VERSION_WITH_GIT` contains at least the cargo version, even when Git is not
@@ -272,3 +276,5 @@ fn built_by() -> &'static str {
         "cargo"
     }
 }
+
+// SPDX-SnippetEnd

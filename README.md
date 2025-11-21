@@ -231,7 +231,8 @@ Copyright © 2023-2025 Jean-Philippe Cugnet
 The code of this project is primarily licensed under the [GNU General Public
 License 3.0](./LICENSES/GPL-3.0-only.txt), with some parts dual-licensed under
 the [MIT License](./LICENSES/MIT.txt) OR the [Apache License, Version
-2.0](./LICENSES/Apache-2.0.txt).
+2.0](./LICENSES/Apache-2.0.txt). The build script contains a portion licensed
+under the [European Union Public License v. 1.2](./LICENSES/EUPL-1.2.txt).
 
 Its documentation is licensed under the [Creative Commons Attribution Share
 Alike 4.0 International](./LICENSES/CC-BY-SA-4.0.txt) license.
