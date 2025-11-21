@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: Apache-2.0 OR MIT
 
 //! Utilities to help with tracing.
 

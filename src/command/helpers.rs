@@ -72,6 +72,10 @@ pub fn page_size(previous_questions: usize) -> usize {
     }
 }
 
+// SPDX-SnippetBegin
+// SPDX-SnippetCopyrightText: 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 /// Prints a success.
 #[macro_export]
 macro_rules! success {
@@ -118,3 +122,5 @@ macro_rules! hint {
         eprintln!("{message}");
     }};
 }
+
+// SPDX-SnippetEnd
