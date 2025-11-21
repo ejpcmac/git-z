@@ -103,6 +103,7 @@
               ];
 
               checkToolchain = with pkgs; [
+                cargo-deny
                 cargo-hack
                 cargo-nextest
                 committed
