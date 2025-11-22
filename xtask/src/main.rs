@@ -186,6 +186,12 @@ fn build(ctx: &mut Context) {
 
     action!(
         ctx,
+        "Building the tests for all packages for all feature combinations",
+        "cargo hack nextest run --no-run --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
+    );
+
+    action!(
+        ctx,
         "Checking for clippy warnings in all packages for all feature combinations",
         "cargo hack clippy --no-dev-deps --workspace --feature-powerset --skip rust-analyzer --keep-going -- -D warnings",
     );
@@ -194,6 +200,20 @@ fn build(ctx: &mut Context) {
         ctx,
         "Checking for clippy warnings in all packages for all targets and all feature combinations",
         "cargo hack clippy --workspace --all-targets --feature-powerset --skip rust-analyzer --keep-going -- -D warnings",
+    );
+
+    #[cfg(target_os = "linux")]
+    action!(
+        ctx,
+        "Building git-z in release mode for the musl target",
+        "nix develop -L .#deb -c cargo build --release --target=x86_64-unknown-linux-musl",
+    );
+
+    #[cfg(target_os = "windows")]
+    action!(
+        ctx,
+        "Building git-z in release mode",
+        "cargo build --release",
     );
 }
 
@@ -210,10 +230,6 @@ fn check_doc(ctx: &mut Context) {
 fn test(ctx: &mut Context) {
     action!(
         ctx,
-        step!(
-            "Building the tests for all packages for all feature combinations",
-            "cargo hack nextest run --no-run --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",
-        ),
         step!(
             "Running the tests for all packages for all feature combinations",
             "cargo hack nextest run --no-tests=warn --workspace --exclude xtask --feature-powerset --skip rust-analyzer --keep-going",

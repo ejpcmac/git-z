@@ -101,7 +101,7 @@ jobs:
         if: matrix.system == 'x86_64-windows'
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-hack
+          tool: cargo-hack,cargo-nextest
       - name: Restore the build cache
         uses: actions/cache/restore@v4
         with:
