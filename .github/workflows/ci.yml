@@ -42,9 +42,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
-        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci-commits
       - name: Run the commit linter
-        run: nix develop .#ci -c cargo xtask check commits
+        run: nix develop .#ci-commits -c cargo xtask check commits
 
   licenses:
     name: Licensing
@@ -55,9 +55,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
-        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci-license
       - name: Check licensing compliance
-        run: nix develop .#ci -c cargo xtask check licenses
+        run: nix develop .#ci-license -c cargo xtask check licenses
 
   format:
     name: Code formatting and typos
@@ -68,9 +68,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
-        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci-format
       - name: Check the code is formatted and free of typos
-        run: nix develop .#ci -c cargo xtask check format
+        run: nix develop .#ci-format -c cargo xtask check format
 
   build:
     name: Compilation and static analysis
@@ -96,7 +96,7 @@ jobs:
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: |
-          nix build -L --no-link .#devShells.${{ matrix.system }}.ci
+          nix build -L --no-link .#devShells.${{ matrix.system }}.ci-code
       - name: Setup the environment (without Nix)
         if: matrix.system == 'x86_64-windows'
         uses: taiki-e/install-action@v2
@@ -104,7 +104,7 @@ jobs:
           tool: cargo-hack
       - name: Compile and run static analysis (with Nix)
         if: matrix.system != 'x86_64-windows'
-        run: nix develop .#ci -c cargo xtask check build
+        run: nix develop .#ci-code -c cargo xtask check build
       - name: Compile and run static analysis (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo xtask check build
@@ -118,9 +118,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
-        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci-code
       - name: Check the documentation
-        run: nix develop .#ci -c cargo xtask check doc
+        run: nix develop .#ci-code -c cargo xtask check doc
 
   test:
     name: Tests
@@ -146,7 +146,7 @@ jobs:
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: |
-          nix build -L --no-link .#devShells.${{ matrix.system }}.ci
+          nix build -L --no-link .#devShells.${{ matrix.system }}.ci-code
       - name: Setup the environment (without Nix)
         if: matrix.system == 'x86_64-windows'
         uses: taiki-e/install-action@v2
@@ -154,7 +154,7 @@ jobs:
           tool: cargo-hack,cargo-nextest
       - name: Build and run the tests (with Nix)
         if: matrix.system != 'x86_64-windows'
-        run: nix develop .#ci -c cargo xtask check test
+        run: nix develop .#ci-code -c cargo xtask check test
       - name: Build and run the tests (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo xtask check test
@@ -170,9 +170,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
-        run: nix build -L --no-link .#devShells.x86_64-linux.ci-nightly
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci-coverage
       - name: Generate the test coverage report
-        run: nix develop .#ci-nightly -c cargo xtask check coverage
+        run: nix develop .#ci-coverage -c cargo xtask check coverage
       - name: Upload the test coverage report
         uses: codecov/codecov-action@v5
         with:
@@ -190,9 +190,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
-        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci-security
       - name: Run security checks
-        run: nix develop .#ci -c cargo xtask check security
+        run: nix develop .#ci-security -c cargo xtask check security
 
   deps:
     name: Dependencies
@@ -217,7 +217,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
-        run: nix build -L --no-link .#devShells.${{ matrix.system }}.ci-nightly
+        run: nix build -L --no-link .#devShells.${{ matrix.system }}.ci-deps
       - name: Install the Rust toolchain (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: rustup toolchain install nightly
@@ -228,7 +228,7 @@ jobs:
           tool: cargo-deny,cargo-hack,cargo-udeps
       - name: Check the dependencies (with Nix)
         if: matrix.system != 'x86_64-windows'
-        run: nix develop .#ci-nightly -c cargo xtask check deps
+        run: nix develop .#ci-deps -c cargo xtask check deps
       - name: Check the dependencies (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo +nightly xtask check deps
@@ -257,7 +257,7 @@ jobs:
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: |
-          nix build -L --no-link .#devShells.${{ matrix.system }}.ci
+          nix build -L --no-link .#devShells.${{ matrix.system }}.ci-code
       - name: Setup the environment (without Nix)
         if: matrix.system == 'x86_64-windows'
         uses: taiki-e/install-action@v2
@@ -265,7 +265,7 @@ jobs:
           tool: cargo-wix
       - name: Build the packages (with Nix)
         if: matrix.system != 'x86_64-windows'
-        run: nix develop .#ci -c cargo xtask check packages
+        run: nix develop .#ci-code -c cargo xtask check packages
       - name: Build the packages (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo xtask check packages

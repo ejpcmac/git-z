@@ -113,23 +113,39 @@
                 clang
               ];
 
-              checkToolchain = with pkgs; [
-                cargo-deny
-                cargo-hack
-                cargo-nextest
+              commitCheckToolchain = with pkgs; [
                 committed
+              ];
+
+              licenseCheckToolchain = with pkgs; [
+                reuse
+                cargo-deny
+              ];
+
+              securityCheckToolchain = with pkgs; [
+                cargo-deny
+              ];
+
+              formatCheckToolchain = with pkgs; [
                 eclint
                 nixpkgs-fmt
                 nodePackages.prettier
-                reuse
                 taplo
                 typos
               ];
 
-              nightlyCheckToolchain = with pkgs; [
-                cargo-udeps
-              ] ++ lib.optionals (!stdenv.isDarwin) [
+              codeCheckToolchain = with pkgs; [
+                cargo-hack
+                cargo-nextest
+              ];
+
+              coverageToolchain = with pkgs; [
                 cargo-llvm-cov
+              ];
+
+              depsCheckToolchain = with pkgs; [
+                cargo-deny
+                cargo-udeps
               ];
 
               ideToolchain = with pkgs; [
@@ -189,7 +205,10 @@
 
                 packages =
                   buildToolchain "stable"
-                  ++ checkToolchain
+                  ++ commitCheckToolchain
+                  ++ licenseCheckToolchain
+                  ++ formatCheckToolchain
+                  ++ codeCheckToolchain
                   ++ ideToolchain
                   ++ devTools;
 
@@ -254,34 +273,76 @@
 
                 packages =
                   buildToolchain "nightly"
-                  ++ nightlyCheckToolchain;
+                  ++ coverageToolchain
+                  ++ depsCheckToolchain;
 
                 env =
                   nightlyEnv;
               };
 
-              ci = {
-                name = "git-z CI";
+              ci-commits = {
+                name = "git-z CI (Commit linter)";
+
+                packages =
+                  commitCheckToolchain;
+              };
+
+              ci-license = {
+                name = "git-z CI (License linters)";
+
+                packages =
+                  licenseCheckToolchain;
+              };
+
+              ci-security = {
+                name = "git-z CI (Security linters)";
+
+                packages =
+                  securityCheckToolchain;
+              };
+
+              ci-format = {
+                name = "git-z CI (Formatters)";
 
                 packages =
                   buildToolchain "stable"
-                  ++ checkToolchain;
+                  ++ formatCheckToolchain;
+              };
+
+              ci-code = {
+                name = "git-z CI (Code)";
+
+                packages =
+                  buildToolchain "stable"
+                  ++ codeCheckToolchain;
 
                 env =
                   testEnv;
               };
 
-              ci-nightly = {
-                name = "git-z CI (Rust Nightly)";
+              ci-coverage = {
+                name = "git-z CI (Coverage / Rust Nightly)";
 
                 packages =
                   buildToolchain "nightly"
-                  ++ checkToolchain
-                  ++ nightlyCheckToolchain;
+                  ++ codeCheckToolchain
+                  ++ coverageToolchain;
 
                 env =
                   testEnv
                   ++ nightlyEnv;
+              };
+
+              ci-deps = {
+                name = "git-z CI (Dependency checks / Rust Nightly)";
+
+                packages =
+                  buildToolchain "nightly"
+                  ++ codeCheckToolchain
+                  ++ depsCheckToolchain;
+
+                env =
+                  nightlyEnv;
               };
             };
         };
