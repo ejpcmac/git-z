@@ -1,17 +1,5 @@
-// git-z - A Git extension to go beyond.
-// Copyright (C) 2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, version 3 of the License.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// SPDX-FileCopyrightText: 2024-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// SPDX-License-Identifier: EUPL-1.2
 
 //! Cargo xtasks for git-z.
 
@@ -64,21 +52,25 @@ fn check(subcommand: Option<&str>) {
     match subcommand {
         None => {
             check_commits(&mut ctx);
+            check_licenses(&mut ctx);
             check_format(&mut ctx);
             build(&mut ctx);
             check_doc(&mut ctx);
             test(&mut ctx);
             coverage(&mut ctx);
-            check_unused_deps(&mut ctx);
+            check_security(&mut ctx);
+            check_deps(&mut ctx);
             check_packages(&mut ctx);
         }
         Some("commits") => check_commits(&mut ctx),
+        Some("licenses") => check_licenses(&mut ctx),
         Some("format") => check_format(&mut ctx),
         Some("build") => build(&mut ctx),
         Some("doc") => check_doc(&mut ctx),
         Some("test") => test(&mut ctx),
         Some("coverage") => coverage(&mut ctx),
-        Some("unused-deps") => check_unused_deps(&mut ctx),
+        Some("security") => check_security(&mut ctx),
+        Some("deps") => check_deps(&mut ctx),
         Some("packages") => check_packages(&mut ctx),
         _ => check_usage(),
     }
@@ -89,7 +81,7 @@ fn check(subcommand: Option<&str>) {
 fn check_usage() {
     let name = env::args().next().unwrap();
     eprintln!(
-        "usage: {name} check [commits|format|build|doc|test|coverage|unused-deps|packages]"
+        "usage: {name} check [commits|licenses|format|build|doc|test|coverage|security|deps|packages]"
     );
     process::exit(1);
 }
@@ -128,13 +120,23 @@ fn check_commits(ctx: &mut Context) {
     }
 }
 
+fn check_licenses(ctx: &mut Context) {
+    action!(ctx, "Checking for compliance with REUSE", "reuse lint");
+
+    action!(
+        ctx,
+        "Checking that all dependencies use an authorised license",
+        "cargo deny --workspace --all-features check licenses --deny warnings"
+    );
+}
+
 fn check_format(ctx: &mut Context) {
     let editorconfig_excluded_files = [
         "**.json",
         "**.lock",
         "**.rs",
         "**.toml",
-        "LICENSE",
+        "LICENSES/*",
         "templates/*",
         "wix/gpl-3.0.rtf",
         "wix/main.wxs",
@@ -297,7 +299,27 @@ fn coverage(ctx: &mut Context) {
     }
 }
 
-fn check_unused_deps(ctx: &mut Context) {
+fn check_security(ctx: &mut Context) {
+    action!(
+        ctx,
+        "Checking for security advisories",
+        "cargo deny --workspace --all-features check advisories"
+    );
+}
+
+fn check_deps(ctx: &mut Context) {
+    action!(
+        ctx,
+        "Checking that all dependency sources are allowed",
+        "cargo deny --workspace --all-features check sources"
+    );
+
+    action!(
+        ctx,
+        "Checking that all dependencies are allowed",
+        "cargo deny --workspace --all-features check bans"
+    );
+
     match NightlyCallMethod::from_env() {
         NightlyCallMethod::Cargo => {
             action!(
@@ -342,6 +364,18 @@ fn check_unused_deps(ctx: &mut Context) {
 }
 
 fn check_packages(ctx: &mut Context) {
+    action!(
+        ctx,
+        step!(
+            "Listing the cargo package contents",
+            "cargo package --list --allow-dirty"
+        ),
+        step!(
+            "Checking that the cargo package builds properly",
+            "cargo package --allow-dirty"
+        ),
+    );
+
     #[cfg(not(target_os = "windows"))]
     action!(
         ctx,

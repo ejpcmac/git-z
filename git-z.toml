@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: CC0-1.0 OR GPL-3.0-only
+
 version = "0.2"
 
 # The available types of commits and their description.
@@ -78,6 +81,7 @@ list = [
     "clippy",
     "codecov",
     "committed",
+    "deny",
     "direnv",
     "editorconfig",
     "git",

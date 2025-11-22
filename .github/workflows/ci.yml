@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: EUPL-1.2
+
 name: CI
 
 on:
@@ -44,6 +47,21 @@ jobs:
         run: nix build -L --no-link .#devShells.x86_64-linux.ci
       - name: Run the commit linter
         run: nix develop .#ci -c cargo xtask check commits
+
+  licenses:
+    name: Licensing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+      - name: Check licensing compliance
+        run: nix develop .#ci -c cargo xtask check licenses
 
   format:
     name: Code formatting and typos
@@ -179,8 +197,23 @@ jobs:
           fail_ci_if_error: true
           use_oidc: true
 
-  unused-deps:
-    name: Unused dependencies
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      - name: Setup the Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Setup the environment
+        run: nix build -L --no-link .#devShells.x86_64-linux.ci
+      - name: Run security checks
+        run: nix develop .#ci -c cargo xtask check security
+
+  deps:
+    name: Dependencies
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -213,13 +246,13 @@ jobs:
         if: matrix.system == 'x86_64-windows'
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-hack,cargo-udeps
-      - name: Look for unused dependencies (with Nix)
+          tool: cargo-deny,cargo-hack,cargo-udeps
+      - name: Check the dependencies (with Nix)
         if: matrix.system != 'x86_64-windows'
-        run: nix develop .#ci-nightly -c cargo xtask check unused-deps
-      - name: Look for unused dependencies (without Nix)
+        run: nix develop .#ci-nightly -c cargo xtask check deps
+      - name: Check the dependencies (without Nix)
         if: matrix.system == 'x86_64-windows'
-        run: cargo +nightly xtask check unused-deps
+        run: cargo +nightly xtask check deps
 
   packages:
     name: Packages

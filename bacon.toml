@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2021-2025 Denys Séguret and contributors to bacon <https://dystroy.org/bacon/>
+# SPDX-FileCopyrightText: 2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+
 # This is a configuration file for the bacon tool
 #
 # Complete help on configuration: https://dystroy.org/bacon/config/
@@ -7,6 +12,11 @@
 
 default_job = "clippy-all"
 env.CARGO_TERM_COLOR = "always"
+
+[jobs.deny]
+watch = ["deny.toml"]
+command = ["cargo", "deny", "--workspace", "--all-features", "check"]
+need_stdout = false
 
 [jobs.check]
 command = ["cargo", "check"]

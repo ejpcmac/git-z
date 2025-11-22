@@ -1,8 +1,15 @@
+<!--
+SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+SPDX-FileCopyrightText: 2025 Guillaume Cugnet <jean-philippe@cugnet.eu>
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # git-z
 
 [![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/ejpcmac/git-z/badge)](https://flakehub.com/flake/ejpcmac/git-z)
 [![Crates.io](https://img.shields.io/crates/v/git-z)](https://crates.io/crates/git-z)
-[![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSE)
+[![Crates.io License](https://img.shields.io/crates/l/git-z)](LICENSES/GPL-3.0-only.txt)
 [![Conventional
 Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)
 ](https://conventionalcommits.org)  
@@ -221,4 +228,22 @@ Before contributing to this project, please read the
 
 Copyright © 2023-2025 Jean-Philippe Cugnet
 
-This project is licensed under the [GNU General Public License 3.0](LICENSE).
+The code of this project is primarily licensed under the [GNU General Public
+License 3.0](./LICENSES/GPL-3.0-only.txt), with some parts dual-licensed under
+the [MIT License](./LICENSES/MIT.txt) OR the [Apache License, Version
+2.0](./LICENSES/Apache-2.0.txt). The build script contains a portion licensed
+under the [European Union Public License v. 1.2](./LICENSES/EUPL-1.2.txt).
+
+Its documentation is licensed under the [Creative Commons Attribution Share
+Alike 4.0 International](./LICENSES/CC-BY-SA-4.0.txt) license.
+
+The configuration and commit templates are dual-licensed under the [CC0 1.0
+Universal](./LICENSES/CC0-1.0.txt) license OR the [GNU General Public License
+3.0](./LICENSES/GPL-3.0-only.txt).
+
+The development environment, including CI scripts and configuration files, is
+licensed under the [European Union Public License v.
+1.2](./LICENSES/EUPL-1.2.txt), with some exceptions.
+
+This repository follows the [REUSE](https://reuse.software/) specification.
+Please check the individual files for their exact licensing.

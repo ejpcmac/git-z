@@ -1,7 +1,22 @@
+# SPDX-FileCopyrightText: NONE
+# SPDX-License-Identifier: CC0-1.0
+
 [default]
-# Enable magic comments to ignore typos inline.
 extend-ignore-re = [
-    "(#|//)\\s*spellchecker:ignore-next-line\\n.*",
+    # Enable magic comments to ignore typos inline.
+    # From: https://github.com/crate-ci/typos/blob/a1a16c7b7c25d1c27cc750525aada8b9ae68b716/docs/reference.md#example-configurations
+
+    # SPDX-SnippetBegin
+    # SPDX-SnippetCopyrightText: 2024-2025 Ed Page <eopage@gmail.com>
+    # SPDX-SnippetCopyrightText: 2024 Noah Pendleton
+    # SPDX-License-Identifier: MIT OR Apache-2.0
+
+    # Trailing # spellchecker:disable-line
     "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+    # spellchecker:ignore-next-line
+    "(#|//)\\s*spellchecker:ignore-next-line\\n.*",
+    # spellchecker:<on|off>
     "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on",
+
+    # SPDX-SnippetEnd
 ]

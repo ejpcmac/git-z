@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2018-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Contributing to git-z
 
 git-z is written in [Rust](https://www.rust-lang.org/).
@@ -174,3 +179,35 @@ Please name your commits using [Conventional
 Commits](https://www.conventionalcommits.org/en/v1.0.0/) and using the types and
 scopes defined in `git-z.toml`. You can use `git z commit` to help you prepare
 the commit message.
+
+## Licensing and REUSE compliance
+
+By contributing to `git-z`, you agree that, unless stated otherwise (e.g. by a
+different `SPDX-License-Identifier` header in the contributed file), your
+contributions will be licensed under the [GNU General Public License
+3.0](./LICENSES/GPL-3.0-only.txt) for code and the [Creative Commons Attribution
+Share Alike 4.0 International](./LICENSES/CC-BY-SA-4.0.txt) license for
+documentation.
+
+This project follows the [REUSE](https://reuse.software/) specification to keep
+track of copyright and license information. Each file must contain SPDX license
+headers, like:
+
+<!-- REUSE-IgnoreStart -->
+
+```rust
+// SPDX-FileCopyrightText: 1970 Your Name <your.name@email.provider>
+// SPDX-License-Identifier: GPL-3.0-only
+```
+
+<!-- REUSE-IgnoreEND -->
+
+When this is not possible, a `.license` file should be created instead, as
+described [in the REUSE
+documentation](https://reuse.software/faq/#uncommentable-file).
+
+You can use the `reuse` tool to help you annotate a file:
+
+```text
+reuse annotate -l GPL-3.0-only -c "Your Name <your.name@email.provider>" <file>
+```

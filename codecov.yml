@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: EUPL-1.2
+
 codecov:
   branch: develop
 

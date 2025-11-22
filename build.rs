@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// SPDX-License-Identifier: GPL-3.0-only
+
 //! The build script for git-z.
 
 use std::{env, fs, io, process::Command};
@@ -12,6 +15,10 @@ fn main() {
     define_profile();
     define_built_by();
 }
+
+// SPDX-SnippetBegin
+// SPDX-SnippetCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+// SPDX-License-Identifier: EUPL-1.2
 
 /// Defines a variable containing the version with the Git revision.
 ///
@@ -269,3 +276,5 @@ fn built_by() -> &'static str {
         "cargo"
     }
 }
+
+// SPDX-SnippetEnd

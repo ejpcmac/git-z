@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: EUPL-1.2
+
 {
   description = "A Git extension to go beyond.";
 
@@ -100,12 +103,14 @@
               ];
 
               checkToolchain = with pkgs; [
+                cargo-deny
                 cargo-hack
                 cargo-nextest
                 committed
                 eclint
                 nixpkgs-fmt
                 nodePackages.prettier
+                reuse
                 taplo
                 typos
               ];

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: GPL-3.0-only
+
 [package]
 name = "git-z"
 version = "0.2.5-dev.0"
@@ -13,19 +16,19 @@ description = "A Git extension to go beyond."
 
 # NOTE: Run `cargo package --list` before releasing a new version to ensure no
 # unneeded files are included.
-exclude = [
-    "/.*",
-    "/CHANGELOG.md",
-    "/CONTRIBUTING.md",
-    "/build-deb.sh",
-    "/clippy.toml",
-    "/committed.toml",
-    "/flake.*",
-    "/git-z.toml",
-    "/rust-toolchain.toml",
-    "/rustfmt.toml",
-    "/taplo.toml",
-    "/wix/",
+include = [
+    "LICENSES/Apache-2.0.txt",
+    "LICENSES/CC-BY-SA-4.0.txt",
+    "LICENSES/CC0-1.0.txt",
+    "LICENSES/EUPL-1.2.txt",
+    "LICENSES/GPL-3.0-only.txt",
+    "LICENSES/MIT.txt",
+    "REUSE.toml",
+    "askama.toml",
+    "build.rs",
+    "src/*",
+    "templates/*",
+    "tests/*",
 ]
 
 [package.metadata.deb]
@@ -189,3 +192,6 @@ verbose_file_reads = "warn"
 cargo = { level = "warn", priority = -1 }
 redundant_pub_crate = "warn"
 use_self = "warn"
+
+# NOTE: This is checked by cargo-deny.
+multiple_crate_versions = "allow"

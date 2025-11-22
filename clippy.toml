@@ -1,21 +1,5 @@
-allowed-duplicate-crates = [
-    "bitflags",
-    "regex-automata",
-    "regex-syntax",
-    "thiserror",
-    "thiserror-impl",
-    "windows-link",
-    "windows-sys",
-    "windows-targets",
-    "windows_aarch64_gnullvm",
-    "windows_aarch64_msvc",
-    "windows_i686_gnu",
-    "windows_i686_gnullvm",
-    "windows_i686_msvc",
-    "windows_x86_64_gnu",
-    "windows_x86_64_gnullvm",
-    "windows_x86_64_msvc",
-]
+# SPDX-FileCopyrightText: 2023-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: EUPL-1.2
 
 allow-unwrap-in-tests = true
 allowed-idents-below-min-chars = ["c", "i", "j", "n", "s"]

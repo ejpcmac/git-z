@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-2024 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: CC0-1.0 OR GPL-3.0-only
+
 version = "0.2"
 
 [types]

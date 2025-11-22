@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024-2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: EUPL-1.2
+
 [package]
 name = "xtask"
 version = "0.0.0"
