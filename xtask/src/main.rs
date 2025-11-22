@@ -58,6 +58,7 @@ fn check(subcommand: Option<&str>) {
             check_doc(&mut ctx);
             test(&mut ctx);
             coverage(&mut ctx);
+            check_security(&mut ctx);
             check_deps(&mut ctx);
             check_packages(&mut ctx);
         }
@@ -68,6 +69,7 @@ fn check(subcommand: Option<&str>) {
         Some("doc") => check_doc(&mut ctx),
         Some("test") => test(&mut ctx),
         Some("coverage") => coverage(&mut ctx),
+        Some("security") => check_security(&mut ctx),
         Some("deps") => check_deps(&mut ctx),
         Some("packages") => check_packages(&mut ctx),
         _ => check_usage(),
@@ -79,7 +81,7 @@ fn check(subcommand: Option<&str>) {
 fn check_usage() {
     let name = env::args().next().unwrap();
     eprintln!(
-        "usage: {name} check [commits|licenses|format|build|doc|test|coverage|deps|packages]"
+        "usage: {name} check [commits|licenses|format|build|doc|test|coverage|security|deps|packages]"
     );
     process::exit(1);
 }
@@ -295,6 +297,14 @@ fn coverage(ctx: &mut Context) {
             ),
         ),
     }
+}
+
+fn check_security(ctx: &mut Context) {
+    action!(
+        ctx,
+        "Checking for security advisories",
+        "cargo deny --workspace --all-features check advisories"
+    );
 }
 
 fn check_deps(ctx: &mut Context) {
