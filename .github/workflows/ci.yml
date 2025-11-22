@@ -41,8 +41,6 @@ jobs:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci
       - name: Run the commit linter
@@ -56,8 +54,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci
       - name: Check licensing compliance
@@ -71,8 +67,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci
       - name: Check the code is formatted and free of typos
@@ -99,9 +93,6 @@ jobs:
       - name: Install Nix
         if: matrix.system != 'x86_64-windows'
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        if: matrix.system != 'x86_64-windows'
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: |
@@ -126,8 +117,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci
       - name: Check the documentation
@@ -154,9 +143,6 @@ jobs:
       - name: Install Nix
         if: matrix.system != 'x86_64-windows'
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        if: matrix.system != 'x86_64-windows'
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: |
@@ -183,8 +169,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci-nightly
       - name: Generate the test coverage report
@@ -205,8 +189,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci
       - name: Run security checks
@@ -233,9 +215,6 @@ jobs:
       - name: Install Nix
         if: matrix.system != 'x86_64-windows'
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        if: matrix.system != 'x86_64-windows'
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: nix build -L --no-link .#devShells.${{ matrix.system }}.ci-nightly
@@ -275,9 +254,6 @@ jobs:
       - name: Install Nix
         if: matrix.system != 'x86_64-windows'
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Setup the Nix cache
-        if: matrix.system != 'x86_64-windows'
-        uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Setup the environment (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: |
