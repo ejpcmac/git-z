@@ -25,10 +25,11 @@ workflow:
 stages:
   - devshell
   - check
-  # - build
-  # - analysis
-  # - test
-  # - docs
+  - build
+  - analysis
+  - test
+  - docs
+  - package
 
 variables:
   # Runner configuration
@@ -96,14 +97,6 @@ default:
       - cargo_home
       - target
 
-  nodejs: &nodejs-cache
-    key: node_modules-$CI_COMMIT_REF_SLUG
-    fallback_keys:
-      - node_modules-develop
-    policy: $CACHE_POLICY
-    paths:
-      - prepair-app/node_modules
-
 ################################################################################
 ##                                    Jobs                                    ##
 ################################################################################
@@ -117,56 +110,53 @@ devshell:
 
 commits:
   stage: check
-  # needs:
-  #   - devshell
+  needs:
+    - devshell
   script:
     - nix develop .#ci -c cargo xtask check commits
 
 licenses:
   stage: check
-  # needs:
-  #   - devshell
+  needs:
+    - devshell
   script:
-    - nix develop .#ci -c cargo xtask check license
+    - nix develop .#ci -c cargo xtask check licenses
 
 format:
   stage: check
-  # needs:
-  #   - devshell
+  needs:
+    - devshell
   script:
     - nix develop .#ci -c cargo xtask check format
 
 build:
-  stage: check
-  # <<: *push-cache-policy
-  # stage: build
-  # needs:
-  #   - devshell
-  # cache:
-  #   - *rust-cache
-  #   - *nodejs-cache
+  <<: *push-cache-policy
+  stage: build
+  needs:
+    - devshell
+  cache:
+    - *rust-cache
   script:
     - nix develop .#ci -c cargo xtask check build
 
 test:
-  stage: check
-  # needs:
-  #   - build
-  # variables:
-  #   CACHE_POLICY: pull
-  # cache:
-  #   - *rust-cache
+  stage: test
+  needs:
+    - build
+  variables:
+    CACHE_POLICY: pull
+  cache:
+    - *rust-cache
   script:
     - nix develop .#ci -c cargo xtask check test
 
 coverage:
-  stage: check
-  # <<: *push-cache-policy
-  # stage: test
-  # needs:
-  #   - test
-  # cache:
-  #   - *rust-coverage-cache
+  <<: *push-cache-policy
+  stage: test
+  needs:
+    - test
+  cache:
+    - *rust-coverage-cache
   script:
     - nix develop .#ci-nightly -c cargo xtask check coverage
   # artifacts:
@@ -177,44 +167,40 @@ coverage:
   # coverage: '/TOTAL\s+(\d+\s+)+(\d+\.\d+\%)/'
 
 security:
-  stage: check
-  # needs:
-  #   - devshell
+  stage: analysis
+  needs:
+    - devshell
   script:
     - nix develop .#ci -c cargo xtask check security
 
 deps:
-  stage: check
-  # <<: *push-cache-policy
-  # stage: analysis
-  # needs:
-  #   - build
-  # cache:
-  #   - *rust-udeps-cache
-  #   - *nodejs-cache
+  <<: *push-cache-policy
+  stage: analysis
+  needs:
+    - build
+  cache:
+    - *rust-udeps-cache
   script:
     - nix develop .#ci-nightly -c cargo xtask check deps
 
 docs:
-  stage: check
-  # stage: docs
-  # needs:
-  #   - build
-  # variables:
-  #   CACHE_POLICY: pull
-  # cache:
-  #   - *rust-cache
-  #   - *nodejs-cache
+  stage: docs
+  needs:
+    - build
+  variables:
+    CACHE_POLICY: pull
+  cache:
+    - *rust-cache
   script:
     - nix develop .#ci -c cargo xtask check doc
 
 packages:
-  stage: check
-  # needs:
-  #   - build
-  # variables:
-  #   CACHE_POLICY: pull
-  # cache:
-  #   - *rust-cache
+  stage: package
+  needs:
+    - build
+  variables:
+    CACHE_POLICY: pull
+  cache:
+    - *rust-cache
   script:
     - nix develop .#ci-nightly -c cargo xtask check packages

@@ -102,15 +102,30 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
+      - name: Restore the build cache
+        uses: actions/cache/restore@v4
+        with:
+          key: rust-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
       - name: Compile and run static analysis (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: nix develop .#ci -c cargo xtask check build
       - name: Compile and run static analysis (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo xtask check build
+      - name: Save the build cache
+        uses: actions/cache/save@v4
+        with:
+          key: rust-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
 
   docs:
     name: Documentation
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Clone the repository
@@ -119,11 +134,19 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci
+      - name: Restore the build cache
+        uses: actions/cache/restore@v4
+        with:
+          key: rust-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
       - name: Check the documentation
         run: nix develop .#ci -c cargo xtask check doc
 
   test:
     name: Tests
+    needs: build
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -152,6 +175,13 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack,cargo-nextest
+      - name: Restore the build cache
+        uses: actions/cache/restore@v4
+        with:
+          key: rust-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
       - name: Build and run the tests (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: nix develop .#ci -c cargo xtask check test
@@ -171,6 +201,13 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
       - name: Setup the environment
         run: nix build -L --no-link .#devShells.x86_64-linux.ci-nightly
+      - name: Restore the build cache
+        uses: actions/cache/restore@v4
+        with:
+          key: rust-coverage-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
       - name: Generate the test coverage report
         run: nix develop .#ci-nightly -c cargo xtask check coverage
       # - name: Upload the test coverage report
@@ -180,6 +217,13 @@ jobs:
       #     files: ./target/cobertura.xml
       #     fail_ci_if_error: true
       #     use_oidc: true
+      - name: Save the build cache
+        uses: actions/cache/save@v4
+        with:
+          key: rust-coverage-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
 
   security:
     name: Security
@@ -226,15 +270,30 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-deny,cargo-hack,cargo-udeps
+      - name: Restore the build cache
+        uses: actions/cache/restore@v4
+        with:
+          key: rust-udeps-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
       - name: Check the dependencies (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: nix develop .#ci-nightly -c cargo xtask check deps
       - name: Check the dependencies (without Nix)
         if: matrix.system == 'x86_64-windows'
         run: cargo +nightly xtask check deps
+      - name: Save the build cache
+        uses: actions/cache/save@v4
+        with:
+          key: rust-udeps-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
 
   packages:
     name: Packages
+    needs: build
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -263,6 +322,13 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-wix
+      - name: Restore the build cache
+        uses: actions/cache/restore@v4
+        with:
+          key: rust-${{ matrix.system }}-${{ github.ref_name }}
+          path: |
+            ~/.cargo
+            target/
       - name: Build the packages (with Nix)
         if: matrix.system != 'x86_64-windows'
         run: nix develop .#ci -c cargo xtask check packages

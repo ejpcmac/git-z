@@ -9,6 +9,7 @@
 /.direnv/
 
 # Rust build directory
+/cargo_home/
 /target/
 
 # Nix build output
