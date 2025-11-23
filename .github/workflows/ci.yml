@@ -81,10 +81,10 @@ jobs:
         include:
           - system: x86_64-linux
             runner: ubuntu-latest
-          - system: aarch64-darwin
-            runner: macos-latest
-          - system: x86_64-windows
-            runner: windows-latest
+          # - system: aarch64-darwin
+          #   runner: macos-latest
+          # - system: x86_64-windows
+          #   runner: windows-latest
     steps:
       - name: Configure Git
         run: git config --global core.autocrlf false
@@ -131,10 +131,10 @@ jobs:
         include:
           - system: x86_64-linux
             runner: ubuntu-latest
-          - system: aarch64-darwin
-            runner: macos-latest
-          - system: x86_64-windows
-            runner: windows-latest
+          # - system: aarch64-darwin
+          #   runner: macos-latest
+          # - system: x86_64-windows
+          #   runner: windows-latest
     steps:
       - name: Configure Git
         run: git config --global core.autocrlf false
@@ -173,13 +173,13 @@ jobs:
         run: nix build -L --no-link .#devShells.x86_64-linux.ci-nightly
       - name: Generate the test coverage report
         run: nix develop .#ci-nightly -c cargo xtask check coverage
-      - name: Upload the test coverage report
-        uses: codecov/codecov-action@v5
-        with:
-          disable_search: true
-          files: ./target/cobertura.xml
-          fail_ci_if_error: true
-          use_oidc: true
+      # - name: Upload the test coverage report
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     disable_search: true
+      #     files: ./target/cobertura.xml
+      #     fail_ci_if_error: true
+      #     use_oidc: true
 
   security:
     name: Security
@@ -203,10 +203,10 @@ jobs:
         include:
           - system: x86_64-linux
             runner: ubuntu-latest
-          - system: aarch64-darwin
-            runner: macos-latest
-          - system: x86_64-windows
-            runner: windows-latest
+          # - system: aarch64-darwin
+          #   runner: macos-latest
+          # - system: x86_64-windows
+          #   runner: windows-latest
     steps:
       - name: Configure Git
         run: git config --global core.autocrlf false
@@ -242,10 +242,10 @@ jobs:
         include:
           - system: x86_64-linux
             runner: ubuntu-latest
-          - system: aarch64-darwin
-            runner: macos-latest
-          - system: x86_64-windows
-            runner: windows-latest
+          # - system: aarch64-darwin
+          #   runner: macos-latest
+          # - system: x86_64-windows
+          #   runner: windows-latest
     steps:
       - name: Configure Git
         run: git config --global core.autocrlf false

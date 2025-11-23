@@ -1,0 +1,220 @@
+# SPDX-FileCopyrightText: 2025 Jean-Philippe Cugnet <jean-philippe@cugnet.eu>
+# SPDX-License-Identifier: EUPL-1.2
+
+################################################################################
+##                           General configuration                            ##
+################################################################################
+
+workflow:
+  auto_cancel:
+    on_new_commit: interruptible
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_BRANCH =~ /^release\//
+    - if: $CI_COMMIT_BRANCH =~ /^feature\//
+    - if: $CI_COMMIT_BRANCH =~ /^bugfix\//
+    - if: $CI_COMMIT_BRANCH =~ /^hotfix\//
+    - if: $CI_COMMIT_BRANCH =~ /^chore\//
+    - if: $CI_COMMIT_BRANCH =~ /^docs\//
+    - if: $CI_COMMIT_TAG
+
+stages:
+  - devshell
+  - check
+  # - build
+  # - analysis
+  # - test
+  # - docs
+
+variables:
+  # Runner configuration
+  FF_ENABLE_JOB_CLEANUP: "true"
+  FF_USE_FASTZIP: "true"
+  CACHE_COMPRESSION_LEVEL: "fast"
+
+  # Put the Cargo home inside the build dire to cache it.
+  CARGO_HOME: $CI_PROJECT_DIR/cargo_home
+
+  # Enable colors in CLIs.
+  CARGO_TERM_COLOR: always
+  CLICOLOR_FORCE: 1
+
+  # Environment variables for CI checks
+  IS_PULL_REQUEST: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+default:
+  image: "local/nix:latest"
+  tags:
+    - nix
+    - x86_64-linux
+    - cached
+    - neptune
+  interruptible: true
+
+################################################################################
+##                                 Templates                                  ##
+################################################################################
+
+.cache-policy: &push-cache-policy
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      variables:
+        CACHE_POLICY: pull
+    - if: $CI_COMMIT_BRANCH != "main"
+      variables:
+        CACHE_POLICY: pull-push
+
+.caches:
+  rust: &rust-cache
+    key: rust-$CI_COMMIT_REF_SLUG
+    fallback_keys:
+      - rust-develop
+    policy: $CACHE_POLICY
+    paths:
+      - cargo_home
+      - target
+
+  rust-coverage: &rust-coverage-cache
+    key: rust-coverage-$CI_COMMIT_REF_SLUG
+    fallback_keys:
+      - rust-coverage-develop
+    policy: $CACHE_POLICY
+    paths:
+      - cargo_home
+      - target
+
+  rust-udeps: &rust-udeps-cache
+    key: rust-udeps-$CI_COMMIT_REF_SLUG
+    fallback_keys:
+      - rust-udeps-develop
+    policy: $CACHE_POLICY
+    paths:
+      - cargo_home
+      - target
+
+  nodejs: &nodejs-cache
+    key: node_modules-$CI_COMMIT_REF_SLUG
+    fallback_keys:
+      - node_modules-develop
+    policy: $CACHE_POLICY
+    paths:
+      - prepair-app/node_modules
+
+################################################################################
+##                                    Jobs                                    ##
+################################################################################
+
+devshell:
+  stage: devshell
+  script:
+    - nix --version
+    - nix build -L --no-link .#devShells.x86_64-linux.ci
+    - nix build -L --no-link .#devShells.x86_64-linux.ci-nightly
+
+commits:
+  stage: check
+  # needs:
+  #   - devshell
+  script:
+    - nix develop .#ci -c cargo xtask check commits
+
+licenses:
+  stage: check
+  # needs:
+  #   - devshell
+  script:
+    - nix develop .#ci -c cargo xtask check license
+
+format:
+  stage: check
+  # needs:
+  #   - devshell
+  script:
+    - nix develop .#ci -c cargo xtask check format
+
+build:
+  stage: check
+  # <<: *push-cache-policy
+  # stage: build
+  # needs:
+  #   - devshell
+  # cache:
+  #   - *rust-cache
+  #   - *nodejs-cache
+  script:
+    - nix develop .#ci -c cargo xtask check build
+
+test:
+  stage: check
+  # needs:
+  #   - build
+  # variables:
+  #   CACHE_POLICY: pull
+  # cache:
+  #   - *rust-cache
+  script:
+    - nix develop .#ci -c cargo xtask check test
+
+coverage:
+  stage: check
+  # <<: *push-cache-policy
+  # stage: test
+  # needs:
+  #   - test
+  # cache:
+  #   - *rust-coverage-cache
+  script:
+    - nix develop .#ci-nightly -c cargo xtask check coverage
+  # artifacts:
+  #   reports:
+  #     coverage_report:
+  #       coverage_format: cobertura
+  #       path: target/cobertura.xml
+  # coverage: '/TOTAL\s+(\d+\s+)+(\d+\.\d+\%)/'
+
+security:
+  stage: check
+  # needs:
+  #   - devshell
+  script:
+    - nix develop .#ci -c cargo xtask check security
+
+deps:
+  stage: check
+  # <<: *push-cache-policy
+  # stage: analysis
+  # needs:
+  #   - build
+  # cache:
+  #   - *rust-udeps-cache
+  #   - *nodejs-cache
+  script:
+    - nix develop .#ci-nightly -c cargo xtask check deps
+
+docs:
+  stage: check
+  # stage: docs
+  # needs:
+  #   - build
+  # variables:
+  #   CACHE_POLICY: pull
+  # cache:
+  #   - *rust-cache
+  #   - *nodejs-cache
+  script:
+    - nix develop .#ci -c cargo xtask check doc
+
+packages:
+  stage: check
+  # needs:
+  #   - build
+  # variables:
+  #   CACHE_POLICY: pull
+  # cache:
+  #   - *rust-cache
+  script:
+    - nix develop .#ci-nightly -c cargo xtask check packages
